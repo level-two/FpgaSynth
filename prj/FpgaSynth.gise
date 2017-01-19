@@ -26,6 +26,7 @@
     <file xil_pn:fileType="FILE_LOG" xil_pn:name="fuse.log"/>
     <file xil_pn:fileType="FILE_DIRECTORY" xil_pn:name="isim"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_CMD" xil_pn:name="isim.cmd"/>
+    <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_LOG" xil_pn:name="isim.log"/>
     <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="tb_uart_rx_beh.prj"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_ISIM_EXE" xil_pn:name="tb_uart_rx_isim_beh.exe"/>
     <file xil_pn:fileType="FILE_ISIM_MISC" xil_pn:name="tb_uart_rx_isim_beh.wdb"/>
@@ -35,17 +36,13 @@
   </files>
 
   <transforms xmlns="http://www.xilinx.com/XMLSchema">
-    <transform xil_pn:end_ts="1484772968" xil_pn:name="TRAN_copyInitialToAbstractSimulation" xil_pn:start_ts="1484772968">
+    <transform xil_pn:end_ts="1484803137" xil_pn:name="TRAN_copyInitialToAbstractSimulation" xil_pn:start_ts="1484803137">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1484773197" xil_pn:in_ck="6127852096379784404" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1484773197">
+    <transform xil_pn:end_ts="1484804728" xil_pn:in_ck="6127852096379784404" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1484804728">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../rtl/arb_rr.v"/>
       <outfile xil_pn:name="../rtl/buf_manager.v"/>
       <outfile xil_pn:name="../rtl/ctrl.v"/>
@@ -65,28 +62,23 @@
       <outfile xil_pn:name="../rtl/uart_rx.v"/>
       <outfile xil_pn:name="../tb/tb_uart_rx.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484773203" xil_pn:name="TRAN_xawsToSimhdl" xil_pn:prop_ck="-3600214342309618799" xil_pn:start_ts="1484773203">
+    <transform xil_pn:end_ts="1484803137" xil_pn:name="TRAN_xawsToSimhdl" xil_pn:prop_ck="-3600214342309618799" xil_pn:start_ts="1484803137">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1484773203" xil_pn:name="TRAN_schematicsToHdlSim" xil_pn:prop_ck="-4817988617754938033" xil_pn:start_ts="1484773203">
+    <transform xil_pn:end_ts="1484803137" xil_pn:name="TRAN_schematicsToHdlSim" xil_pn:prop_ck="-4817988617754938033" xil_pn:start_ts="1484803137">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1484773203" xil_pn:in_ck="144595752909302841" xil_pn:name="TRAN_regenerateCoresSim" xil_pn:prop_ck="6045381500859969723" xil_pn:start_ts="1484773203">
+    <transform xil_pn:end_ts="1484803137" xil_pn:in_ck="144595752909302841" xil_pn:name="TRAN_regenerateCoresSim" xil_pn:prop_ck="6045381500859969723" xil_pn:start_ts="1484803137">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M.v"/>
       <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M/example_design/ip_clk_gen_100M_exdes.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484773203" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1484773203">
+    <transform xil_pn:end_ts="1484804728" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1484804728">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="../rtl/arb_rr.v"/>
       <outfile xil_pn:name="../rtl/buf_manager.v"/>
       <outfile xil_pn:name="../rtl/ctrl.v"/>
@@ -108,27 +100,21 @@
       <outfile xil_pn:name="../rtl/uart_rx.v"/>
       <outfile xil_pn:name="../tb/tb_uart_rx.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484773214" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="1265573127915468385" xil_pn:start_ts="1484773203">
+    <transform xil_pn:end_ts="1484804732" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="1265573127915468385" xil_pn:start_ts="1484804728">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForInputs"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="InputChanged"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="fuse.log"/>
       <outfile xil_pn:name="isim"/>
+      <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="tb_uart_rx_beh.prj"/>
       <outfile xil_pn:name="tb_uart_rx_isim_beh.exe"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1484773215" xil_pn:in_ck="-4143242489412252407" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-2500423664127877020" xil_pn:start_ts="1484773214">
+    <transform xil_pn:end_ts="1484804732" xil_pn:in_ck="-4143242489412252407" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-2500423664127877020" xil_pn:start_ts="1484804732">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
-      <status xil_pn:value="OutOfDateForPredecessor"/>
-      <status xil_pn:value="OutOfDateForOutputs"/>
-      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="isim.cmd"/>
+      <outfile xil_pn:name="isim.log"/>
       <outfile xil_pn:name="tb_uart_rx_isim_beh.wdb"/>
     </transform>
     <transform xil_pn:name="TRAN_SubProjectAbstractToPreProxy">

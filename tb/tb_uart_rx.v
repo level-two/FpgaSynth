@@ -9,7 +9,6 @@
 // -----------------------------------------------------------------------------
 
 `timescale 1ns/100ps
-
 module tb_uart_rx;
 
 	// Inputs
@@ -22,7 +21,7 @@ module tb_uart_rx;
 	wire [7:0] data;
 	
     localparam TIMESTEP = 1e-9;
-	localparam CLK_FREQ = 10_000_000;
+	localparam CLK_FREQ = 150_000_000;
 	real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
 
 	localparam BAUD_RATE = 38400;
@@ -37,44 +36,85 @@ module tb_uart_rx;
         .data(data)
     );
 	
+    initial $timeformat(-9, 0, " ns", 0);
+
+    reg[7:0] rnd_data;
+	integer msgCounter = 0, bitCounter = 0;
+
+    reg data_received_trig;
+    always @(data_received) begin
+        data_received_trig <= 1;
+    end
+
 
 	initial begin
 		// Initialize Inputs
 		clk = 0;
 		reset = 1;
 		rx = 1;
-
-		// Wait 100 ns for global reset to finish
 		#100;
-		
 		reset = 0;
-        
-		// Add stimulus here
+		#100;
+
+        $display("[%t] [%m]: Testing correct data", $time);
+
+		repeat (10) begin
+            rnd_data = $random() % 'h100;
+            data_received_trig <= 0;
+
+			rx = 0;
+			bitCounter = 0;
+            #BAUD_PERIOD;
+			
+			repeat (8) begin
+				rx = rnd_data[bitCounter];
+				bitCounter = bitCounter+1;
+                #BAUD_PERIOD;
+			end
+			
+			rx = 1;
+            #BAUD_PERIOD;
+
+            if (data_received_trig == 0) $display("[%t] [%m]: ERROR: data_received is 0 while expected 1!", $time);
+            if (rnd_data != data)        $display("[%t] [%m]: ERROR: data %h is not equal to expected %h!", $time, data, rnd_data);
+
+			msgCounter = msgCounter+1;
+		end
+
+        //-------------------------------------------
+
+        $display("[%t] [%m]: Testing incorrect final bit (0)", $time);
+
+		repeat (10) begin
+            rnd_data = $random() % 'h100;
+            data_received_trig <= 0;
+
+			rx = 0;
+			bitCounter = 0;
+            #BAUD_PERIOD;
+			
+			repeat (8) begin
+				rx = rnd_data[bitCounter];
+				bitCounter = bitCounter+1;
+                #BAUD_PERIOD;
+			end
+			
+			rx = 0;
+
+            #BAUD_PERIOD;
+
+            if (data_received_trig == 1) $display("[%t] [%m]: ERROR: data_received is 1 while expected 0!", $time);
+
+			msgCounter = msgCounter+1;
+
+            // return lane to initial state
+			rx = 1;
+            #BAUD_PERIOD;
+		end
 	end
 	
 	always begin
 		#(CLK_PERIOD/2) clk = ~clk;
-	end
-	
-	wire[7:0] msgArr[0:5] = {8'hFF, 8'h77, 8'h11, 8'h80, 8'h00, 8'h00 };
-	integer msgCounter = 0, bitCounter = 0;
-	
-	initial begin
-		repeat (6) begin
-			#BAUD_PERIOD rx = 0;
-			
-			bitCounter = 0;
-			
-			repeat (8) begin
-				#BAUD_PERIOD rx = msgArr[msgCounter][bitCounter];
-				bitCounter = bitCounter+1;
-			end
-			
-			#BAUD_PERIOD rx = 1;
-			msgCounter = msgCounter+1;
-			
-			#100;
-		end
 	end
 endmodule
 
