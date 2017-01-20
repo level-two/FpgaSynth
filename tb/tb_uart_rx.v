@@ -9,7 +9,14 @@
 // -----------------------------------------------------------------------------
 
 `timescale 1ns/100ps
+
 module tb_uart_rx;
+    localparam TIMESTEP = 1e-9;
+	localparam CLK_FREQ = 150_000_000;
+	real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
+
+	localparam BAUD_RATE = 38400;
+	real BAUD_PERIOD = (1 / (TIMESTEP * BAUD_RATE));
 
 	// Inputs
 	reg clk;
@@ -19,13 +26,6 @@ module tb_uart_rx;
 	// Outputs
 	wire data_received;
 	wire [7:0] data;
-	
-    localparam TIMESTEP = 1e-9;
-	localparam CLK_FREQ = 150_000_000;
-	real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
-
-	localparam BAUD_RATE = 38400;
-	real BAUD_PERIOD = (1 / (TIMESTEP * BAUD_RATE));
 
 	uart_rx #(CLK_FREQ, BAUD_RATE) dut
     (
