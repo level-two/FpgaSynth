@@ -27,9 +27,11 @@
     <file xil_pn:fileType="FILE_DIRECTORY" xil_pn:name="isim"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_CMD" xil_pn:name="isim.cmd"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_LOG" xil_pn:name="isim.log"/>
-    <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="tb_uart_rx_beh.prj"/>
+    <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="tb_spdif_beh.prj"/>
+    <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_ISIM_EXE" xil_pn:name="tb_spdif_isim_beh.exe"/>
+    <file xil_pn:fileType="FILE_ISIM_MISC" xil_pn:name="tb_spdif_isim_beh.wdb"/>
+    <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="tb_spdif_stx_beh.prj"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_ISIM_EXE" xil_pn:name="tb_uart_rx_isim_beh.exe"/>
-    <file xil_pn:fileType="FILE_ISIM_MISC" xil_pn:name="tb_uart_rx_isim_beh.wdb"/>
     <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="tb_uart_rx_stx_beh.prj"/>
     <file xil_pn:fileType="FILE_XST_PROJECT" xil_pn:name="uart_rx_stx_beh.prj"/>
     <file xil_pn:branch="BehavioralSim" xil_pn:fileType="FILE_INI" xil_pn:name="xilinxsim.ini"/>
@@ -40,7 +42,7 @@
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1484804728" xil_pn:in_ck="6127852096379784404" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1484804728">
+    <transform xil_pn:end_ts="1484948151" xil_pn:in_ck="4375667269160976179" xil_pn:name="TRAN_copyAbstractToPostAbstractSimulation" xil_pn:start_ts="1484948151">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="../rtl/arb_rr.v"/>
@@ -60,13 +62,14 @@
       <outfile xil_pn:name="../rtl/syn_fifo.v"/>
       <outfile xil_pn:name="../rtl/top.v"/>
       <outfile xil_pn:name="../rtl/uart_rx.v"/>
+      <outfile xil_pn:name="../tb/tb_spdif.v"/>
       <outfile xil_pn:name="../tb/tb_uart_rx.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484803137" xil_pn:name="TRAN_xawsToSimhdl" xil_pn:prop_ck="-3600214342309618799" xil_pn:start_ts="1484803137">
+    <transform xil_pn:end_ts="1484947123" xil_pn:name="TRAN_xawsToSimhdl" xil_pn:prop_ck="-796639285216202974" xil_pn:start_ts="1484947123">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
-    <transform xil_pn:end_ts="1484803137" xil_pn:name="TRAN_schematicsToHdlSim" xil_pn:prop_ck="-4817988617754938033" xil_pn:start_ts="1484803137">
+    <transform xil_pn:end_ts="1484947123" xil_pn:name="TRAN_schematicsToHdlSim" xil_pn:prop_ck="-7643694958205383968" xil_pn:start_ts="1484947123">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
     </transform>
@@ -76,7 +79,7 @@
       <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M.v"/>
       <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M/example_design/ip_clk_gen_100M_exdes.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484804728" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1484804728">
+    <transform xil_pn:end_ts="1484948151" xil_pn:in_ck="4375667269160976179" xil_pn:name="TRAN_copyPostAbstractToPreSimulation" xil_pn:start_ts="1484948151">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
       <outfile xil_pn:name="../rtl/arb_rr.v"/>
@@ -84,8 +87,6 @@
       <outfile xil_pn:name="../rtl/ctrl.v"/>
       <outfile xil_pn:name="../rtl/dp_ram.v"/>
       <outfile xil_pn:name="../rtl/globals.vh"/>
-      <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M.v"/>
-      <outfile xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M/example_design/ip_clk_gen_100M_exdes.v"/>
       <outfile xil_pn:name="../rtl/led_driver.v"/>
       <outfile xil_pn:name="../rtl/led_driver_data_coder.v"/>
       <outfile xil_pn:name="../rtl/led_driver_shift_reg.v"/>
@@ -98,24 +99,29 @@
       <outfile xil_pn:name="../rtl/syn_fifo.v"/>
       <outfile xil_pn:name="../rtl/top.v"/>
       <outfile xil_pn:name="../rtl/uart_rx.v"/>
+      <outfile xil_pn:name="../tb/tb_spdif.v"/>
       <outfile xil_pn:name="../tb/tb_uart_rx.v"/>
     </transform>
-    <transform xil_pn:end_ts="1484804732" xil_pn:in_ck="6728972741715234017" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="1265573127915468385" xil_pn:start_ts="1484804728">
+    <transform xil_pn:end_ts="1484948157" xil_pn:in_ck="-7668041952103450304" xil_pn:name="TRAN_ISimulateBehavioralModelRunFuse" xil_pn:prop_ck="1722943042700167459" xil_pn:start_ts="1484948151">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="fuse.log"/>
       <outfile xil_pn:name="isim"/>
       <outfile xil_pn:name="isim.log"/>
-      <outfile xil_pn:name="tb_uart_rx_beh.prj"/>
-      <outfile xil_pn:name="tb_uart_rx_isim_beh.exe"/>
+      <outfile xil_pn:name="tb_spdif_beh.prj"/>
+      <outfile xil_pn:name="tb_spdif_isim_beh.exe"/>
       <outfile xil_pn:name="xilinxsim.ini"/>
     </transform>
-    <transform xil_pn:end_ts="1484804732" xil_pn:in_ck="-4143242489412252407" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="-2500423664127877020" xil_pn:start_ts="1484804732">
+    <transform xil_pn:end_ts="1484948157" xil_pn:in_ck="-8246418440062163709" xil_pn:name="TRAN_ISimulateBehavioralModel" xil_pn:prop_ck="4866599420061314566" xil_pn:start_ts="1484948157">
       <status xil_pn:value="SuccessfullyRun"/>
       <status xil_pn:value="ReadyToRun"/>
+      <status xil_pn:value="OutOfDateForOutputs"/>
+      <status xil_pn:value="OutputChanged"/>
       <outfile xil_pn:name="isim.cmd"/>
       <outfile xil_pn:name="isim.log"/>
-      <outfile xil_pn:name="tb_uart_rx_isim_beh.wdb"/>
+      <outfile xil_pn:name="tb_spdif_isim_beh.wdb"/>
     </transform>
     <transform xil_pn:name="TRAN_SubProjectAbstractToPreProxy">
       <status xil_pn:value="SuccessfullyRun"/>
