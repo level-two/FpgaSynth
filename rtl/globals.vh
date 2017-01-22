@@ -8,12 +8,33 @@
 // Description: Global constants and common functions
 // -----------------------------------------------------------------------------
 
-`define LED_DATA_WIDTH          24
-`define LEDS_NUM                12
 
-`define IMG_WIDTH               12
-`define IMG_HEIGHT              (`LEDS_NUM)
+`define MIDI_CMD_NONE           'h00
+`define MIDI_CMD_NOTE_ON        'h01
+`define MIDI_CMD_NOTE_OFF       'h02
+`define MIDI_CMD_AFTERTOUCH     'h03
+`define MIDI_CMD_CC             'h04
+`define MIDI_CMD_PATCH_CHG      'h05
+`define MIDI_CMD_CH_PRESSURE    'h06
+`define MIDI_CMD_PITCH_BEND     'h07
 
+`define MIDI_CMD_SYS_EXCL_ST    'h08
+`define MIDI_CMD_SYS_TIME_QF    'h09
+`define MIDI_CMD_SYS_SONG_POS   'h0a
+`define MIDI_CMD_SYS_SONG_SEL   'h0b
+`define MIDI_CMD_SYS_TUNE_REQ   'h0c
+`define MIDI_CMD_SYS_EXCL_END   'h0d
+`define MIDI_CMD_SYS_TIMING_CLK 'h0e
+`define MIDI_CMD_SYS_START      'h0f
+`define MIDI_CMD_SYS_CONT       'h10
+`define MIDI_CMD_SYS_STOP       'h11
+`define MIDI_CMD_SYS_ACT_SNS    'h12
+`define MIDI_CMD_SYS_RST        'h13
+
+`define MIDI_CMD_SIZE           5
+
+
+///// ????
 `define NBUFS                   16
 `define BUF_SIZE                1024
 `define BUF_ID_LOWER_BIT        (clogb2(`BUF_SIZE))
@@ -22,14 +43,10 @@
 
 `define BUF_MANAGER_BASE        1
 `define MEM_BASE                2
-`define SPI_BASE                3
 
 `define BUF_MANAGER_BASE_ADDR   (`BUF_MANAGER_BASE << `FIRST_BASE_BIT)
 `define MEM_BASE_ADDR           (`MEM_BASE         << `FIRST_BASE_BIT)
 `define SPI_BASE_ADDR           (`SPI_BASE         << `FIRST_BASE_BIT)
-
-`define COLUMN_TIME             200000
-`define FRAME_TIME              (2 * `COLUMN_TIME * `IMG_WIDTH)
 
 
 
