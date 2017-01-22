@@ -12,14 +12,14 @@
 `include "globals.vh"
 
 module midi_decoder (
-    input clk,
-    input reset,
-    input dataInReady,
-    input [7:0] dataIn,
+    input            clk,
+    input            reset,
+    input            dataInReady,
+    input [7:0]      dataIn,
 
     // Parsed MIDI message
     output wire      midi_rdy,
-    output reg [`MIDI_CMD_SIZE:0] midi_cmd,
+    output reg [`MIDI_CMD_SIZE-1:0] midi_cmd,
     output reg [3:0] midi_ch_sysn,
     output reg [6:0] midi_data0,
     output reg [6:0] midi_data1
