@@ -8,6 +8,8 @@
 // Description: Global constants and common functions
 // -----------------------------------------------------------------------------
 
+`ifndef _MIDI_FPGA_SYNTH_VH_
+`define _MIDI_FPGA_SYNTH_VH_
 
 `define MIDI_CMD_NONE           'h00
 `define MIDI_CMD_NOTE_ON        'h01
@@ -49,6 +51,7 @@
 `define SPI_BASE_ADDR           (`SPI_BASE         << `FIRST_BASE_BIT)
 
 
+/*
 
 // ---------------------------------------------------------
 function integer addr_base;
@@ -85,5 +88,6 @@ function integer addr_for_buf_id;
     end
 endfunction
 
+*/
  
-
+`endif // _MIDI_FPGA_SYNTH_VH_

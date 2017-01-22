@@ -9,6 +9,8 @@
 //              format
 // -----------------------------------------------------------------------------
 
+`include "globals.vh"
+
 module midi_decoder (
     input clk,
     input reset,
@@ -16,7 +18,7 @@ module midi_decoder (
     input [7:0] dataIn,
 
     // Parsed MIDI message
-    output reg       midi_rdy,
+    output wire      midi_rdy,
     output reg [`MIDI_CMD_SIZE:0] midi_cmd,
     output reg [3:0] midi_ch_sysn,
     output reg [6:0] midi_data0,
@@ -25,9 +27,9 @@ module midi_decoder (
     
     localparam ST_WAIT_CMD = 0;
     localparam ST_WAIT_DTS = 1;
-    localparam ST_WAIT_DT0 = 1;
-    localparam ST_WAIT_DT1 = 2;
-    localparam ST_SEND_MSG = 3;
+    localparam ST_WAIT_DT0 = 2;
+    localparam ST_WAIT_DT1 = 3;
+    localparam ST_SEND_MSG = 4;
     
     reg[2:0] state, next_state;
 
@@ -40,10 +42,10 @@ module midi_decoder (
         end
     end
 
-    wire [3:0] ch_sysn;
-    wire       skip;
-    wire [1:0] npar;
-    wire [`MIDI_CMD_SIZE-1:0] type;
+    reg [3:0] ch_sysn;
+    reg       skip;
+    reg [1:0] npar;
+    reg [`MIDI_CMD_SIZE-1:0] type;
     
     always @(dataIn) begin
         ch_sysn = dataIn[3:0];
@@ -110,9 +112,7 @@ module midi_decoder (
                                                        ST_SEND_MSG ;
                 end
             ST_SEND_MSG:
-                if (wbm_ack) begin
-                    next_state = ST_WAIT_CMD;
-                end
+                next_state = ST_WAIT_CMD;
             default:
                 next_state = ST_WAIT_CMD;
         endcase
