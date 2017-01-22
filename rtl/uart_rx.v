@@ -10,10 +10,10 @@
 
 module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
 (
-    input clk,
-    input reset,
-    input rx,
-    output data_received,
+    input        clk,
+    input        reset,
+    input        rx,
+    output       data_received,
     output [7:0] data
 );
     
