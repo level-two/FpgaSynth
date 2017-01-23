@@ -8,6 +8,8 @@
 // Description: Top level module with external FPGA interface
 // -----------------------------------------------------------------------------
 
+`include "globals.vh"
+
 module top (
     input            CLK_50M,
     input      [0:0] PB,      // UART rx
@@ -15,387 +17,119 @@ module top (
     output     [0:0] PMOD3    // SPDIF out
 );
 
-    wire uart_rx;
-    assign PMOD4[0] = uart_rx;
+    wire rx;
+    assign PMOD4[0] = rx;
 
     wire spdif_out;
     assign PMOD3[0] = spdif_out;
 
     wire clk;
-    wire reset_n = clk_valid & PB[0];
+    wire clk_6p140M;
 
-    clk_gen_100M clk_gen
+    wire locked;
+    wire reset_n = locked & PB[0];
+    wire reset   = ~reset_n;
+
+    clk_gen_100M_6p144M clk_gen
     (
         .clk_in_50M(CLK_50M), 
         .clk_out_100M(clk), 
-        .CLK_VALID(clk_valid)
+        .clk_out_6p140M(clk_6p140M), 
+        .locked(locked)
     );
 
 
+    wire        data_received;
+    wire [7:0]  data;
 
-/*
-    `include "globals.vh"
-
-    parameter ADDR_WIDTH = 32;
-    parameter DATA_WIDTH = 32;
-    parameter CLK_PER    = 20;
-
-    wire reset_n;
-    wire reset = !reset_n;
-    
-    wire clk;
-
-    // Wishbone Master signals
-    wire [ADDR_WIDTH-1:0] ctrl_wbm_address;
-    wire [DATA_WIDTH-1:0] ctrl_wbm_writedata;
-    wire [DATA_WIDTH-1:0] ctrl_wbm_readdata;
-    wire                  ctrl_wbm_strobe;
-    wire                  ctrl_wbm_cycle;
-    wire                  ctrl_wbm_write;
-    wire                  ctrl_wbm_ack;
-
-    wire [ADDR_WIDTH-1:0] ldrv_wbm_address;
-    wire [DATA_WIDTH-1:0] ldrv_wbm_writedata;
-    wire [DATA_WIDTH-1:0] ldrv_wbm_readdata;
-    wire                  ldrv_wbm_strobe;
-    wire                  ldrv_wbm_cycle;
-    wire                  ldrv_wbm_write;
-    wire                  ldrv_wbm_ack;
-
-    wire [ADDR_WIDTH-1:0] bupd_wbm_address;
-    wire [DATA_WIDTH-1:0] bupd_wbm_writedata;
-    wire [DATA_WIDTH-1:0] bupd_wbm_readdata;
-    wire                  bupd_wbm_strobe;
-    wire                  bupd_wbm_cycle;
-    wire                  bupd_wbm_write;
-    wire                  bupd_wbm_ack;
-
-    wire [ADDR_WIDTH-1:0] imgd_wbm_address;
-    wire [DATA_WIDTH-1:0] imgd_wbm_writedata;
-    wire [DATA_WIDTH-1:0] imgd_wbm_readdata;
-    wire                  imgd_wbm_strobe;
-    wire                  imgd_wbm_cycle;
-    wire                  imgd_wbm_write;
-    wire                  imgd_wbm_ack;
-
-    wire [ADDR_WIDTH-1:0] imgr_wbm_address;
-    wire [DATA_WIDTH-1:0] imgr_wbm_writedata;
-    wire [DATA_WIDTH-1:0] imgr_wbm_readdata;
-    wire                  imgr_wbm_strobe;
-    wire                  imgr_wbm_cycle;
-    wire                  imgr_wbm_write;
-    wire                  imgr_wbm_ack;
+    wire        midi_rdy;
+    wire [`MIDI_CMD_SIZE-1:0] midi_cmd;
+    wire [3:0]  midi_ch_sysn;
+    wire [6:0]  midi_data0;
+    wire [6:0]  midi_data1;
 
 
-    // Wishbone Slave signals
-    wire [ADDR_WIDTH-1:0] spi_wbs_address;
-    wire [DATA_WIDTH-1:0] spi_wbs_writedata;
-    wire [DATA_WIDTH-1:0] spi_wbs_readdata;
-    wire                  spi_wbs_strobe;
-    wire                  spi_wbs_cycle;
-    wire                  spi_wbs_write;
-    wire                  spi_wbs_ack;
+    wire        spdif_left_accepted;
+    wire        spdif_right_accepted;
 
-    wire [ADDR_WIDTH-1:0] bmgr_wbs_address;
-    wire [DATA_WIDTH-1:0] bmgr_wbs_writedata;
-    wire [DATA_WIDTH-1:0] bmgr_wbs_readdata;
-    wire                  bmgr_wbs_strobe;
-    wire                  bmgr_wbs_cycle;
-    wire                  bmgr_wbs_write;
-    wire                  bmgr_wbs_ack;
+    wire        gen_left_sample;
+    wire        gen_right_sample;
 
-    wire [ADDR_WIDTH-1:0] mem_wbs_address;
-    wire [DATA_WIDTH-1:0] mem_wbs_writedata;
-    wire [DATA_WIDTH-1:0] mem_wbs_readdata;
-    wire                  mem_wbs_strobe;
-    wire                  mem_wbs_cycle;
-    wire                  mem_wbs_write;
-    wire                  mem_wbs_ack;
 
-    // Spi signals
-    wire                  spi_done;
+    // 
+    wire        left_sample_rdy;
+    wire [15:0] left_sample;
 
-    // Spi image receiver signals
-    wire [DATA_WIDTH-1:0] img_buf_id;
-    wire                  img_rcvd;
+    wire        right_sample_rdy;
+    wire [15:0] right_sample;
 
-    // Image display signals
-    wire                  display_image;
-    wire [DATA_WIDTH-1:0] display_image_buf_id;
-    wire                  display_image_done;
 
-    // Bufer updater signals
-    //wire [DATA_WIDTH-1:0] update_buf_id;
-    //wire                  update_buf;
-    //wire                  buf_updated;
 
-    // Led driver signals
-    wire [DATA_WIDTH-1:0] led_tx_buf_id;
-    wire                  led_tx;
-    wire                  led_tx_done;
-    wire                  led_data_out;
-
-    assign PMOD4 = led_data_out;
-
-    wb_nic #(ADDR_WIDTH, DATA_WIDTH) wb_nic
+    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(31250)) uart_rx
     (
-        .reset(reset),
         .clk(clk),
-
-        .ctrl_wbm_address(ctrl_wbm_address),
-        .ctrl_wbm_writedata(ctrl_wbm_writedata),
-        .ctrl_wbm_readdata(ctrl_wbm_readdata),
-        .ctrl_wbm_strobe(ctrl_wbm_strobe),
-        .ctrl_wbm_cycle(ctrl_wbm_cycle),
-        .ctrl_wbm_write(ctrl_wbm_write),
-        .ctrl_wbm_ack(ctrl_wbm_ack),
-
-        
-        .ldrv_wbm_address(ldrv_wbm_address),
-        .ldrv_wbm_writedata(ldrv_wbm_writedata),
-        .ldrv_wbm_readdata(ldrv_wbm_readdata),
-        .ldrv_wbm_strobe(ldrv_wbm_strobe),
-        .ldrv_wbm_cycle(ldrv_wbm_cycle),
-        .ldrv_wbm_write(ldrv_wbm_write),
-        .ldrv_wbm_ack(ldrv_wbm_ack),
-
-        .bupd_wbm_address(bupd_wbm_address),
-        .bupd_wbm_writedata(bupd_wbm_writedata),
-        .bupd_wbm_readdata(bupd_wbm_readdata),
-        .bupd_wbm_strobe(bupd_wbm_strobe),
-        .bupd_wbm_cycle(bupd_wbm_cycle),
-        .bupd_wbm_write(bupd_wbm_write),
-        .bupd_wbm_ack(bupd_wbm_ack),
-
-        .imgd_wbm_address(imgd_wbm_address),
-        .imgd_wbm_writedata(imgd_wbm_writedata),
-        .imgd_wbm_readdata(imgd_wbm_readdata),
-        .imgd_wbm_strobe(imgd_wbm_strobe),
-        .imgd_wbm_cycle(imgd_wbm_cycle),
-        .imgd_wbm_write(imgd_wbm_write),
-        .imgd_wbm_ack(imgd_wbm_ack),
-
-        .imgr_wbm_address(imgr_wbm_address),
-        .imgr_wbm_writedata(imgr_wbm_writedata),
-        .imgr_wbm_readdata(imgr_wbm_readdata),
-        .imgr_wbm_strobe(imgr_wbm_strobe),
-        .imgr_wbm_cycle(imgr_wbm_cycle),
-        .imgr_wbm_write(imgr_wbm_write),
-        .imgr_wbm_ack(imgr_wbm_ack),
-
-        
-        .spi_wbs_address(spi_wbs_address),
-        .spi_wbs_writedata(spi_wbs_writedata),
-        .spi_wbs_readdata(spi_wbs_readdata),
-        .spi_wbs_strobe(spi_wbs_strobe),
-        .spi_wbs_cycle(spi_wbs_cycle),
-        .spi_wbs_write(spi_wbs_write),
-        .spi_wbs_ack(spi_wbs_ack),
-        
-        .bmgr_wbs_address(bmgr_wbs_address),
-        .bmgr_wbs_writedata(bmgr_wbs_writedata),
-        .bmgr_wbs_readdata(bmgr_wbs_readdata),
-        .bmgr_wbs_strobe(bmgr_wbs_strobe),
-        .bmgr_wbs_cycle(bmgr_wbs_cycle),
-        .bmgr_wbs_write(bmgr_wbs_write),
-        .bmgr_wbs_ack(bmgr_wbs_ack),
-
-        .mem_wbs_address(mem_wbs_address),
-        .mem_wbs_writedata(mem_wbs_writedata),
-        .mem_wbs_readdata(mem_wbs_readdata),
-        .mem_wbs_strobe(mem_wbs_strobe),
-        .mem_wbs_cycle(mem_wbs_cycle),
-        .mem_wbs_write(mem_wbs_write),
-        .mem_wbs_ack(mem_wbs_ack)
+        .reset(reset),
+        .rx(rx),
+        .data_received(data_received),
+        .data(data)
     );
 
 
-    // dut
-    wb_spi #(ADDR_WIDTH, DATA_WIDTH) wb_spi
-    (
-        .reset(reset),
+    midi_decoder midi_decoder (
         .clk(clk),
+        .reset(reset),
+        .dataInReady(data_received),
+        .dataIn(data),
 
-        // Wishbone signals
-        .wbs_address(spi_wbs_address),
-        .wbs_writedata(spi_wbs_writedata),
-        .wbs_readdata(spi_wbs_readdata),
-        .wbs_strobe(spi_wbs_strobe),
-        .wbs_cycle(spi_wbs_cycle),
-        .wbs_write(spi_wbs_write),
-        .wbs_ack(spi_wbs_ack),
-
-        // Spi signals
-        .mosi(SYS_SPI_MOSI),
-        .ss(RP_SPI_CE0N), 
-        .sclk(SYS_SPI_SCK),
-        .miso(SYS_SPI_MISO),
-
-        // Done signal
-        .spi_done(spi_done)
+        .midi_rdy(midi_rdy),
+        .midi_cmd(midi_cmd),
+        .midi_ch_sysn(midi_ch_sysn),
+        .midi_data0(midi_data0),
+        .midi_data1(midi_data1)
     );
 
 
-    spi_image_rcvr #(ADDR_WIDTH, DATA_WIDTH) spi_image_rcvr
-    (
-        .reset(reset),
+    ctrl ctrl (
         .clk(clk),
+        .reset(reset),
 
-        .wbm_address(imgr_wbm_address),
-        .wbm_writedata(imgr_wbm_writedata),
-        .wbm_readdata(imgr_wbm_readdata),
-        .wbm_strobe(imgr_wbm_strobe),
-        .wbm_cycle(imgr_wbm_cycle),
-        .wbm_write(imgr_wbm_write),
-        .wbm_ack(imgr_wbm_ack),
+        .spdif_left_accepted(spdif_left_accepted),
+        .spdif_right_accepted(spdif_right_accepted),
 
-        .spi_done(spi_done),
-
-        // Signals from contorll logic
-        .img_buf_id(img_buf_id),
-        .img_rcvd(img_rcvd)
+        .gen_left_sample(gen_left_sample),
+        .gen_right_sample(gen_right_sample)
     );
 
 
-
-    buf_manager #(ADDR_WIDTH, DATA_WIDTH, `NBUFS) buf_manager
-    (
-        .reset(reset),
+    gen_pulse gen_pulse (
         .clk(clk),
-
-        // Wishbone signals
-        .wbs_address(bmgr_wbs_address),
-        .wbs_writedata(bmgr_wbs_writedata),
-        .wbs_readdata(bmgr_wbs_readdata),
-        .wbs_strobe(bmgr_wbs_strobe),
-        .wbs_cycle(bmgr_wbs_cycle),
-        .wbs_write(bmgr_wbs_write),
-        .wbs_ack(bmgr_wbs_ack)
-    );
-
-    buf_updater_squares #(ADDR_WIDTH, DATA_WIDTH) buf_updater_squares
-    (
         .reset(reset),
-        .clk(clk),
 
-        // Wishbone master signals
-        .wbm_address(bupd_wbm_address),
-        .wbm_writedata(bupd_wbm_writedata),
-        .wbm_readdata(bupd_wbm_readdata),
-        .wbm_strobe(bupd_wbm_strobe),
-        .wbm_cycle(bupd_wbm_cycle),
-        .wbm_write(bupd_wbm_write),
-        .wbm_ack(bupd_wbm_ack),
+        .gen_left_sample(gen_left_sample),
+        .gen_right_sample(gen_right_sample),
 
-        // control signals
-        .buf_id(update_buf_id),
-        .update_buf(update_buf),
-        .buf_updated(buf_updated)
-    );
+        .midi_rdy(midi_rdy),
+        .midi_cmd(midi_cmd),
+        .midi_ch_sysn(midi_ch_sysn),
+        .midi_data0(midi_data0),
+        .midi_data1(midi_data1),
 
-    ctrl_logic #(ADDR_WIDTH, DATA_WIDTH) ctrl_logic
-    (
-        .reset(reset),
-        .clk(clk),
+        .left_sample_rdy(left_sample_rdy),
+        .left_sample_out(left_sample),
 
-        .wbm_address(ctrl_wbm_address),
-        .wbm_writedata(ctrl_wbm_writedata),
-        .wbm_readdata(ctrl_wbm_readdata),
-        .wbm_strobe(ctrl_wbm_strobe),
-        .wbm_cycle(ctrl_wbm_cycle),
-        .wbm_write(ctrl_wbm_write),
-        .wbm_ack(ctrl_wbm_ack),
-        
-        .update_buf_id(update_buf_id),
-        .update_buf(update_buf),
-        .buf_updated(buf_updated),
-
-        .display_image(display_image),
-        .image_buf_id(image_buf_id),
-        .display_image_done(display_image_done)
-    );
-
-    ctrl_logic_img #(ADDR_WIDTH, DATA_WIDTH) ctrl_logic_img
-    (
-        .reset(reset),
-        .clk(clk),
-
-        .wbm_address(ctrl_wbm_address),
-        .wbm_writedata(ctrl_wbm_writedata),
-        .wbm_readdata(ctrl_wbm_readdata),
-        .wbm_strobe(ctrl_wbm_strobe),
-        .wbm_cycle(ctrl_wbm_cycle),
-        .wbm_write(ctrl_wbm_write),
-        .wbm_ack(ctrl_wbm_ack),
-        
-        .img_buf_id(img_buf_id),
-        .img_rcvd(img_rcvd),
-
-        .display_image(display_image),
-        .display_image_buf_id(display_image_buf_id),
-        .display_image_done(display_image_done)
+        .right_sample_rdy(right_sample_rdy),
+        .right_sample_out(right_sample)
     );
 
 
-    mem #(ADDR_WIDTH, DATA_WIDTH) mem
-    (
+    spdif spdif (
+        .clk(clk_6p140M),
         .reset(reset),
-        .clk(clk),
-
-        // Wishbone signals
-        .wbs_address(mem_wbs_address),
-        .wbs_writedata(mem_wbs_writedata),
-        .wbs_readdata(mem_wbs_readdata),
-        .wbs_strobe(mem_wbs_strobe),
-        .wbs_cycle(mem_wbs_cycle),
-        .wbs_write(mem_wbs_write),
-        .wbs_ack(mem_wbs_ack)
+        .left_in(left_sample),
+        .right_in(right_sample),
+        .left_accepted(spdif_left_accepted),
+        .right_accepted(spdif_right_accepted),
+        .spdif(spdif_out)
     );
-
-
-    image_display #(ADDR_WIDTH, DATA_WIDTH) image_display
-    (
-        .reset(reset),
-        .clk(clk),
-
-        .wbm_address(imgd_wbm_address),
-        .wbm_writedata(imgd_wbm_writedata),
-        .wbm_readdata(imgd_wbm_readdata),
-        .wbm_strobe(imgd_wbm_strobe),
-        .wbm_cycle(imgd_wbm_cycle),
-        .wbm_write(imgd_wbm_write),
-        .wbm_ack(imgd_wbm_ack),
-
-        .display_image(display_image),
-        .display_image_buf_id(display_image_buf_id),
-        .display_image_done(display_image_done),
-
-        .led_tx_buf_id(led_tx_buf_id),
-        .led_tx(led_tx),
-        .led_tx_done(led_tx_done)
-    );
-
-    led_driver #(ADDR_WIDTH, DATA_WIDTH, CLK_PER) led_driver
-    (
-        .reset(reset),
-        .clk(clk),
-
-        // Wishbone master signals
-        .wbm_address(ldrv_wbm_address),
-        .wbm_writedata(ldrv_wbm_writedata),
-        .wbm_readdata(ldrv_wbm_readdata),
-        .wbm_strobe(ldrv_wbm_strobe),
-        .wbm_cycle(ldrv_wbm_cycle),
-        .wbm_write(ldrv_wbm_write),
-        .wbm_ack(ldrv_wbm_ack),
-
-        // ctrl
-        .ctrl_update(led_tx),
-        .ctrl_buf_id(led_tx_buf_id),
-        .ctrl_update_done(led_tx_done),
-
-        .led_data_out(led_data_out)
-    );
-*/
-
+ 
 endmodule

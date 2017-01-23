@@ -16,7 +16,7 @@ module ctrl (
     input         spdif_right_accepted,
 
     output reg    gen_left_sample,
-    output reg    gen_right_sample,
+    output reg    gen_right_sample
 );
 
     always @(posedge reset or posedge clk) begin

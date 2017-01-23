@@ -8,8 +8,10 @@
 // Description: Global constants and common functions
 // -----------------------------------------------------------------------------
 
-`ifndef _MIDI_FPGA_SYNTH_VH_
-`define _MIDI_FPGA_SYNTH_VH_
+`ifndef _MIDI_FPGA_SYNTH_GLOBALS_VH_
+`define _MIDI_FPGA_SYNTH_GLOBALS_VH_
+
+`define CLK_FREQ                100_000_000
 
 `define MIDI_CMD_NONE           'h00
 `define MIDI_CMD_NOTE_ON        'h01
@@ -90,4 +92,4 @@ endfunction
 
 */
  
-`endif // _MIDI_FPGA_SYNTH_VH_
+`endif // _MIDI_FPGA_SYNTH_GLOBALS_VH_
