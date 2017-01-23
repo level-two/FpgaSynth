@@ -1,0 +1,2 @@
+verilog work ../../clk_gen_100M_6p144M.v
+verilog work ../example_design/clk_gen_100M_6p144M_exdes.v
