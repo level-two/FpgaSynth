@@ -14,14 +14,16 @@ module top (
     input            CLK_50M,
     input      [0:0] PB,      // UART rx
     input      [0:0] PMOD4,   // UART rx
-    output     [0:0] PMOD3    // SPDIF out
+    output     [0:0] PMOD3,   // SPDIF out
+    output     [0:0] LED      // SPDIF out
 );
 
     wire rx;
-    assign PMOD4[0] = rx;
+    assign rx = PMOD4[0];
 
     wire spdif_out;
     assign PMOD3[0] = spdif_out;
+    assign LED[0]   = spdif_out;
 
     wire clk;
     wire clk_6p140M;
@@ -49,18 +51,18 @@ module top (
     wire [6:0]  midi_data1;
 
 
-    wire        spdif_left_accepted;
-    wire        spdif_right_accepted;
+    wire        left_accepted;
+    wire        right_accepted;
 
     wire        gen_left_sample;
     wire        gen_right_sample;
 
 
     // 
-    wire        left_sample_rdy;
+    wire        left_sample_stb;
     wire [15:0] left_sample;
 
-    wire        right_sample_rdy;
+    wire        right_sample_stb;
     wire [15:0] right_sample;
 
 
@@ -93,8 +95,8 @@ module top (
         .clk(clk),
         .reset(reset),
 
-        .spdif_left_accepted(spdif_left_accepted),
-        .spdif_right_accepted(spdif_right_accepted),
+        .spdif_left_accepted(left_accepted),
+        .spdif_right_accepted(right_accepted),
 
         .gen_left_sample(gen_left_sample),
         .gen_right_sample(gen_right_sample)
@@ -114,22 +116,32 @@ module top (
         .midi_data0(midi_data0),
         .midi_data1(midi_data1),
 
-        .left_sample_rdy(left_sample_rdy),
+        .left_sample_rdy(left_sample_stb),
         .left_sample_out(left_sample),
 
-        .right_sample_rdy(right_sample_rdy),
+        .right_sample_rdy(right_sample_stb),
         .right_sample_out(right_sample)
     );
 
 
-    spdif spdif (
-        .clk(clk_6p140M),
+    wire right_sample_done;
+    wire left_sample_done;
+
+    spdif_adapter spdif_adapter (
+        .clk(clk),
+        .clk_6p140M(clk_6p140M),
         .reset(reset),
-        .left_in(left_sample),
-        .right_in(right_sample),
-        .left_accepted(spdif_left_accepted),
-        .right_accepted(spdif_right_accepted),
-        .spdif(spdif_out)
+
+        .right_sample(right_sample),
+        .right_sample_stb(right_sample_stb),
+        .right_sample_done(right_sample_done),
+        .right_accepted(right_accepted),
+
+        .left_sample(left_sample),
+        .left_sample_stb(left_sample_stb),
+        .left_sample_done(left_sample_done),
+        .left_accepted(left_accepted),
+
+        .spdif_out(spdif_out)
     );
- 
 endmodule

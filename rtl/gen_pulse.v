@@ -37,11 +37,12 @@ module gen_pulse (
         if (reset) begin
             divider_cnt <= 0;
         end
-        else if (divider_cnt == 0) begin
-            divider_cnt <= 32'd170_454; // 440 Hz, when CLK is 150 MHz
+        else if (divider_cnt == 32'd113_636) begin
+            // 440 Hz, when CLK is 100 MHz
+            divider_cnt <= 0;
         end
         else begin
-            divider_cnt <= divider_cnt - 1;
+            divider_cnt <= divider_cnt + 1;
         end
     end
 

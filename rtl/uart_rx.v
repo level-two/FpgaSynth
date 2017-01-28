@@ -66,7 +66,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
         next_state = state;
         case (state)
             ST_IDLE: begin
-                if (prevRxVal == 1 && rxVal == 0) begin
+                if (prevRxVal == 1'b1 && rxVal == 1'b0) begin
                     next_state = ST_WAIT_HALF_BAUD;
                 end
             end
@@ -76,7 +76,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
                 end
             end
             ST_FIRST_BIT_RECEIVED: begin
-                next_state = (rxVal == 0) ? ST_WAIT_BAUD : ST_IDLE;
+                next_state = (rxVal == 1'b0) ? ST_WAIT_BAUD : ST_IDLE;
             end
             ST_WAIT_BAUD: begin
                 if (baud_tick == 1) begin
@@ -84,7 +84,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
                 end
             end
             ST_RECEIVED: begin
-                next_state = (rx_count == 8) ? ST_DONE : ST_WAIT_BAUD;
+                next_state = (rx_count == 4'h8) ? ST_DONE : ST_WAIT_BAUD;
             end
             ST_DONE: begin
                 next_state = ST_IDLE;

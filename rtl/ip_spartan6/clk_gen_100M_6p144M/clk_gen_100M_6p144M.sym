@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <symbol version="7" name="clk_gen_100M_6p144M">
     <symboltype>BLOCK</symboltype>
-    <timestamp>2017-1-23T20:23:41</timestamp>
+    <timestamp>2017-1-24T20:59:54</timestamp>
     <pin polarity="Input" x="0" y="80" name="clk_in1" />
     <pin polarity="Output" x="608" y="80" name="clk_out1" />
     <pin polarity="Output" x="608" y="176" name="clk_out2" />
