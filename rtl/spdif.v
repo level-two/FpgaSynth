@@ -16,7 +16,7 @@ module spdif (
     input  [15:0] right_in,
     output reg    left_accepted,
     output reg    right_accepted,
-    output reg    spdif
+    output reg    spdif_out
 );
  
 
@@ -89,10 +89,10 @@ module spdif (
     // BMC coder
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            spdif <= 0;
+            spdif_out <= 0;
         end
         else begin
-            spdif <= spdif ^ subFrame[63];
+            spdif_out <= spdif_out ^ subFrame[63];
         end
     end
 

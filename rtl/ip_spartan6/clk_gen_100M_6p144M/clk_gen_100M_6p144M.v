@@ -65,7 +65,7 @@
 
 `timescale 1ps/1ps
 
-(* CORE_GENERATION_INFO = "clk_gen_100M_6p144M,clk_wiz_v3_6,{component_name=clk_gen_100M_6p144M,use_phase_alignment=true,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=PLL_BASE,num_out_clk=2,clkin1_period=20.000,clkin2_period=20.000,use_power_down=false,use_reset=false,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}" *)
+(* CORE_GENERATION_INFO = "clk_gen_100M_6p144M,clk_wiz_v3_6,{component_name=clk_gen_100M_6p144M,use_phase_alignment=false,use_min_o_jitter=false,use_max_i_jitter=false,use_dyn_phase_shift=false,use_inclk_switchover=false,use_dyn_reconfig=false,feedback_source=FDBK_AUTO,primtype_sel=PLL_BASE,num_out_clk=2,clkin1_period=20.000,clkin2_period=20.000,use_power_down=false,use_reset=false,use_locked=true,use_inclk_stopped=false,use_status=false,use_freeze=false,use_clk_valid=false,feedback_type=SINGLE,clock_mgr_type=AUTO,manual_override=false}" *)
 module clk_gen_100M_6p144M
  (// Clock in ports
   input         clk_in_50M,
@@ -91,7 +91,6 @@ module clk_gen_100M_6p144M
   wire [15:0] do_unused;
   wire        drdy_unused;
   wire        clkfbout;
-  wire        clkfbout_buf;
   wire        clkout2_unused;
   wire        clkout3_unused;
   wire        clkout4_unused;
@@ -100,7 +99,7 @@ module clk_gen_100M_6p144M
   PLL_BASE
   #(.BANDWIDTH              ("OPTIMIZED"),
     .CLK_FEEDBACK           ("CLKFBOUT"),
-    .COMPENSATION           ("SYSTEM_SYNCHRONOUS"),
+    .COMPENSATION           ("INTERNAL"),
     .DIVCLK_DIVIDE          (1),
     .CLKFBOUT_MULT          (14),
     .CLKFBOUT_PHASE         (0.000),
@@ -125,15 +124,12 @@ module clk_gen_100M_6p144M
     .LOCKED                (locked),
     .RST                   (1'b0),
      // Input clock control
-    .CLKFBIN               (clkfbout_buf),
+    .CLKFBIN               (clkfbout),
     .CLKIN                 (clkin1));
 
 
   // Output buffering
   //-----------------------------------
-  BUFG clkf_buf
-   (.O (clkfbout_buf),
-    .I (clkfbout));
 
   BUFG clkout1_buf
    (.O   (clk_out_100M),

@@ -13,12 +13,25 @@
 ##############################################################################
 
 ##### Grouping Constraints #####
-NET CLK_50M TNM_NET = clk50_grp;
+NET CLK_50M    TNM_NET = clk50_grp;
+#NET clk        TNM_NET = clk100_grp;
+#NET clk_6p140M TNM_NET = clk6p140_grp;
 #NET DRAM_CLK TNM_NET = clk100_grp;
 #NET SYS_SPI_SCK TNM_NET = clk32_grp;
 
 ##### Clock Period Constraints #####
-TIMESPEC TS_PER_CLK50 = PERIOD "clk50_grp" 20.0 ns ;
+TIMESPEC TS_PER_CLK50    = PERIOD "clk50_grp"    50.000 MHz;
+#TIMESPEC TS_PER_CLK100   = PERIOD "clk100_grp"   100.000 MHz;
+#TIMESPEC TS_PER_CLK6p140 = PERIOD "clk6p140_grp" 6.140 MHz;
+#
+#
+NET clk        TNM_NET = FFS GRP_100M;
+NET clk_6p140M TNM_NET = FFS GRP_6p140M;
+
+TIMESPEC TS_SLOW_TO_FAST = FROM "GRP_6p140M" TO "GRP_100M" 20 ns DATAPATHONLY;
+TIMESPEC TS_FAST_TO_SLOW = FROM "GRP_100M" TO "GRP_6p140M" 350 ns DATAPATHONLY;
+#
+#
 #TIMESPEC TS_PER_CLK100 = PERIOD "clk100_grp" 10.0 ns;
 #TIMESPEC TS_PER_CLK32 = PERIOD "clk32_grp" 20.0 ns;
 #PIN "sys_clocks_gen/clkout2_buf.O" CLOCK_DEDICATED_ROUTE = FALSE;
@@ -32,7 +45,7 @@ TIMESPEC TS_PER_CLK50 = PERIOD "clk50_grp" 20.0 ns ;
 NET "CLK_50M"       LOC = "P85"         | IOSTANDARD = LVTTL;
 
 #Peripherals#############################################################
-#NET "LED<0>"               LOC = "P105"        | IOSTANDARD = LVTTL;       #SHARED WITH ARD_D6
+NET "LED<0>"               LOC = "P105"        | IOSTANDARD = LVTTL;       #SHARED WITH ARD_D6
 #NET "LED<1>"               LOC = "P104"        | IOSTANDARD = LVTTL;       #SHARED WITH ARD_D7
 NET "PB<0>"                LOC = "P102"        | IOSTANDARD = LVTTL;
 #NET "PB<1>"                LOC = "P101"        | IOSTANDARD = LVTTL;

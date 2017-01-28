@@ -1,4 +1,5 @@
 # Output products list for <clk_gen_100M_6p144M>
+_xmsgs\pn_parser.xmsgs
 clk_gen_100M_6p144M.asy
 clk_gen_100M_6p144M.gise
 clk_gen_100M_6p144M.sym
