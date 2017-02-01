@@ -24,10 +24,10 @@ module gen_pulse (
     input  [6:0]      midi_data1,
 
     output reg        left_sample_rdy,
-    output reg [15:0] left_sample_out,
+    output reg signed [17:0] left_sample_out,
 
     output reg        right_sample_rdy,
-    output reg [15:0] right_sample_out
+    output reg signed [17:0] right_sample_out
 );
 
 
@@ -47,13 +47,13 @@ module gen_pulse (
     end
 
 
-    reg [15:0] sample_val;
+    reg signed [17:0] sample_val;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_val <= 0;
+            sample_val <= 18'h04000;
         end
         else if (divider_cnt_evnt) begin
-            sample_val[8] <= ~sample_val[8];
+            sample_val <= -sample_val;
         end
     end
 

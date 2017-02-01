@@ -1,4 +1,5 @@
 # Output products list for <ip_clk_gen_100M>
+_xmsgs\pn_parser.xmsgs
 ip_clk_gen_100M.asy
 ip_clk_gen_100M.gise
 ip_clk_gen_100M.sym
