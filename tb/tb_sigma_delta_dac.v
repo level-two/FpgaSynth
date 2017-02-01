@@ -23,8 +23,8 @@ module tb_sigma_delta_dac;
     reg             clk;
     reg             reset;   // SPDIF out
 
-    reg      [17:0] din;
-    wire            dout;
+    reg signed [17:0] din;
+    wire              dout;
 
     sigma_delta_dac #(.NBITS(2), .MBITS(16)) dut
     (
@@ -47,13 +47,15 @@ module tb_sigma_delta_dac;
 
     initial begin
         reset <= 1;
-        din <= 0;
+        din   <= 0;
         #100;
         reset <= 0;
 
-        din <= 18'h08000;
-        repeat (1000) @(posedge clk);
-        din <= 18'h28000;
+        din <= 18'h30000; // Q2.16
+        repeat (8) begin
+            repeat (10000) @(posedge clk);
+            din <= din + 18'h04000; // Q2.16
+        end
     end
 endmodule
 

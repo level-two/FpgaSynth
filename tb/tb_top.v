@@ -28,6 +28,7 @@ module tb_top;
     reg      [0:0] PB;      // UART rx
     reg      [0:0] PMOD4;   // UART rx
     wire     [0:0] PMOD3;   // SPDIF out
+
     top dut (
         .CLK_50M(CLK_50M),
         .PB(PB),
