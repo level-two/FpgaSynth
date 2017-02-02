@@ -25,9 +25,9 @@ module tb_top;
     // Inputs
 
     reg            CLK_50M;
-    reg      [0:0] PB;      // UART rx
-    reg      [0:0] PMOD4;   // UART rx
-    wire     [0:0] PMOD3;   // SPDIF out
+    reg      [0:0] PB;
+    reg      [0:0] PMOD3;   // UART rx
+    wire     [0:0] PMOD4;   // SPDIF out
 
     top dut (
         .CLK_50M(CLK_50M),
@@ -39,9 +39,9 @@ module tb_top;
     initial $timeformat(-9, 0, " ns", 0);
 
     initial begin
-        CLK_50M     = 0;
-        PB = 1;
-        PMOD4 = 0;
+        CLK_50M = 0;
+        PB      = 1;
+        PMOD3   = 0;
     end
 
     always begin

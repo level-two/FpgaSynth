@@ -13,17 +13,17 @@
 module top (
     input            CLK_50M,
     input      [0:0] PB,      // UART rx
-    input      [0:0] PMOD4,   // UART rx
-    output     [0:0] PMOD3    // dac out
+    input      [0:0] PMOD3,   // UART rx
+    output     [0:0] PMOD4    // dac out
 );
 
-    wire rx = PMOD4[0];
+    wire rx = PMOD3[0];
 
+    wire dac_right_out;
     wire dac_left_out;
-    assign PMOD3[0] = dac_left_out;
+    assign PMOD4[0] = dac_left_out;
 
     wire clk;
-    wire clk_6p140M;
 
     /*
     wire locked;
