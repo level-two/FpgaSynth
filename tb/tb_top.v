@@ -19,7 +19,7 @@ module tb_top;
     localparam CLK_FREQ = 50_000_000;
     real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
 
-    localparam BAUD_RATE = 38400;
+    localparam BAUD_RATE = 31250;
     real BAUD_PERIOD = (1 / (TIMESTEP * BAUD_RATE));
 
     // Inputs
@@ -41,11 +41,40 @@ module tb_top;
     initial begin
         CLK_50M = 0;
         PB      = 1;
-        PMOD3   = 0;
     end
 
     always begin
         #(CLK_PERIOD/2) CLK_50M = ~CLK_50M;
+    end
+
+
+    wire [7:0]midi_data[0:2] = {8'h90, 8'h55, 8'h77};
+    integer msg_cnt = 0;
+    integer bit_cnt = 0;
+
+	initial begin
+        PMOD3 <= 1;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+		
+		repeat (3) begin
+			PMOD3 <= 0;
+			bit_cnt = 0;
+            #BAUD_PERIOD;
+			
+			repeat (8) begin
+				PMOD3 <= midi_data[msg_cnt][bit_cnt];
+				bit_cnt = bit_cnt+1;
+                #BAUD_PERIOD;
+			end
+			
+			PMOD3 <= 1;
+            #BAUD_PERIOD;
+
+			msg_cnt = msg_cnt+1;
+		end
     end
 endmodule
 
