@@ -12,8 +12,9 @@
 
 module top (
     input            CLK_50M,
-    input      [0:0] PB,      // UART rx
+    input      [0:0] PB,
     input      [0:0] PMOD3,   // UART rx
+    output     [1:0] LED,
     output     [0:0] PMOD4    // dac out
 );
 
@@ -22,6 +23,8 @@ module top (
     wire dac_right_out;
     wire dac_left_out;
     assign PMOD4[0] = dac_left_out;
+    assign LED[0] = rx;
+    assign LED[1] = (midi_cmd == `MIDI_CMD_NOTE_ON) ? 1:0;
 
     wire clk;
 
@@ -54,11 +57,11 @@ module top (
     wire        gen_left_sample;
     wire        gen_right_sample;
 
-    wire [17:0] left_sample;
-    wire [17:0] right_sample;
+    wire [18:0] left_sample;
+    wire [18:0] right_sample;
 
 
-    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(31250)) uart_rx
+    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
     (
         .clk(clk),
         .reset(reset),
@@ -103,12 +106,14 @@ module top (
         .midi_data0(midi_data0),
         .midi_data1(midi_data1),
 
-        .left_sample_out(left_sample),
-        .right_sample_out(right_sample)
+        .left_sample_out(left_sample[17:0]),
+        .right_sample_out(right_sample[17:0])
     );
 
+    assign right_sample[18] = 0;
+    assign left_sample[18] = 0;
 
-    sigma_delta_dac #(.NBITS(2), .MBITS(16)) right_sigma_delta_dac
+    sigma_delta_dac #(.NBITS(3), .MBITS(16)) right_sigma_delta_dac
     (
         .clk(clk),
         .reset(reset),
@@ -116,7 +121,7 @@ module top (
         .dout(dac_right_out)
     );
 
-    sigma_delta_dac #(.NBITS(2), .MBITS(16)) left_sigma_delta_dac
+    sigma_delta_dac #(.NBITS(3), .MBITS(16)) left_sigma_delta_dac
     (
         .clk(clk),
         .reset(reset),
