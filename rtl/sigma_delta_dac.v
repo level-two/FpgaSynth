@@ -12,7 +12,7 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
 (
     input              clk,
     input              reset,
-    input [TOT_BITS-1:0] din,
+    input signed [TOT_BITS-1:0] din,
     output reg         dout
 );
  
@@ -22,7 +22,7 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
     reg signed [TOT_BITS-1:0] del2;
     reg signed [TOT_BITS-1:0] d_q;
 
-    localparam signed [TOT_BITS-1:0] c1   = 1; // { {NBITS-1{1'b0}}, 1'b1, {MBITS{1'b0}} }
+    localparam signed [TOT_BITS-1:0] c1   = { {NBITS-1{1'b0}}, 1'b1, {MBITS{1'b0}} };
     localparam signed [TOT_BITS-1:0] c_1  = -c1;
 
     always @(posedge reset or posedge clk) begin
@@ -41,11 +41,11 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
             v2 = v1  + d_q + del2;
             // if (v2 > 0) begin
             if (v2[TOT_BITS-1] == 1'b0) begin
-                d_q  <= c_1; // -1
+                d_q  <= c_1; // -1.0
                 dout <= 1'b1;
             end
             else begin
-                d_q  <= c1; // +1
+                d_q  <= c1;  // +1.0
                 dout <= 1'b0;
             end
             del1 <= v1;

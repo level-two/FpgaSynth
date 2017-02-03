@@ -54,8 +54,8 @@ module midi_decoder (
         type    = `MIDI_CMD_NONE;
 
         case (dataIn[6:4])
-        3'h0: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_NOTE_ON    ; end
-        3'h1: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_NOTE_OFF   ; end
+        3'h0: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_NOTE_OFF   ; end
+        3'h1: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_NOTE_ON    ; end
         3'h2: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_AFTERTOUCH ; end
         3'h3: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_CC         ; end
         3'h4: begin skip=1'b0; npar=2'd2; type=`MIDI_CMD_PATCH_CHG  ; end
