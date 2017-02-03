@@ -25,9 +25,10 @@ module tb_top;
     // Inputs
 
     reg            CLK_50M;
-    reg      [0:0] PB;      // UART rx
-    reg      [0:0] PMOD4;   // UART rx
-    wire     [0:0] PMOD3;   // SPDIF out
+    reg      [0:0] PB;
+    reg      [0:0] PMOD3;   // UART rx
+    wire     [0:0] PMOD4;   // SPDIF out
+
     top dut (
         .CLK_50M(CLK_50M),
         .PB(PB),
@@ -38,13 +39,42 @@ module tb_top;
     initial $timeformat(-9, 0, " ns", 0);
 
     initial begin
-        CLK_50M     = 0;
-        PB = 1;
-        PMOD4 = 0;
+        CLK_50M = 0;
+        PB      = 1;
     end
 
     always begin
         #(CLK_PERIOD/2) CLK_50M = ~CLK_50M;
+    end
+
+
+    wire [7:0]midi_data[0:2] = {8'h90, 8'h45, 8'h77};
+    integer msg_cnt = 0;
+    integer bit_cnt = 0;
+
+	initial begin
+        PMOD3 <= 1;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+        #BAUD_PERIOD;
+		
+		repeat (3) begin
+			PMOD3 <= 0;
+			bit_cnt = 0;
+            #BAUD_PERIOD;
+			
+			repeat (8) begin
+				PMOD3 <= midi_data[msg_cnt][bit_cnt];
+				bit_cnt = bit_cnt+1;
+                #BAUD_PERIOD;
+			end
+			
+			PMOD3 <= 1;
+            #BAUD_PERIOD;
+
+			msg_cnt = msg_cnt+1;
+		end
     end
 endmodule
 

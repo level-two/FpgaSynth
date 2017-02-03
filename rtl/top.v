@@ -12,32 +12,36 @@
 
 module top (
     input            CLK_50M,
-    input      [0:0] PB,      // UART rx
-    input      [0:0] PMOD4,   // UART rx
-    output     [0:0] PMOD3,   // SPDIF out
-    output     [0:0] LED      // SPDIF out
+    input      [0:0] PB,
+    input      [0:0] PMOD3,   // UART rx
+    output     [1:0] LED,
+    output     [0:0] PMOD4    // dac out
 );
 
-    wire rx;
-    assign rx = PMOD4[0];
+    wire rx = PMOD3[0];
 
-    wire spdif_out;
-    assign PMOD3[0] = spdif_out;
-    assign LED[0]   = spdif_out;
+    wire dac_right_out;
+    wire dac_left_out;
+    assign PMOD4[0] = dac_left_out;
+    assign LED[0] = rx;
+    assign LED[1] = (midi_cmd == `MIDI_CMD_NOTE_ON) ? 1:0;
 
     wire clk;
-    wire clk_6p140M;
 
+    /*
     wire locked;
     wire reset_n = locked & PB[0];
     wire reset   = ~reset_n;
+    */
+    wire clk_valid;
+    wire reset_n = clk_valid & PB[0];
+    wire reset   = ~reset_n;
 
-    clk_gen_100M_6p144M clk_gen
+    ip_clk_gen_100M clk_gen
     (
         .clk_in_50M(CLK_50M), 
         .clk_out_100M(clk), 
-        .clk_out_6p140M(clk_6p140M), 
-        .locked(locked)
+        .CLK_VALID(clk_valid)
     );
 
 
@@ -50,24 +54,14 @@ module top (
     wire [6:0]  midi_data0;
     wire [6:0]  midi_data1;
 
-
-    wire        left_accepted;
-    wire        right_accepted;
-
     wire        gen_left_sample;
     wire        gen_right_sample;
 
-
-    // 
-    wire        left_sample_stb;
-    wire [15:0] left_sample;
-
-    wire        right_sample_stb;
-    wire [15:0] right_sample;
+    wire [18:0] left_sample;
+    wire [18:0] right_sample;
 
 
-
-    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(31250)) uart_rx
+    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
     (
         .clk(clk),
         .reset(reset),
@@ -94,10 +88,6 @@ module top (
     ctrl ctrl (
         .clk(clk),
         .reset(reset),
-
-        .spdif_left_accepted(left_accepted),
-        .spdif_right_accepted(right_accepted),
-
         .gen_left_sample(gen_left_sample),
         .gen_right_sample(gen_right_sample)
     );
@@ -116,32 +106,26 @@ module top (
         .midi_data0(midi_data0),
         .midi_data1(midi_data1),
 
-        .left_sample_rdy(left_sample_stb),
-        .left_sample_out(left_sample),
-
-        .right_sample_rdy(right_sample_stb),
-        .right_sample_out(right_sample)
+        .left_sample_out(left_sample[17:0]),
+        .right_sample_out(right_sample[17:0])
     );
 
+    assign right_sample[18] = 0;
+    assign left_sample[18] = 0;
 
-    wire right_sample_done;
-    wire left_sample_done;
-
-    spdif_adapter spdif_adapter (
+    sigma_delta_dac #(.NBITS(3), .MBITS(16)) right_sigma_delta_dac
+    (
         .clk(clk),
-        .clk_6p140M(clk_6p140M),
         .reset(reset),
+        .din(right_sample),
+        .dout(dac_right_out)
+    );
 
-        .right_sample(right_sample),
-        .right_sample_stb(right_sample_stb),
-        .right_sample_done(right_sample_done),
-        .right_accepted(right_accepted),
-
-        .left_sample(left_sample),
-        .left_sample_stb(left_sample_stb),
-        .left_sample_done(left_sample_done),
-        .left_accepted(left_accepted),
-
-        .spdif_out(spdif_out)
+    sigma_delta_dac #(.NBITS(3), .MBITS(16)) left_sigma_delta_dac
+    (
+        .clk(clk),
+        .reset(reset),
+        .din(left_sample),
+        .dout(dac_left_out)
     );
 endmodule
