@@ -192,11 +192,7 @@ module gen_pulse (
             default: begin div <= 32'hffffffff; end
         endcase
     end
-    
-    // A-4
-    // Midi 'h45 ('d69)
-    // 440 Hz (per = 2.28ms), when CLK is 100 MHz
-    // 'h1_bbe4 ('d113_636)
+
 
     reg  [31:0] divider_cnt;
     wire        divider_cnt_evnt = (divider_cnt == div);

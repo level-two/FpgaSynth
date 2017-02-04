@@ -14,37 +14,29 @@ module top (
     input            CLK_50M,
     input      [0:0] PB,
     input      [0:0] PMOD3,   // UART rx
-    output     [1:0] LED,
-    output     [0:0] PMOD4    // dac out
+    output     [0:0] PMOD4,   // dac out
+    output     [1:0] LED
 );
-
-    wire rx = PMOD3[0];
 
     wire dac_right_out;
     wire dac_left_out;
-    assign PMOD4[0] = dac_left_out;
 
-    assign LED[0] = 0;
-    assign LED[1] = 0;
+    wire   rx       = PMOD3[0];
+    assign PMOD4[0] = dac_left_out;
+    assign LED[0]   = 0;
+    assign LED[1]   = 0;
 
     wire clk;
-
-    /*
-    wire locked;
-    wire reset_n = locked & PB[0];
-    wire reset   = ~reset_n;
-    */
     wire clk_valid;
     wire reset_n = clk_valid & PB[0];
     wire reset   = ~reset_n;
 
     ip_clk_gen_100M clk_gen
     (
-        .clk_in_50M(CLK_50M), 
-        .clk_out_100M(clk), 
-        .CLK_VALID(clk_valid)
+        .clk_in_50M  (CLK_50M  ), 
+        .clk_out_100M(clk      ), 
+        .CLK_VALID   (clk_valid)
     );
-
 
     wire        data_received;
     wire [7:0]  data;
@@ -64,69 +56,68 @@ module top (
 
     uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
     (
-        .clk(clk),
-        .reset(reset),
-        .rx(rx),
+        .clk          (clk          ),
+        .reset        (reset        ),
+        .rx           (rx           ),
         .data_received(data_received),
-        .data(data)
+        .data         (data         )
     );
 
 
     midi_decoder midi_decoder (
-        .clk(clk),
-        .reset(reset),
-        .dataInReady(data_received),
-        .dataIn(data),
+        .clk         (clk          ),
+        .reset       (reset        ),
+        .dataInReady (data_received),
+        .dataIn      (data         ),
 
-        .midi_rdy(midi_rdy),
-        .midi_cmd(midi_cmd),
-        .midi_ch_sysn(midi_ch_sysn),
-        .midi_data0(midi_data0),
-        .midi_data1(midi_data1)
+        .midi_rdy    (midi_rdy     ),
+        .midi_cmd    (midi_cmd     ),
+        .midi_ch_sysn(midi_ch_sysn ),
+        .midi_data0  (midi_data0   ),
+        .midi_data1  (midi_data1   )
     );
 
 
     ctrl ctrl (
-        .clk(clk),
-        .reset(reset),
-        .gen_left_sample(gen_left_sample),
+        .clk             (clk             ),
+        .reset           (reset           ),
+        .gen_left_sample (gen_left_sample ),
         .gen_right_sample(gen_right_sample)
     );
 
 
     gen_pulse gen_pulse (
-        .clk(clk),
-        .reset(reset),
+        .clk             (clk             ),
+        .reset           (reset           ),
 
-        .gen_left_sample(gen_left_sample),
+        .gen_left_sample (gen_left_sample ),
         .gen_right_sample(gen_right_sample),
 
-        .midi_rdy(midi_rdy),
-        .midi_cmd(midi_cmd),
-        .midi_ch_sysn(midi_ch_sysn),
-        .midi_data0(midi_data0),
-        .midi_data1(midi_data1),
+        .midi_rdy        (midi_rdy        ),
+        .midi_cmd        (midi_cmd        ),
+        .midi_ch_sysn    (midi_ch_sysn    ),
+        .midi_data0      (midi_data0      ),
+        .midi_data1      (midi_data1      ),
 
-        .left_sample_out(left_sample[17:0]),
-        .right_sample_out(right_sample[17:0])
+        .left_sample_out (left_sample     ),
+        .right_sample_out(right_sample    )
     );
 
-    //assign right_sample[20:18] = {3{right_sample[17]}};
-    //assign left_sample[20:18]  = {3{left_sample[17]}};
 
     sigma_delta_dac #(.NBITS(2), .MBITS(16)) right_sigma_delta_dac
     (
-        .clk(clk),
-        .reset(reset),
-        .din(right_sample),
-        .dout(dac_right_out)
+        .clk  (clk          ),
+        .reset(reset        ),
+        .din  (right_sample ),
+        .dout (dac_right_out)
     );
+
 
     sigma_delta_dac #(.NBITS(2), .MBITS(16)) left_sigma_delta_dac
     (
-        .clk(clk),
-        .reset(reset),
-        .din(left_sample),
-        .dout(dac_left_out)
+        .clk  (clk         ),
+        .reset(reset       ),
+        .din  (left_sample ),
+        .dout (dac_left_out)
     );
 endmodule

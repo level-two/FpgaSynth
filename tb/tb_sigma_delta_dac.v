@@ -5,7 +5,7 @@
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
 // File: tb_sigma_delta_dac.v
-// Description: Testbench for the top module
+// Description: Testbench for the sigma-delta adc
 // -----------------------------------------------------------------------------
 
 

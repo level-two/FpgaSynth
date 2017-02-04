@@ -1,11 +1,11 @@
-// -----------------------------------------------------------------------------
+// ----------------------------------------------------------------------------- block
 // Copyright © 2017 Yauheni Lychkouski. All Rights Reserved
 //
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
 // File: tb_uart_rx.v
-// Description: Testbench for the UART receiver controller
+// Description: Testbench for the midi decoder
 // -----------------------------------------------------------------------------
 
 

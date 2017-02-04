@@ -22,18 +22,18 @@ module tb_top;
     localparam BAUD_RATE = 38400;
     real BAUD_PERIOD = (1 / (TIMESTEP * BAUD_RATE));
 
-    // Inputs
-
     reg            CLK_50M;
     reg      [0:0] PB;
     reg      [0:0] PMOD3;   // UART rx
     wire     [0:0] PMOD4;   // SPDIF out
+    wire     [1:0] LED;     // LED out
 
     top dut (
         .CLK_50M(CLK_50M),
         .PB(PB),
         .PMOD4(PMOD4),
-        .PMOD3(PMOD3)
+        .PMOD3(PMOD3),
+        .LED(LED),
     );
     
     initial $timeformat(-9, 0, " ns", 0);
