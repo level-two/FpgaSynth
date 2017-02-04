@@ -25,6 +25,7 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
     localparam signed [TOT_BITS-1:0] c1   = { {NBITS-1{1'b0}}, 1'b1, {MBITS{1'b0}} };
     localparam signed [TOT_BITS-1:0] c_1  = -c1;
 
+    /*
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             del1 <= 0;
@@ -50,6 +51,31 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
             end
             del1 <= v1;
             del2 <= v2;
+        end
+    end
+    */
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            del1 <= 0;
+            d_q  <= 0;
+            dout <= 0;
+        end
+        else begin : dac
+            // note that sign before d_q is changed to plus!
+            // thus constants loaded to d_q are also with opposite signs
+            reg signed [TOT_BITS-1:0] v1;
+            v1 = din + d_q + del1;
+            // if (v2 > 0) begin
+            if (v1[TOT_BITS-1] == 1'b0) begin
+                d_q  <= c_1; // -1.0
+                dout <= 1'b1;
+            end
+            else begin
+                d_q  <= c1;  // +1.0
+                dout <= 1'b0;
+            end
+            del1 <= v1;
         end
     end
 endmodule
