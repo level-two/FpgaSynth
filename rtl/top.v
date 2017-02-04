@@ -23,8 +23,9 @@ module top (
     wire dac_right_out;
     wire dac_left_out;
     assign PMOD4[0] = dac_left_out;
-    assign LED[0] = rx;
-    assign LED[1] = (midi_cmd == `MIDI_CMD_NOTE_ON) ? 1:0;
+
+    assign LED[0] = 0;
+    assign LED[1] = 0;
 
     wire clk;
 
@@ -57,8 +58,8 @@ module top (
     wire        gen_left_sample;
     wire        gen_right_sample;
 
-    wire [18:0] left_sample;
-    wire [18:0] right_sample;
+    wire [17:0] left_sample;
+    wire [17:0] right_sample;
 
 
     uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
@@ -110,10 +111,10 @@ module top (
         .right_sample_out(right_sample[17:0])
     );
 
-    assign right_sample[18] = 0;
-    assign left_sample[18] = 0;
+    //assign right_sample[20:18] = {3{right_sample[17]}};
+    //assign left_sample[20:18]  = {3{left_sample[17]}};
 
-    sigma_delta_dac #(.NBITS(3), .MBITS(16)) right_sigma_delta_dac
+    sigma_delta_dac #(.NBITS(2), .MBITS(16)) right_sigma_delta_dac
     (
         .clk(clk),
         .reset(reset),
@@ -121,7 +122,7 @@ module top (
         .dout(dac_right_out)
     );
 
-    sigma_delta_dac #(.NBITS(3), .MBITS(16)) left_sigma_delta_dac
+    sigma_delta_dac #(.NBITS(2), .MBITS(16)) left_sigma_delta_dac
     (
         .clk(clk),
         .reset(reset),
