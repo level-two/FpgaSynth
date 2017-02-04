@@ -5,7 +5,7 @@
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
 // File: tb_spdif.v
-// Description: Testbench for the SPDIF module
+// Description: Testbench for the data crossing clock domain block
 // -----------------------------------------------------------------------------
 
 `timescale 1ns/100ps

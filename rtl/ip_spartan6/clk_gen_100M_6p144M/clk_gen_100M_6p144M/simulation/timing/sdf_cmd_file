@@ -1,2 +1,0 @@
-COMPILED_SDF_FILE = "../../implement/results/routed.sdf.X",
-SCOPE = clk_gen_100M_6p144M_tb.dut;

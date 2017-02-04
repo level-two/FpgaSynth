@@ -5,7 +5,8 @@
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
 // File: ctrl.v
-// Description: Control block
+// Description: Control block. Triggers left and right channels to generate
+//              new sample (sample rate is taken to be 48kHz)
 // -----------------------------------------------------------------------------
 
 module ctrl (
