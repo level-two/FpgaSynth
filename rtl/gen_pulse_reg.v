@@ -23,25 +23,19 @@ module gen_pulse_reg (
 
     output [31:0] reg_0,
 
-    output [31:0] reg_1,
     output [3:0]  reg_1_field_0,
     output [2:0]  reg_1_field_1,
     output [0:0]  reg_1_field_2,
-    output [7:0]  reg_1_field_3
+    output [7:0]  reg_1_field_3,
 
-    // output [DATA_WIDTH-1:0] reg_wo_0,
-    // output [DATA_WIDTH-1:0] reg_wo_1,
-    // output [DATA_WIDTH-1:0] reg_rw_0,
-    // output [DATA_WIDTH-1:0] reg_rw_1
+    input  [7:0]  reg_2_field_0,
+    input  [7:0]  reg_2_field_1,
+    input  [7:0]  reg_2_field_2,
+    input  [7:0]  reg_2_field_3
 );
 
     parameter ADDR_WIDTH = 16;
     parameter DATA_WIDTH = 32;
-
-
-    localparam REG_0_ADDR = 8'h0;
-    localparam REG_1_ADDR = 8'h1;
-
 
     reg  read_ack;
     reg  write_ack;
@@ -64,57 +58,59 @@ module gen_pulse_reg (
 
     wire [ADDR_WIDTH-1:0] addr       = wbs_address;
     wire [DATA_WIDTH-1:0] write_data = wbs_writedata;
-    wire [DATA_WIDTH-1:0] read_data;
+    reg  [DATA_WIDTH-1:0] read_data;
     assign wbs_readdata = read_data;
 
 
-    // reg_0
-    reg [31:0] reg_0_rw_reg;
-    assign reg_0 = reg_0_rw_reg; 
+    reg  [31:0] reg_0_rw_reg;
+    reg  [31:0] reg_1_rw_reg;
+    wire [31:0] reg_2_ro_reg;
+    reg  [31:0] reg_3_const_reg;
 
-    wire reg_0_selected = (addr[7:0] == REG_0_ADDR);
-    wire reg_0_read     = reg_0_selected & read;
-    wire reg_0_write    = reg_0_selected & write;
+
+    always @(*) begin
+        case (addr[7:0])
+            8'h00:   read_data <= reg_0_rw_reg;
+            8'h04:   read_data <= reg_1_rw_reg;
+            8'h08:   read_data <= reg_2_ro_reg;
+            8'h0c:   read_data <= reg_3_const_reg;
+            default: read_data <= 32'h00000000;
+        endcase
+    end
+
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin 
-            reg_0_rw_reg <= 32'h00000000; // default value
+            // default values
+            reg_0_rw_reg    <= 32'h01010101;
+            reg_1_rw_reg    <= 32'h00ffff00;
+            reg_3_const_reg <= 32'hdeadbeef;
         end 
-        else if (reg_0_write) begin
-            reg_0_rw_reg <= write_data;
+        else if (write) begin
+            case (addr[7:0])
+                8'h00: begin reg_0_rw_reg <= write_data; end
+                8'h04: begin reg_1_rw_reg <= write_data; end
+                8'h08: begin end
+                8'h0c: begin end
+            endcase
         end
     end
 
-    wire [31:0] reg_0_read_data = reg_0_rw_reg & {DATA_WIDTH{reg_0_read}};
+    // reg_0 RW
+    assign reg_0 = reg_0_rw_reg; 
 
-
-    // reg_1
-    reg [31:0] reg_1_rw_reg;
-    assign reg_1         = reg_1_rw_reg; 
+    // reg_1 RW
     assign reg_1_field_0 = reg_1_rw_reg[3:0]; 
     assign reg_1_field_1 = reg_1_rw_reg[5:4]; 
     assign reg_1_field_2 = reg_1_rw_reg[6:6]; 
     assign reg_1_field_3 = reg_1_rw_reg[14:7]; 
 
-    wire reg_1_selected = (addr[7:0] == REG_1_ADDR);
-    wire reg_1_read     = reg_1_selected & read;
-    wire reg_1_write    = reg_1_selected & write;
+    // reg_2 RO
+    assign reg_2_ro_reg[7:0]   = reg_2_field_0;
+    assign reg_2_ro_reg[15:8]  = reg_2_field_1;  
+    assign reg_2_ro_reg[23:16] = reg_2_field_2; 
+    assign reg_2_ro_reg[31:24] = reg_2_field_3; 
 
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin 
-            reg_1_rw_reg <= 32'h00000000; // default value
-        end 
-        else if (reg_1_write) begin
-            reg_1_rw_reg <= write_data;
-        end
-    end
-
-    wire [31:0] reg_1_read_data = reg_1_rw_reg & {DATA_WIDTH{reg_1_read}};
-
-
-    // Aggregate read data and send it to the output
-    assign read_data =
-        reg_0_read_data |
-        reg_1_read_data;
+    // reg_3 CONST
 
 endmodule
