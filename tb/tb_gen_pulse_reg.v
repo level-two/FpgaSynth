@@ -20,11 +20,18 @@ module tb_gen_pulse_reg();
     // registers outs
     wire [31:0] reg_0;
 
-    wire [31:0] reg_1;
     wire [3:0]  reg_1_field_0;
     wire [2:0]  reg_1_field_1;
     wire [0:0]  reg_1_field_2;
     wire [7:0]  reg_1_field_3;
+
+
+
+    reg  [7:0]  reg_2_field_0;
+    reg  [7:0]  reg_2_field_1;
+    reg  [7:0]  reg_2_field_2;
+    reg  [7:0]  reg_2_field_3;
+
 
     // dut
     gen_pulse_reg dut(
@@ -41,11 +48,15 @@ module tb_gen_pulse_reg();
         .wbs_ack(wbs_ack),
 
         .reg_0(reg_0),
-        .reg_1(reg_1),
         .reg_1_field_0(reg_1_field_0),
         .reg_1_field_1(reg_1_field_1),
         .reg_1_field_2(reg_1_field_2),
-        .reg_1_field_3(reg_1_field_3)
+        .reg_1_field_3(reg_1_field_3),
+
+        .reg_2_field_0(reg_2_field_0),
+        .reg_2_field_1(reg_2_field_1),
+        .reg_2_field_2(reg_2_field_2),
+        .reg_2_field_3(reg_2_field_3)
     );
 
     always begin
@@ -54,7 +65,7 @@ module tb_gen_pulse_reg();
     end
 
 
-    parameter NREGS = 2;
+    parameter NREGS = 4;
     reg [ADDR_WIDTH-1:0] addr;
     reg wr;
 
@@ -69,6 +80,11 @@ module tb_gen_pulse_reg();
 
             addr          <= 0;
             wr            <= 0;
+
+            reg_2_field_0 <= $random();
+            reg_2_field_1 <= $random();
+            reg_2_field_2 <= $random();
+            reg_2_field_3 <= $random();
 
         repeat (100) @(posedge clk);
             reset <= 0;
@@ -89,7 +105,7 @@ module tb_gen_pulse_reg();
 
                 wbs_strobe    <= 0;
                 wbs_cycle     <= 0;
-                addr          <= addr + 1;
+                addr          <= addr + 4;
             end
             wr <= ~wr;
         end
