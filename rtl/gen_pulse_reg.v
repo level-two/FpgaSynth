@@ -4,11 +4,9 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: mem.v
-// Description: Wishbone memory
+// File: gen_pulse_reg.v
+// Description: Configuration registers for the pulse generator
 // -----------------------------------------------------------------------------
-
-
 
 module gen_pulse_reg (
     input reset,
@@ -29,7 +27,7 @@ module gen_pulse_reg (
     output [3:0]  reg_1_field_0,
     output [2:0]  reg_1_field_1,
     output [0:0]  reg_1_field_2,
-    output [7:0]  reg_1_field_3,
+    output [7:0]  reg_1_field_3
 
     // output [DATA_WIDTH-1:0] reg_wo_0,
     // output [DATA_WIDTH-1:0] reg_wo_1,
@@ -47,10 +45,10 @@ module gen_pulse_reg (
 
     reg  read_ack;
     reg  write_ack;
-    wire trans    = wbs_strobe & wbs_cycle;
-    wire write    = trans & wbs_write;
-    wire read     = trans & ~wbs_write;
-    wire wbs_ack  = (read_ack | write_ack) & trans;
+    wire trans     = wbs_strobe & wbs_cycle;
+    wire write     = trans & wbs_write;
+    wire read      = trans & ~wbs_write;
+    assign wbs_ack = (read_ack | write_ack) & trans;
 
 
     always @(posedge clk or posedge reset) begin
@@ -87,7 +85,7 @@ module gen_pulse_reg (
         end
     end
 
-    wire reg_0_read_data = reg_0_rw_reg & {DATA_WIDTH{reg_0_read}};
+    wire [31:0] reg_0_read_data = reg_0_rw_reg & {DATA_WIDTH{reg_0_read}};
 
 
     // reg_1
@@ -111,12 +109,12 @@ module gen_pulse_reg (
         end
     end
 
-    wire reg_1_read_data = reg_1_rw_reg & {DATA_WIDTH{reg_1_read}};
+    wire [31:0] reg_1_read_data = reg_1_rw_reg & {DATA_WIDTH{reg_1_read}};
 
 
+    // Aggregate read data and send it to the output
     assign read_data =
         reg_0_read_data |
         reg_1_read_data;
-
 
 endmodule
