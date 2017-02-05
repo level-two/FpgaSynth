@@ -72,8 +72,8 @@ context = {
                     'reset_value' : 'hdeadbeef'
                 }
             ]
-        },
-    ],
+        }
+    ]
 }
 
 
