@@ -12,3 +12,4 @@ src/ipcore_dir/clk_gen/clk_gen/simulation/
 src\ip_spartan6\*\tmp\*
 rtl\ip_spartan6\*\tmp\*
 prj/
+docs/
