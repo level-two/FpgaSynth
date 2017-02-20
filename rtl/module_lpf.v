@@ -28,6 +28,56 @@ module module_lpf.v (
 );
 
 
+
+
+
+
+
+//------------------------------------
+// -------====== COEFS ======-------
+//--------------------------------
+
+    reg [1:0] coef_sel;
+
+    reg signed [17:0] a_coef;
+    always (@coef_sel) begin
+        case (coef_sel)
+            2'h0: begin a_coef <= 18'h00000; end
+            2'h1: begin a_coef <= 18'h00000; end
+            2'h2: begin a_coef <= 18'h00000; end
+            2'h3: begin a_coef <= 18'h00000; end
+            default: begin a_coef <= 18'h00000; end
+        endcase
+    end
+
+    reg signed [17:0] b_coef;
+    always (@coef_sel) begin
+        case (coef_sel)
+            2'h0: begin b_coef <= 18'h00000; end
+            2'h1: begin b_coef <= 18'h00000; end
+            2'h2: begin b_coef <= 18'h00000; end
+            2'h3: begin b_coef <= 18'h00000; end
+            default: begin b_coef <= 18'h00000; end
+        endcase
+    end
+
+
+    dp_ram #(.DATA_WIDTH(18), .ADDR_WIDTH(3)) dp_ram
+    (
+        .clk    (clk          ),
+        .rd     (omega_rd     ),
+        .rd_addr(omega_rd_addr),
+        .rd_data(omega_rd_data),
+        .wr     (omega_wr     ),
+        .wr_addr(omega_wr_addr),
+        .wr_data(omega_wr_data)
+    );
+
+
+//----------------------------------
+// -------====== ALU ======-------
+//------------------------------
+
     localparam OP_X_IN_ZERO = 2'b00;
     localparam OP_X_IN_MULT = 2'b01;
     localparam OP_X_IN_POUT = 2'b10;
