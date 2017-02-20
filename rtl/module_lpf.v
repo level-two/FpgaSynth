@@ -20,98 +20,94 @@ module module_lpf.v (
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
 
-    input                       sample_in_left_rdy,
-    input                       sample_in_right_rdy,
-    input signed [17:0]         sample_in_left,
-    input signed [17:0]         sample_in_right,
+    input                       sample_in_rdy,
+    input signed [17:0]         sample_in,
 
-    output reg                  sample_out_left_rdy,
-    output reg                  sample_out_right_rdy,
-    output reg signed [17:0]    sample_out_left,
-    output reg signed [17:0]    sample_out_right
+    output reg                  sample_out_rdy,
+    output reg signed [17:0]    sample_out
 );
 
 
+    localparam OP_X_IN_ZERO = 2'b00;
+    localparam OP_X_IN_MULT = 2'b01;
+    localparam OP_X_IN_POUT = 2'b10;
+    localparam OP_X_IN_DAB  = 2'b11;
 
+    localparam OP_Z_IN_ZERO = 2'b00;
+    localparam OP_Z_IN_PCIN = 2'b01;
+    localparam OP_Z_IN_POUT = 2'b10;
+    localparam OP_Z_IN_CIN  = 2'b11;
 
-    MACC_MACRO #(
-        .DEVICE("SPARTAN6"),    // Target Device: "VIRTEX5", "VIRTEX6", "SPARTAN6" 
-        .LATENCY(3),            // Desired clock cycle latency, 1-4
-        .WIDTH_A(18),           // Multiplier A-input bus width, 1-18
-        .WIDTH_B(18),           // Multiplier B-input bus width, 1-18
-        .WIDTH_P(48)            // Accumulator output bus width, 1-48
-    ) MACC_MACRO_inst (
-        .P(P),                  // MACC output bus, width determined by WIDTH_P parameter 
-        .A(A),                  // MACC input A bus, width determined by WIDTH_A parameter 
-        .ADDSUB(ADDSUB),        // 1-bit add/sub input, high selects add, low selects subtract
-        .B(B),                  // MACC input B bus, width determined by WIDTH_B parameter 
-        .CARRYIN(CARRYIN),      // 1-bit carry-in input to accumulator
-        .CE(CE),                // 1-bit active high input clock enable
-        .CLK(CLK),              // 1-bit positive edge clock input
-        .LOAD(LOAD),            // 1-bit active high input load accumulator enable
-        .LOAD_DATA(LOAD_DATA),  // Load accumulator input data, width determined by WIDTH_P parameter
-        .RST(RST)               // 1-bit input active high reset
-    );
+    wire [17:0] a;
+    wire [17:0] b;
+    wire [47:0] p;
 
+    wire [1:0]  opmode_x_in;
+    wire [1:0]  opmode_z_in;
+    wire        opmode_use_preadd;
+    wire        opmode_cryin = 1'b0;
+    wire        opmode_preadd_nsub;
+    wire        opmode_postadd_nsub;
 
+    wire [7:0]  opmode = {opmode_postadd_nsub, opmode_preadd_nsub, opmode_cryin,
+                          opmode_use_preadd  , opmode_z_in       , opmode_x_in};
+
+    // not connected
+    wire [35:0] m_nc;
+    wire [17:0] bcout_nc;
+    wire [47:0] pcout_nc;
+    wire [47:0] pcin_nc;
+    wire        carryin_nc;
+    wire        carryout_nc;
+    wire        carryoutf_nc;
 
 
     DSP48A1 #(
-        .A0REG(0),              // First stage A input pipeline register (0/1)
-        .A1REG(1),              // Second stage A input pipeline register (0/1)
-        .B0REG(0),              // First stage B input pipeline register (0/1)
-        .B1REG(1),              // Second stage B input pipeline register (0/1)
-        .CARRYINREG(1),         // CARRYIN input pipeline register (0/1)
-        .CARRYINSEL("OPMODE5"), // Specify carry-in source, "CARRYIN" or "OPMODE5" 
-        .CARRYOUTREG(1),        // CARRYOUT output pipeline register (0/1)
-        .CREG(1),               // C input pipeline register (0/1)
-        .DREG(1),               // D pre-adder input pipeline register (0/1)
-        .MREG(1),               // M pipeline register (0/1)
-        .OPMODEREG(1),          // Enable=1/disable=0 OPMODE input pipeline registers
-        .PREG(1),               // P output pipeline register (0/1)
-        .RSTTYPE("SYNC")        // Specify reset type, "SYNC" or "ASYNC" 
+        .A0REG      (0          ),  // First stage A pipeline register (0/1)
+        .A1REG      (1          ),  // Second stage A pipeline register (0/1)
+        .B0REG      (0          ),  // First stage B pipeline register (0/1)
+        .B1REG      (1          ),  // Second stage B pipeline register (0/1)
+        .CARRYINREG (0          ),  // CARRYIN pipeline register (0/1)
+        .CARRYINSEL ("OPMODE5"  ),  // Specify carry-in source, "CARRYIN" or "OPMODE5" 
+        .CARRYOUTREG(0          ),  // CARRYOUT output pipeline register (0/1)
+        .CREG       (0          ),  // C pipeline register (0/1)
+        .DREG       (0          ),  // D pre-adder pipeline register (0/1)
+        .MREG       (1          ),  // M pipeline register (0/1)
+        .OPMODEREG  (1          ),  // Enable=1/disable=0 OPMODE pipeline registers
+        .PREG       (1          ),  // P output pipeline register (0/1)
+        .RSTTYPE    ("SYNC"     )   // Specify reset type, "SYNC" or "ASYNC" 
     )
     DSP48A1_inst (
-        // Cascade Ports: 18-bit (each) output: Ports to cascade from one DSP48 to another
-        .BCOUT(BCOUT),           // 18-bit output: B port cascade output
-        .PCOUT(PCOUT),           // 48-bit output: P cascade output (if used, connect to PCIN of another DSP48A1)
-        // Data Ports: 1-bit (each) output: Data input and output ports
-        .CARRYOUT(CARRYOUT),     // 1-bit output: carry output (if used, connect to CARRYIN pin of another
-                               // DSP48A1)
-
-        .CARRYOUTF(CARRYOUTF),   // 1-bit output: fabric carry output
-        .M(M),                   // 36-bit output: fabric multiplier data output
-        .P(P),                   // 48-bit output: data output
-        // Cascade Ports: 48-bit (each) input: Ports to cascade from one DSP48 to another
-        .PCIN(PCIN),             // 48-bit input: P cascade input (if used, connect to PCOUT of another DSP48A1)
-        // Control Input Ports: 1-bit (each) input: Clocking and operation mode
-        .CLK(CLK),               // 1-bit input: clock input
-        .OPMODE(OPMODE),         // 8-bit input: operation mode input
-        // Data Ports: 18-bit (each) input: Data input and output ports
-        .A(A),                   // 18-bit input: A data input
-        .B(B),                   // 18-bit input: B data input (connected to fabric or BCOUT of adjacent DSP48A1)
-        .C(C),                   // 48-bit input: C data input
-        .CARRYIN(CARRYIN),       // 1-bit input: carry input signal (if used, connect to CARRYOUT pin of another
-                               // DSP48A1)
-
-        .D(D),                   // 18-bit input: B pre-adder data input
-        // Reset/Clock Enable Input Ports: 1-bit (each) input: Reset and enable input ports
-        .CEA(CEA),               // 1-bit input: active high clock enable input for A registers
-        .CEB(CEB),               // 1-bit input: active high clock enable input for B registers
-        .CEC(CEC),               // 1-bit input: active high clock enable input for C registers
-        .CECARRYIN(CECARRYIN),   // 1-bit input: active high clock enable input for CARRYIN registers
-        .CED(CED),               // 1-bit input: active high clock enable input for D registers
-        .CEM(CEM),               // 1-bit input: active high clock enable input for multiplier registers
-        .CEOPMODE(CEOPMODE),     // 1-bit input: active high clock enable input for OPMODE registers
-        .CEP(CEP),               // 1-bit input: active high clock enable input for P registers
-        .RSTA(RSTA),             // 1-bit input: reset input for A pipeline registers
-        .RSTB(RSTB),             // 1-bit input: reset input for B pipeline registers
-        .RSTC(RSTC),             // 1-bit input: reset input for C pipeline registers
-        .RSTCARRYIN(RSTCARRYIN), // 1-bit input: reset input for CARRYIN pipeline registers
-        .RSTD(RSTD),             // 1-bit input: reset input for D pipeline registers
-        .RSTM(RSTM),             // 1-bit input: reset input for M pipeline registers
-        .RSTOPMODE(RSTOPMODE),   // 1-bit input: reset input for OPMODE pipeline registers
-        .RSTP(RSTP)              // 1-bit input: reset input for P pipeline registers
+        .BCOUT     (bcout_nc    ), // B port cascade output
+        .PCOUT     (pcout_nc    ), // P cascade output (if used, connect to PCIN of another DSP48A1)
+        .CARRYOUT  (carryout_nc ), // Carry output (if used, connect to CARRYIN pin of another DSP48A1)
+        .CARRYOUTF (carryoutf_nc), // Fabric carry output
+        .M         (m_nc        ), // Fabric multiplier data output
+        .P         (p           ), // Data output
+        .PCIN      (pcin_nc     ), // P cascade (if used, connect to PCOUT of another DSP48A1)
+        .CLK       (clk         ), // Clock 
+        .OPMODE    (opmode      ), // Operation mode 
+        .A         (a           ), // A data 
+        .B         (b           ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
+        .C         (48'b0       ), // C data 
+        .CARRYIN   (carryin_nc  ), // Carry signal (if used, connect to CARRYOUT pin of another DSP48A1)
+        .D         (18'b0      ), // B pre-adder data 
+        .CEA       (1'b1        ), // Active high clock enable for A registers
+        .CEB       (1'b1        ), // Active high clock enable for B registers
+        .CEC       (1'b0        ), // Active high clock enable for C registers
+        .CECARRYIN (1'b0        ), // Active high clock enable for CARRYIN registers
+        .CED       (1'b0        ), // Active high clock enable for D registers
+        .CEM       (1'b1        ), // Active high clock enable for multiplier registers
+        .CEOPMODE  (1'b1        ), // Active high clock enable for OPMODE registers
+        .CEP       (1'b1        ), // Active high clock enable for P registers
+        .RSTA      (reset       ), // Reset for A pipeline registers
+        .RSTB      (reset       ), // Reset for B pipeline registers
+        .RSTC      (1'b0        ), // Reset for C pipeline registers
+        .RSTCARRYIN(1'b0        ), // Reset for CARRYIN pipeline registers
+        .RSTD      (1'b0        ), // Reset for D pipeline registers
+        .RSTM      (reset       ), // Reset for M pipeline registers
+        .RSTOPMODE (reset       ), // Reset for OPMODE pipeline registers
+        .RSTP      (reset       )  // Reset for P pipeline registers
     );
 				
 
@@ -125,222 +121,35 @@ module module_lpf.v (
 
 
 
+    // TODO: Use this
+    wire cc_event  = (midi_rdy && midi_cmd == `MIDI_CMD_CC);
 
-    wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
-    wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
-
-    reg [7:0] note;
+    reg [7:0] cc_num;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note <= 0;
+            cc_num <= 0;
         end
         else if (note_on_event) begin
-            note <= midi_data0;
+            cc_num <= midi_data0;
         end
     end
 
-    reg [31:0] div;
-    always @(note) begin
-        case (note)
-            7'h00: begin div <= 32'h005d5084; end
-            7'h01: begin div <= 32'h005813c2; end
-            7'h02: begin div <= 32'h00532240; end
-            7'h03: begin div <= 32'h004e77c5; end
-            7'h04: begin div <= 32'h004a1054; end
-            7'h05: begin div <= 32'h0045e82b; end
-            7'h06: begin div <= 32'h0041fbbc; end
-            7'h07: begin div <= 32'h003e47ac; end
-
-            7'h08: begin div <= 32'h003ac8d3; end
-            7'h09: begin div <= 32'h00377c32; end
-            7'h0a: begin div <= 32'h00345efa; end
-            7'h0b: begin div <= 32'h00316e80; end
-            7'h0c: begin div <= 32'h002ea842; end
-            7'h0d: begin div <= 32'h002c09e1; end
-            7'h0e: begin div <= 32'h00299120; end
-            7'h0f: begin div <= 32'h00273be2; end
-
-            7'h10: begin div <= 32'h0025082a; end
-            7'h11: begin div <= 32'h0022f415; end
-            7'h12: begin div <= 32'h0020fdde; end
-            7'h13: begin div <= 32'h001f23d6; end
-            7'h14: begin div <= 32'h001d6469; end
-            7'h15: begin div <= 32'h001bbe19; end
-            7'h16: begin div <= 32'h001a2f7d; end
-            7'h17: begin div <= 32'h0018b740; end
-
-            7'h18: begin div <= 32'h00175421; end
-            7'h19: begin div <= 32'h001604f1; end
-            7'h1a: begin div <= 32'h0014c890; end
-            7'h1b: begin div <= 32'h00139df1; end
-            7'h1c: begin div <= 32'h00128415; end
-            7'h1d: begin div <= 32'h00117a0b; end
-            7'h1e: begin div <= 32'h00107eef; end
-            7'h1f: begin div <= 32'h000f91eb; end
-
-            7'h20: begin div <= 32'h000eb235; end
-            7'h21: begin div <= 32'h000ddf0d; end
-            7'h22: begin div <= 32'h000d17bf; end
-            7'h23: begin div <= 32'h000c5ba0; end
-            7'h24: begin div <= 32'h000baa11; end
-            7'h25: begin div <= 32'h000b0278; end
-            7'h26: begin div <= 32'h000a6448; end
-            7'h27: begin div <= 32'h0009cef9; end
-
-            7'h28: begin div <= 32'h0009420b; end
-            7'h29: begin div <= 32'h0008bd05; end
-            7'h2a: begin div <= 32'h00083f77; end
-            7'h2b: begin div <= 32'h0007c8f6; end
-            7'h2c: begin div <= 32'h0007591a; end
-            7'h2d: begin div <= 32'h0006ef86; end
-            7'h2e: begin div <= 32'h00068bdf; end
-            7'h2f: begin div <= 32'h00062dd0; end
-
-            7'h30: begin div <= 32'h0005d508; end
-            7'h31: begin div <= 32'h0005813c; end
-            7'h32: begin div <= 32'h00053224; end
-            7'h33: begin div <= 32'h0004e77c; end
-            7'h34: begin div <= 32'h0004a105; end
-            7'h35: begin div <= 32'h00045e83; end
-            7'h36: begin div <= 32'h00041fbc; end
-            7'h37: begin div <= 32'h0003e47b; end
-
-            7'h38: begin div <= 32'h0003ac8d; end
-            7'h39: begin div <= 32'h000377c3; end
-            7'h3a: begin div <= 32'h000345f0; end
-            7'h3b: begin div <= 32'h000316e8; end
-            7'h3c: begin div <= 32'h0002ea84; end
-            7'h3d: begin div <= 32'h0002c09e; end
-            7'h3e: begin div <= 32'h00029912; end
-            7'h3f: begin div <= 32'h000273be; end
-
-            7'h40: begin div <= 32'h00025083; end
-            7'h41: begin div <= 32'h00022f41; end
-            7'h42: begin div <= 32'h00020fde; end
-            7'h43: begin div <= 32'h0001f23d; end
-            7'h44: begin div <= 32'h0001d647; end
-            7'h45: begin div <= 32'h0001bbe2; end
-            7'h46: begin div <= 32'h0001a2f8; end
-            7'h47: begin div <= 32'h00018b74; end
-
-            7'h48: begin div <= 32'h00017542; end
-            7'h49: begin div <= 32'h0001604f; end
-            7'h4a: begin div <= 32'h00014c89; end
-            7'h4b: begin div <= 32'h000139df; end
-            7'h4c: begin div <= 32'h00012841; end
-            7'h4d: begin div <= 32'h000117a1; end
-            7'h4e: begin div <= 32'h000107ef; end
-            7'h4f: begin div <= 32'h0000f91f; end
-
-            7'h50: begin div <= 32'h0000eb23; end
-            7'h51: begin div <= 32'h0000ddf1; end
-            7'h52: begin div <= 32'h0000d17c; end
-            7'h53: begin div <= 32'h0000c5ba; end
-            7'h54: begin div <= 32'h0000baa1; end
-            7'h55: begin div <= 32'h0000b028; end
-            7'h56: begin div <= 32'h0000a645; end
-            7'h57: begin div <= 32'h00009cf0; end
-
-            7'h58: begin div <= 32'h00009421; end
-            7'h59: begin div <= 32'h00008bd0; end
-            7'h5a: begin div <= 32'h000083f7; end
-            7'h5b: begin div <= 32'h00007c8f; end
-            7'h5c: begin div <= 32'h00007592; end
-            7'h5d: begin div <= 32'h00006ef8; end
-            7'h5e: begin div <= 32'h000068be; end
-            7'h5f: begin div <= 32'h000062dd; end
-
-            7'h60: begin div <= 32'h00005d51; end
-            7'h61: begin div <= 32'h00005814; end
-            7'h62: begin div <= 32'h00005322; end
-            7'h63: begin div <= 32'h00004e78; end
-            7'h64: begin div <= 32'h00004a10; end
-            7'h65: begin div <= 32'h000045e8; end
-            7'h66: begin div <= 32'h000041fc; end
-            7'h67: begin div <= 32'h00003e48; end
-
-            7'h68: begin div <= 32'h00003ac9; end
-            7'h69: begin div <= 32'h0000377c; end
-            7'h6a: begin div <= 32'h0000345f; end
-            7'h6b: begin div <= 32'h0000316e; end
-            7'h6c: begin div <= 32'h00002ea8; end
-            7'h6d: begin div <= 32'h00002c0a; end
-            7'h6e: begin div <= 32'h00002991; end
-            7'h6f: begin div <= 32'h0000273c; end
-
-            7'h70: begin div <= 32'h00002508; end
-            7'h71: begin div <= 32'h000022f4; end
-            7'h72: begin div <= 32'h000020fe; end
-            7'h73: begin div <= 32'h00001f24; end
-            7'h74: begin div <= 32'h00001d64; end
-            7'h75: begin div <= 32'h00001bbe; end
-            7'h76: begin div <= 32'h00001a2f; end
-            7'h77: begin div <= 32'h000018b7; end
-
-            7'h78: begin div <= 32'h00001754; end
-            7'h79: begin div <= 32'h00001605; end
-            7'h7a: begin div <= 32'h000014c9; end
-            7'h7b: begin div <= 32'h0000139e; end
-            7'h7c: begin div <= 32'h00001284; end
-            7'h7d: begin div <= 32'h0000117a; end
-            7'h7e: begin div <= 32'h0000107f; end
-            7'h7f: begin div <= 32'h00000f92; end
-            default: begin div <= 32'hffffffff; end
-        endcase
-    end
-
-
-    reg  [31:0] divider_cnt;
-    wire        divider_cnt_evnt = (divider_cnt == div);
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            divider_cnt <= 0;
-        end
-        else if (divider_cnt == div || note_on_event || note_off_event) begin
-            divider_cnt <= 0;
-        end
-        else begin
-            divider_cnt <= divider_cnt + 1;
-        end
-    end
-
-
-    reg signed [17:0] sample_val;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            sample_val <= 0;
-        end
-        else if (note_on_event) begin
-            sample_val <= {2'b00, midi_data1, 9'b0}; // Q2.16
-        end
-        else if (note_off_event) begin
-            sample_val <= 0;
-        end
-        else if (divider_cnt_evnt) begin
-            sample_val <= -sample_val;
-        end
-    end
 
     
+    // TODO: Use this
+    wire processing_done = (state == ST_DONE);
+    wire sample_val = p;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            left_sample_out  <= 0;
-            left_sample_rdy  <= 0;
-            right_sample_out <= 0;
-            right_sample_rdy <= 0;
+            sample_out     <= 18'b0;
+            sample_out_rdy <= 0;
         end
-        else if (gen_left_sample) begin
-            left_sample_out  <= sample_val;
-            left_sample_rdy  <= 1;
-        end
-        else if (gen_right_sample) begin
-            right_sample_out <= sample_val;
-            right_sample_rdy <= 1;
+        else if (processing_done) begin
+            sample_out     <= sample_val;
+            sample_out_rdy <= 1;
         end
         else begin
-            left_sample_rdy  <= 0;
-            right_sample_rdy <= 0;
+            sample_out_rdy <= 0;
         end
     end
 endmodule
-
