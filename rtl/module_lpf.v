@@ -27,51 +27,120 @@ module module_lpf.v (
     output reg signed [17:0]    sample_out
 );
 
+//--------------------------------------------------------
+// -------====== State Machine ======-------
+//-----------------------------------------------------
+    localparam ST_IDLE           = 0;
+    localparam ST_CALC_A         = 1;
+    localparam ST_WAIT_RESULT_A  = 2;
+    localparam ST_STORE_RESULT_A = 3;
+    localparam ST_CALC_B         = 4;
+    localparam ST_WAIT_RESULT_B  = 5;
+    localparam ST_WAIT_CALC_DONE = 6;
+    localparam ST_DONE           = 7;
 
+    reg [2:0] state;
+    reg [2:0] next_state;
 
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            state <= ST_IDLE;
+        end
+        else begin
+            state <= next_state;
+        end
+    end
 
-
+    always @(*) begin
+        next_state = state;
+        case (state)
+            ST_IDLE:
+                if (sample_in_rdy) begin
+                    next_state = ST_CALC_A;
+                end
+            ST_CALC_A:
+                if (calc_coef_cnt_done) begin
+                    next_state = ST_CALC_B;
+                end
+            ST_CALC_B:
+                if (calc_coef_cnt_done) begin
+                    next_state = ST_WAIT_CALC_DONE;
+                end
+            ST_WAIT_CALC_DONE:
+                if (calc_done) begin
+                    next_state = ST_DONE;
+                end
+            ST_DONE:
+                next_state = ST_IDLE;
+        endcase
+    end
 
 
 //------------------------------------
 // -------====== COEFS ======-------
 //--------------------------------
-
+    // Counter control
     reg [1:0] coef_sel;
-
+    wire      coef_sel_done = (coef_sel == 2'h2);
     reg signed [17:0] a_coef;
+    reg signed [17:0] b_coef;
+    
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            coef_sel <= 0;
+        end
+        else if (state == ST_CALC_A || state == ST_CALC_B) begin
+            coef_sel <= coef_sel + 1;
+        end
+        else begin
+            coef_sel <= 0;
+        end
+    end
+
+
+    // A Coefs
     always (@coef_sel) begin
         case (coef_sel)
-            2'h0: begin a_coef <= 18'h00000; end
-            2'h1: begin a_coef <= 18'h00000; end
-            2'h2: begin a_coef <= 18'h00000; end
-            2'h3: begin a_coef <= 18'h00000; end
+            2'h0:    begin a_coef <= 18'h10000; end
+            2'h1:    begin a_coef <= 18'h00000; end
+            2'h2:    begin a_coef <= 18'h00000; end
             default: begin a_coef <= 18'h00000; end
         endcase
     end
 
-    reg signed [17:0] b_coef;
+    // B Coefs
     always (@coef_sel) begin
         case (coef_sel)
-            2'h0: begin b_coef <= 18'h00000; end
-            2'h1: begin b_coef <= 18'h00000; end
-            2'h2: begin b_coef <= 18'h00000; end
-            2'h3: begin b_coef <= 18'h00000; end
+            2'h0:    begin b_coef <= 18'h00000; end
+            2'h1:    begin b_coef <= 18'h00000; end
+            2'h2:    begin b_coef <= 18'h00000; end
             default: begin b_coef <= 18'h00000; end
         endcase
     end
 
 
-    dp_ram #(.DATA_WIDTH(18), .ADDR_WIDTH(3)) dp_ram
-    (
-        .clk    (clk          ),
-        .rd     (omega_rd     ),
-        .rd_addr(omega_rd_addr),
-        .rd_data(omega_rd_data),
-        .wr     (omega_wr     ),
-        .wr_addr(omega_wr_addr),
-        .wr_data(omega_wr_data)
-    );
+//----------------------------------
+// -------====== Delay line ======-------
+//------------------------------
+    reg signed [17:0] smpl_dly_line[0:2];
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            smpl_dly_line[0] <= 18'h00000;
+            smpl_dly_line[1] <= 18'h00000;
+            smpl_dly_line[2] <= 18'h00000;
+        end
+        else if (state == ST_STORE_RESULT_A) begin
+            smpl_dly_line[0] <= p;
+        end
+        else if (state == ST_DONE) begin
+            smpl_dly_line[1] <= smpl_dly_line[0];
+            smpl_dly_line[2] <= smpl_dly_line[1];
+        end
+    end
+
+
 
 
 //----------------------------------
@@ -160,6 +229,9 @@ module module_lpf.v (
         .RSTP      (reset       )  // Reset for P pipeline registers
     );
 				
+
+
+
 
 
 
