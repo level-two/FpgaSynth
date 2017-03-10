@@ -194,17 +194,14 @@ module module_lpf.v (
             end
             ST_WAIT_RESULT_A:  begin end
             ST_STORE_RESULT_A: begin end
-            ST_CALC_B:         begin end
+            ST_CALC_B: begin
+                opmode_x_in = OP_X_IN_MULT;
+                opmode_z_in = OP_Z_IN_POUT;
+            end
             ST_WAIT_RESULT_B:  begin end
             ST_DONE:           begin end
         endcase
     end
-
-
-
-
-
-
 
 
 //---------------------------------------------
@@ -222,28 +219,26 @@ module module_lpf.v (
                              opmode_cryin      , opmode_use_preadd,
                              opmode_z_in       , opmode_x_in      };
 
-    reg [7:0] opmode_in_dly[0:1];
+    reg [7:0] opmode_in_dly;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            opmode_in_dly[0] <= 8'h00;
-            opmode_in_dly[1] <= 8'h00;
+            opmode_in_dly <= 8'h00;
         end
         else begin
-            opmode_in_dly[0] <= opmode_in;
-            opmode_in_dly[1] <= opmode_in_dly[0];
+            opmode_in_dly <= opmode_in;
         end
     end
 
-    wire        opmode_postadd_sub_dly = opmode_in_dly[1][7];
-    wire        opmode_preadd_sub_dly  = opmode_in[6];
-    wire        opmode_cryin_dly       = opmode_in_dly[1][5];
-    wire        opmode_use_preadd_dly  = opmode_in[4];
-    wire [1:0]  opmode_z_in_dly        = opmode_in_dly[1][3:2];
-    wire [1:0]  opmode_x_in_dly        = opmode_in_dly[1][1:0];
+    wire        opmode_postadd_sub_dly = opmode_in_dly[7];
+    wire        opmode_preadd_sub_dly  = 1'b0; // opmode_in[6];
+    wire        opmode_cryin_dly       = opmode_in_dly[5];
+    wire        opmode_use_preadd_dly  = 1'b0; // opmode_in[4];
+    wire [1:0]  opmode_z_in_dly        = opmode_in_dly[3:2];
+    wire [1:0]  opmode_x_in_dly        = opmode_in_dly[1:0];
 
     assign  opmode = {opmode_postadd_sub_dly, opmode_preadd_sub_dly,
-                      opmode_cryin_dly      , opmode_use_preadd_dly ,
-                      opmode_z_in_dly       , opmode_x_in_dly       };
+                      opmode_cryin_dly      , opmode_use_preadd_dly,
+                      opmode_z_in_dly       , opmode_x_in_dly      };
 
 
 //----------------------------------
@@ -333,6 +328,27 @@ module module_lpf.v (
         .RSTOPMODE (reset       ), // Reset for OPMODE pipeline registers
         .RSTP      (reset       )  // Reset for P pipeline registers
     );
+
+
+//--------------------------------------------------------
+// -------====== Wait Result ======-------
+//----------------------------------------------------
+    reg [1:0] wait_clac_cnt;
+    wire      calc_done = (wait_clac_cnt == 2'h2);
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            wait_clac_cnt <= 0;
+        end
+        else if (state == ST_WAIT_RESULT_A || state == ST_WAIT_RESULT_B) begin
+            wait_clac_cnt <= wait_clac_cnt + 1;
+        end
+        else begin
+            wait_clac_cnt <= 0;
+        end
+    end
+
+
 
 
 //--------------------------------------------------------
