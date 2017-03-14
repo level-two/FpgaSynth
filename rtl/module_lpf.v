@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: module_lpf.v.v
+// File: module_lpf.v
 // Description: LPF implementation based on IIR scheme and Xilinx DSP48A1
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module module_lpf.v (
+module module_lpf (
     input                       clk,
     input                       reset,
 
@@ -31,13 +31,12 @@ module module_lpf.v (
 // -------====== State Machine ======-------
 //-----------------------------------------------------
     localparam ST_IDLE           = 0;
-    localparam ST_STORE_SAMPLE   = 1;
-    localparam ST_CALC_A         = 2;
-    localparam ST_WAIT_RESULT_A  = 3;
-    localparam ST_STORE_RESULT_A = 4;
-    localparam ST_CALC_B         = 5;
-    localparam ST_WAIT_RESULT_B  = 6;
-    localparam ST_DONE           = 7;
+    localparam ST_CALC_A         = 1;
+    localparam ST_WAIT_RESULT_A  = 2;
+    localparam ST_STORE_RESULT_A = 3;
+    localparam ST_CALC_B         = 4;
+    localparam ST_WAIT_RESULT_B  = 5;
+    localparam ST_DONE           = 6;
 
     reg [2:0] state;
     reg [2:0] next_state;
@@ -58,34 +57,37 @@ module module_lpf.v (
                 if (sample_in_rdy) begin
                     next_state = ST_CALC_A;
                 end
-            ST_STORE_SAMPLE:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_CALC_B;
-                end
             ST_CALC_A:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_CALC_B;
+                if (coef_sel_last) begin
+                    next_state = ST_WAIT_RESULT_A;
                 end
             ST_WAIT_RESULT_A:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_CALC_B;
+                if (calc_will_be_done) begin
+                    next_state = ST_STORE_RESULT_A;
                 end
             ST_STORE_RESULT_A:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_CALC_B;
-                end
+                next_state = ST_CALC_B;
             ST_CALC_B:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_WAIT_CALC_DONE;
+                if (coef_sel_last) begin
+                    next_state = ST_WAIT_RESULT_B;
                 end
             ST_WAIT_RESULT_B:
-                if (calc_coef_cnt_done) begin
-                    next_state = ST_CALC_B;
+                if (calc_will_be_done) begin
+                    next_state = ST_DONE;
                 end
             ST_DONE:
                 next_state = ST_IDLE;
         endcase
     end
+
+
+//------------------------------------
+// -------====== ALU SIGNALS ======-------
+//--------------------------------
+    wire signed [17:0] a;
+    wire signed [17:0] b;
+    wire signed [47:0] p;
+    wire        [7:0]  opmode;
 
 
 //------------------------------------
@@ -102,7 +104,10 @@ module module_lpf.v (
         if (reset) begin
             coef_sel <= 0;
         end
-        else if (state == ST_CALC_A || state == ST_CALC_B) begin
+        else if ((state == ST_CALC_A  || 
+                  state == ST_CALC_B) &&
+                 !coef_sel_last)
+        begin
             coef_sel <= coef_sel + 1;
         end
         else begin
@@ -111,21 +116,21 @@ module module_lpf.v (
     end
 
     // A Coefs
-    always (@coef_sel) begin
+    always @(coef_sel) begin
         case (coef_sel)
             2'h0:    begin a_coef <= 18'h10000; end // should always be 1.0
-            2'h1:    begin a_coef <= 18'h00000; end
-            2'h2:    begin a_coef <= 18'h00000; end
+            2'h1:    begin a_coef <= 18'h3f000; end
+            2'h2:    begin a_coef <= 18'h01000; end
             default: begin a_coef <= 18'h00000; end
         endcase
     end
 
     // B Coefs
-    always (@coef_sel) begin
+    always @(coef_sel) begin
         case (coef_sel)
-            2'h0:    begin b_coef <= 18'h00000; end
-            2'h1:    begin b_coef <= 18'h00000; end
-            2'h2:    begin b_coef <= 18'h00000; end
+            2'h0:    begin b_coef <= 18'h01000; end
+            2'h1:    begin b_coef <= 18'h3f000; end
+            2'h2:    begin b_coef <= 18'h01000; end
             default: begin b_coef <= 18'h00000; end
         endcase
     end
@@ -134,17 +139,6 @@ module module_lpf.v (
 //---------------------------------------------
 // -------====== Delay line ======-------
 //-----------------------------------------
-    reg signed [17:0] sample_in_dly;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            sample_in_dly <= 18'h00000;
-        end
-        else begin
-            sample_in_dly <= sample_in;
-        end
-    end
-
-
     reg  signed [17:0] smpl_dly_line[0:2];
     wire signed [17:0] smpl_delayed = smpl_dly_line[coef_sel];
 
@@ -154,13 +148,13 @@ module module_lpf.v (
             smpl_dly_line[1] <= 18'h00000;
             smpl_dly_line[2] <= 18'h00000;
         end
-        else if (state == ST_STORE_RESULT_A) begin
-            smpl_dly_line[0] <= p;
-        end
-        else if (state == ST_STORE_SAMPLE) begin
-            smpl_dly_line[0] <= sample_in_dly;
+        else if (state == ST_IDLE && sample_in_rdy) begin
+            smpl_dly_line[0] <= sample_in;
             smpl_dly_line[1] <= smpl_dly_line[0];
             smpl_dly_line[2] <= smpl_dly_line[1];
+        end
+        else if (state == ST_STORE_RESULT_A) begin
+            smpl_dly_line[0] <= p[33:16];
         end
     end
 
@@ -187,7 +181,6 @@ module module_lpf.v (
 
         case (state)
             ST_IDLE:           begin end
-            ST_STORE_SAMPLE:   begin end
             ST_CALC_A: begin
                 opmode_x_in = OP_X_IN_MULT;
                 opmode_z_in = OP_Z_IN_POUT;
@@ -208,12 +201,12 @@ module module_lpf.v (
 // -------====== Controll ======-------
 //-----------------------------------------
 
-    wire [1:0]  opmode_x_in;
-    wire [1:0]  opmode_z_in;
-    wire        opmode_use_preadd;
-    wire        opmode_cryin;
-    wire        opmode_preadd_sub;
-    wire        opmode_postadd_sub;
+    reg [1:0]  opmode_x_in;
+    reg [1:0]  opmode_z_in;
+    reg        opmode_use_preadd;
+    reg        opmode_cryin;
+    reg        opmode_preadd_sub;
+    reg        opmode_postadd_sub;
 
     wire [7:0]  opmode_in = {opmode_postadd_sub, opmode_preadd_sub,
                              opmode_cryin      , opmode_use_preadd,
@@ -255,11 +248,6 @@ module module_lpf.v (
     localparam OP_Z_IN_POUT = 2'b10;
     localparam OP_Z_IN_CIN  = 2'b11;
 
-    wire [17:0] a;
-    wire [17:0] b;
-    wire [47:0] p;
-    wire [7:0]  opmode;
-
     /*
     wire [1:0]  opmode_x_in;
     wire [1:0]  opmode_z_in;
@@ -272,13 +260,13 @@ module module_lpf.v (
     */
 
     // not connected
-    wire [35:0] m_nc;
-    wire [17:0] bcout_nc;
-    wire [47:0] pcout_nc;
-    wire [47:0] pcin_nc;
-    wire        carryin_nc;
-    wire        carryout_nc;
-    wire        carryoutf_nc;
+    wire signed [35:0] m_nc;
+    wire signed [17:0] bcout_nc;
+    wire signed [47:0] pcout_nc;
+    wire signed [47:0] pcin_nc;
+    wire               carryin_nc;
+    wire               carryout_nc;
+    wire               carryoutf_nc;
 
 
     DSP48A1 #(
@@ -334,7 +322,7 @@ module module_lpf.v (
 // -------====== Wait Result ======-------
 //----------------------------------------------------
     reg [1:0] wait_clac_cnt;
-    wire      calc_done = (wait_clac_cnt == 2'h2);
+    wire      calc_will_be_done = (wait_clac_cnt == 2'h1);
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -360,7 +348,7 @@ module module_lpf.v (
             sample_out_rdy <= 0;
         end
         else if (state == ST_DONE) begin
-            sample_out     <= p[17:0];
+            sample_out     <= p[33:16];
             sample_out_rdy <= 1;
         end
         else begin
@@ -378,7 +366,7 @@ module module_lpf.v (
         if (reset) begin
             cc_num <= 0;
         end
-        else if (note_on_event) begin
+        else if (cc_event) begin
             cc_num <= midi_data0;
         end
     end
