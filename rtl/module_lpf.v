@@ -263,10 +263,10 @@ module module_lpf (
     wire signed [35:0] m_nc;
     wire signed [17:0] bcout_nc;
     wire signed [47:0] pcout_nc;
-    wire signed [47:0] pcin_nc;
-    wire               carryin_nc;
+    wire signed [47:0] pcin_nc = 0;
     wire               carryout_nc;
     wire               carryoutf_nc;
+    wire               carryin_nc = 0;
 
 
     DSP48A1 #(
