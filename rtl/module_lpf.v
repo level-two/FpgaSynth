@@ -23,8 +23,8 @@ module module_lpf (
     input                       sample_in_rdy,
     input signed [17:0]         sample_in,
 
-    output reg                  sample_out_rdy,
-    output reg signed [17:0]    sample_out
+    output                      sample_out_rdy,
+    output signed [17:0]        sample_out
 );
 
 //--------------------------------------------------------
@@ -342,19 +342,8 @@ module module_lpf (
 //--------------------------------------------------------
 // -------====== Output ======-------
 //----------------------------------------------------
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            sample_out     <= 18'h00000;
-            sample_out_rdy <= 0;
-        end
-        else if (state == ST_DONE) begin
-            sample_out     <= p[33:16];
-            sample_out_rdy <= 1;
-        end
-        else begin
-            sample_out_rdy <= 0;
-        end
-    end
+    assign sample_out     = (state == ST_DONE) ? p[33:16] : 18'h00000;
+    assign sample_out_rdy = (state == ST_DONE) ? 1 : 0;
 
 
 //-----------------------------------------------------------------

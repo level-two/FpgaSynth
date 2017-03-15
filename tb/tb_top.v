@@ -33,7 +33,7 @@ module tb_top;
         .PB(PB),
         .PMOD4(PMOD4),
         .PMOD3(PMOD3),
-        .LED(LED),
+        .LED(LED)
     );
     
     initial $timeformat(-9, 0, " ns", 0);
