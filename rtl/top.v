@@ -18,11 +18,11 @@ module top (
     output     [1:0] LED
 );
 
-    wire dac_right_out;
-    wire dac_left_out;
+    wire dac_out_l;
+    wire dac_out_r;
 
     wire   rx       = PMOD3[0];
-    assign PMOD4[0] = dac_left_out;
+    assign PMOD4[0] = dac_out_l;
     assign LED[0]   = 0;
     assign LED[1]   = 0;
 
@@ -47,12 +47,8 @@ module top (
     wire [6:0]  midi_data0;
     wire [6:0]  midi_data1;
 
-    wire        gen_left_sample;
-    wire        gen_right_sample;
-
-    wire [17:0] left_sample;
-    wire [17:0] right_sample;
-
+    wire        smpl_rate_trig_l;
+    wire        smpl_rate_trig_r;
 
     uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
     (
@@ -81,43 +77,83 @@ module top (
     ctrl ctrl (
         .clk             (clk             ),
         .reset           (reset           ),
-        .gen_left_sample (gen_left_sample ),
-        .gen_right_sample(gen_right_sample)
+        .smpl_rate_trig_l(smpl_rate_trig_l),
+        .smpl_rate_trig_r(smpl_rate_trig_r)
     );
 
+
+    wire                lpf_smpl_in_rdy_l;
+    wire                lpf_smpl_in_rdy_r;
+    wire                lpf_smpl_out_rdy_l;
+    wire                lpf_smpl_out_rdy_r;
+    wire signed [17:0]  lpf_smpl_in_l;
+    wire signed [17:0]  lpf_smpl_in_r;
+    wire signed [17:0]  lpf_smpl_out_l;
+    wire signed [17:0]  lpf_smpl_out_r;
 
     gen_pulse gen_pulse (
-        .clk             (clk             ),
-        .reset           (reset           ),
-
-        .gen_left_sample (gen_left_sample ),
-        .gen_right_sample(gen_right_sample),
-
-        .midi_rdy        (midi_rdy        ),
-        .midi_cmd        (midi_cmd        ),
-        .midi_ch_sysn    (midi_ch_sysn    ),
-        .midi_data0      (midi_data0      ),
-        .midi_data1      (midi_data1      ),
-
-        .left_sample_out (left_sample     ),
-        .right_sample_out(right_sample    )
+        .clk             (clk               ),
+        .reset           (reset             ),
+        .midi_rdy        (midi_rdy          ),
+        .midi_cmd        (midi_cmd          ),
+        .midi_ch_sysn    (midi_ch_sysn      ),
+        .midi_data0      (midi_data0        ),
+        .midi_data1      (midi_data1        ),
+        .smpl_rate_trig_l(smpl_rate_trig_l  ),
+        .smpl_rate_trig_r(smpl_rate_trig_r  ),
+        .smpl_out_rdy_l  (lpf_smpl_in_rdy_l ),
+        .smpl_out_l      (lpf_smpl_in_l     ),
+        .smpl_out_rdy_r  (lpf_smpl_in_rdy_r ),
+        .smpl_out_r      (lpf_smpl_in_r     )
     );
 
 
-    sigma_delta_dac #(.NBITS(2), .MBITS(16)) right_sigma_delta_dac
-    (
-        .clk  (clk          ),
-        .reset(reset        ),
-        .din  (right_sample ),
-        .dout (dac_right_out)
+    module_lpf module_lpf_l (
+        .clk            (clk                      ),
+        .reset          (reset                    ),
+        .midi_rdy       (midi_rdy                 ),
+        .midi_cmd       (midi_cmd                 ),
+        .midi_ch_sysn   (midi_ch_sysn             ),
+        .midi_data0     (midi_data0               ),
+        .midi_data1     (midi_data1               ),
+        .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
+        .sample_in      (lpf_smpl_in_l            ),
+        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
+        .sample_out     (lpf_smpl_out_l           )
+    );
+
+    module_lpf module_lpf_r (
+        .clk            (clk                      ),
+        .reset          (reset                    ),
+        .midi_rdy       (midi_rdy                 ),
+        .midi_cmd       (midi_cmd                 ),
+        .midi_ch_sysn   (midi_ch_sysn             ),
+        .midi_data0     (midi_data0               ),
+        .midi_data1     (midi_data1               ),
+        .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
+        .sample_in      (lpf_smpl_in_r            ),
+        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
+        .sample_out     (lpf_smpl_out_r           )
     );
 
 
-    sigma_delta_dac #(.NBITS(2), .MBITS(16)) left_sigma_delta_dac
+    sigma_delta_dac_wrap sigma_delta_dac_wrap_l
     (
-        .clk  (clk         ),
-        .reset(reset       ),
-        .din  (left_sample ),
-        .dout (dac_left_out)
+        .clk            (clk                  ),
+        .reset          (reset                ),
+        .smpl_rdy       (lpf_smpl_out_rdy_l   ),
+        .smpl           (lpf_smpl_out_l       ),
+        .smpl_rate_trig (smpl_rate_trig_l     ),
+        .dout           (dac_out_l            )
+    );
+
+    sigma_delta_dac_wrap sigma_delta_dac_wrap_r
+    (
+        .clk            (clk                  ),
+        .reset          (reset                ),
+        .smpl_rdy       (lpf_smpl_out_rdy_r   ),
+        .smpl           (lpf_smpl_out_r       ),
+        .smpl_rate_trig (smpl_rate_trig_r     ),
+        .dout           (dac_out_r            )
     );
 endmodule

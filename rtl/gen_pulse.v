@@ -14,8 +14,8 @@ module gen_pulse (
     input             clk,
     input             reset,
 
-    input             gen_left_sample,
-    input             gen_right_sample,
+    input             smpl_rate_trig_l,
+    input             smpl_rate_trig_r,
 
     input             midi_rdy,
     input  [`MIDI_CMD_SIZE-1:0] midi_cmd,
@@ -23,11 +23,11 @@ module gen_pulse (
     input  [6:0]      midi_data0,
     input  [6:0]      midi_data1,
 
-    output reg        left_sample_rdy,
-    output reg signed [17:0] left_sample_out,
+    output reg        smpl_out_rdy_l,
+    output reg signed [17:0] smpl_out_l,
 
-    output reg        right_sample_rdy,
-    output reg signed [17:0] right_sample_out
+    output reg        smpl_out_rdy_r,
+    output reg signed [17:0] smpl_out_r
 );
 
     wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
@@ -228,22 +228,22 @@ module gen_pulse (
     
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            left_sample_out  <= 0;
-            left_sample_rdy  <= 0;
-            right_sample_out <= 0;
-            right_sample_rdy <= 0;
+            smpl_out_l     <= 0;
+            smpl_out_rdy_l <= 0;
+            smpl_out_r     <= 0;
+            smpl_out_rdy_r <= 0;
         end
-        else if (gen_left_sample) begin
-            left_sample_out  <= sample_val;
-            left_sample_rdy  <= 1;
+        else if (smpl_rate_trig_l) begin
+            smpl_out_l     <= sample_val;
+            smpl_out_rdy_l <= 1;
         end
-        else if (gen_right_sample) begin
-            right_sample_out <= sample_val;
-            right_sample_rdy <= 1;
+        else if (smpl_rate_trig_r) begin
+            smpl_out_r     <= sample_val;
+            smpl_out_rdy_r <= 1;
         end
         else begin
-            left_sample_rdy  <= 0;
-            right_sample_rdy <= 0;
+            smpl_out_rdy_l <= 0;
+            smpl_out_rdy_r <= 0;
         end
     end
 endmodule
