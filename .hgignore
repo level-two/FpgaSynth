@@ -13,3 +13,4 @@ src\ip_spartan6\*\tmp\*
 rtl\ip_spartan6\*\tmp\*
 prj/
 docs/
+*\_xmsgs\*.xmsgs
