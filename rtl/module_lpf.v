@@ -21,7 +21,7 @@ module module_lpf (
     input  [6:0]                midi_data1,
 
     input                       sample_in_rdy,
-    input signed [17:0]         sample_in,
+    input  signed [17:0]        sample_in,
 
     output                      sample_out_rdy,
     output signed [17:0]        sample_out
@@ -30,16 +30,13 @@ module module_lpf (
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
-    localparam ST_IDLE           = 0;
-    localparam ST_CALC_A         = 1;
-    localparam ST_WAIT_RESULT_A  = 2;
-    localparam ST_STORE_RESULT_A = 3;
-    localparam ST_CALC_B         = 4;
-    localparam ST_WAIT_RESULT_B  = 5;
-    localparam ST_DONE           = 6;
+    localparam ST_IDLE         = 0;
+    localparam ST_CALC         = 1;
+    localparam ST_WAIT_RESULT  = 2;
+    localparam ST_DONE         = 3;
 
-    reg [2:0] state;
-    reg [2:0] next_state;
+    reg [1:0] state;
+    reg [1:0] next_state;
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -55,23 +52,13 @@ module module_lpf (
         case (state)
             ST_IDLE:
                 if (sample_in_rdy) begin
-                    next_state = ST_CALC_A;
+                    next_state = ST_CALC;
                 end
-            ST_CALC_A:
+            ST_CALC:
                 if (coef_sel_last) begin
-                    next_state = ST_WAIT_RESULT_A;
+                    next_state = ST_WAIT_RESULT;
                 end
-            ST_WAIT_RESULT_A:
-                if (calc_will_be_done) begin
-                    next_state = ST_STORE_RESULT_A;
-                end
-            ST_STORE_RESULT_A:
-                next_state = ST_CALC_B;
-            ST_CALC_B:
-                if (coef_sel_last) begin
-                    next_state = ST_WAIT_RESULT_B;
-                end
-            ST_WAIT_RESULT_B:
+            ST_WAIT_RESULT:
                 if (calc_will_be_done) begin
                     next_state = ST_DONE;
                 end
@@ -93,19 +80,16 @@ module module_lpf (
 //------------------------------------
 // -------====== COEFS ======-------
 //--------------------------------
-    // Counter control
     reg [1:0] coef_sel;
-    wire      coef_sel_last  = (coef_sel == 2'h2);
-    reg signed [17:0] a_coef;
-    reg signed [17:0] b_coef;
-    
+    wire      coef_sel_last  = (coef_sel == 2'h4);
+    reg signed [17:0] coef;
 
+    
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             coef_sel <= 0;
         end
-        else if ((state == ST_CALC_A  || 
-                  state == ST_CALC_B) &&
+        else if (state == ST_CALC  || 
                  !coef_sel_last)
         begin
             coef_sel <= coef_sel + 1;
@@ -115,23 +99,14 @@ module module_lpf (
         end
     end
 
-    // A Coefs
     always @(coef_sel) begin
         case (coef_sel)
-            2'h0:    begin a_coef <= 18'h10000; end // should always be 1.0
-            2'h1:    begin a_coef <= 18'h3f000; end
-            2'h2:    begin a_coef <= 18'h01000; end
-            default: begin a_coef <= 18'h00000; end
-        endcase
-    end
-
-    // B Coefs
-    always @(coef_sel) begin
-        case (coef_sel)
-            2'h0:    begin b_coef <= 18'h01000; end
-            2'h1:    begin b_coef <= 18'h3f000; end
-            2'h2:    begin b_coef <= 18'h01000; end
-            default: begin b_coef <= 18'h00000; end
+            2'h0:    begin coef <= 18'h10000; end // should always be 1.0
+            2'h1:    begin coef <= 18'h3f000; end
+            2'h2:    begin coef <= 18'h01000; end
+            2'h3:    begin coef <= 18'h3f000; end
+            2'h4:    begin coef <= 18'h01000; end
+            default: begin coef <= 18'h00000; end
         endcase
     end
 
@@ -139,22 +114,27 @@ module module_lpf (
 //---------------------------------------------
 // -------====== Delay line ======-------
 //-----------------------------------------
-    reg  signed [17:0] smpl_dly_line[0:2];
-    wire signed [17:0] smpl_delayed = smpl_dly_line[coef_sel];
+
+
+    reg  signed [17:0] xy_dly_line[0:4];
+    wire signed [17:0] xy = smpl_dly_line[coef_sel];
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            smpl_dly_line[0] <= 18'h00000;
-            smpl_dly_line[1] <= 18'h00000;
-            smpl_dly_line[2] <= 18'h00000;
+            xy_dly_line[0] <= 18'h00000;
+            xy_dly_line[1] <= 18'h00000;
+            xy_dly_line[2] <= 18'h00000;
+            xy_dly_line[3] <= 18'h00000;
+            xy_dly_line[4] <= 18'h00000;
         end
         else if (state == ST_IDLE && sample_in_rdy) begin
-            smpl_dly_line[0] <= sample_in;
-            smpl_dly_line[1] <= smpl_dly_line[0];
-            smpl_dly_line[2] <= smpl_dly_line[1];
+            xy_dly_line[0] <= sample_in;
+            xy_dly_line[1] <= xy_dly_line[0];
+            xy_dly_line[2] <= xy_dly_line[1];
         end
-        else if (state == ST_STORE_RESULT_A) begin
-            smpl_dly_line[0] <= p[33:16];
+        else if (state == ST_STORE_RESULT) begin
+            xy_dly_line[3] <= p[33:16];
+            xy_dly_line[4] <= xy_dly_line[3];
         end
     end
 
@@ -162,10 +142,8 @@ module module_lpf (
 //----------------------------------
 // -------====== A,B ======-------
 //------------------------------
-    assign a = smpl_delayed;
-    assign b = (state == ST_CALC_A) ? a_coef :
-               (state == ST_CALC_B) ? b_coef :
-               18'h00000;
+    assign a = xy;
+    assign b = coef;
 
 
 //-------------------------------------------------------------
@@ -181,17 +159,11 @@ module module_lpf (
 
         case (state)
             ST_IDLE:           begin end
-            ST_CALC_A: begin
+            ST_CALC: begin
                 opmode_x_in = OP_X_IN_MULT;
                 opmode_z_in = OP_Z_IN_POUT;
             end
-            ST_WAIT_RESULT_A:  begin end
-            ST_STORE_RESULT_A: begin end
-            ST_CALC_B: begin
-                opmode_x_in = OP_X_IN_MULT;
-                opmode_z_in = OP_Z_IN_POUT;
-            end
-            ST_WAIT_RESULT_B:  begin end
+            ST_WAIT_RESULT:  begin end
             ST_DONE:           begin end
         endcase
     end
@@ -200,7 +172,6 @@ module module_lpf (
 //---------------------------------------------
 // -------====== Controll ======-------
 //-----------------------------------------
-
     reg [1:0]  opmode_x_in;
     reg [1:0]  opmode_z_in;
     reg        opmode_use_preadd;
@@ -248,17 +219,6 @@ module module_lpf (
     localparam OP_Z_IN_POUT = 2'b10;
     localparam OP_Z_IN_CIN  = 2'b11;
 
-    /*
-    wire [1:0]  opmode_x_in;
-    wire [1:0]  opmode_z_in;
-    wire        opmode_use_preadd;
-    wire        opmode_cryin = 1'b0;
-    wire        opmode_preadd_sub;
-    wire        opmode_postadd_sub;
-    wire [7:0]  opmode = {opmode_postadd_sub, opmode_preadd_sub, opmode_cryin,
-                          opmode_use_preadd , opmode_z_in      , opmode_x_in};
-    */
-
     // not connected
     wire signed [35:0] m_nc;
     wire signed [17:0] bcout_nc;
@@ -267,7 +227,6 @@ module module_lpf (
     wire               carryout_nc;
     wire               carryoutf_nc;
     wire               carryin_nc = 0;
-
 
     DSP48A1 #(
         .A0REG      (0          ),  // First stage A pipeline register (0/1)
@@ -328,15 +287,13 @@ module module_lpf (
         if (reset) begin
             wait_clac_cnt <= 0;
         end
-        else if (state == ST_WAIT_RESULT_A || state == ST_WAIT_RESULT_B) begin
+        else if (state == ST_WAIT_RESULT) begin
             wait_clac_cnt <= wait_clac_cnt + 1;
         end
         else begin
             wait_clac_cnt <= 0;
         end
     end
-
-
 
 
 //--------------------------------------------------------
