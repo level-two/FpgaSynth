@@ -69,15 +69,6 @@ module module_lpf (
 
 
 //------------------------------------
-// -------====== ALU SIGNALS ======-------
-//--------------------------------
-    wire signed [17:0] a;
-    wire signed [17:0] b;
-    wire signed [47:0] p;
-    wire        [7:0]  opmode;
-
-
-//------------------------------------
 // -------====== COEFS ======-------
 //--------------------------------
     reg [1:0] coef_sel;
@@ -114,8 +105,6 @@ module module_lpf (
 //---------------------------------------------
 // -------====== Delay line ======-------
 //-----------------------------------------
-
-
     reg  signed [17:0] xy_dly_line[0:4];
     wire signed [17:0] xy = smpl_dly_line[coef_sel];
 
@@ -150,8 +139,8 @@ module module_lpf (
 // -------====== ALU Operation mode controll ======-------
 //---------------------------------------------------------
     always @(state) begin
-        opmode_x_in        = OP_X_IN_ZERO;
-        opmode_z_in        = OP_Z_IN_ZERO;
+        opmode_x_in        = DSP_X_IN_ZERO;
+        opmode_z_in        = DSP_Z_IN_ZERO;
         opmode_use_preadd  = 1'b0;
         opmode_cryin       = 1'b0;
         opmode_preadd_sub  = 1'b0;
@@ -160,8 +149,8 @@ module module_lpf (
         case (state)
             ST_IDLE:           begin end
             ST_CALC: begin
-                opmode_x_in = OP_X_IN_MULT;
-                opmode_z_in = OP_Z_IN_POUT;
+                opmode_x_in = DSP_X_IN_MULT;
+                opmode_z_in = DSP_Z_IN_POUT;
             end
             ST_WAIT_RESULT:  begin end
             ST_DONE:           begin end
@@ -172,108 +161,29 @@ module module_lpf (
 //---------------------------------------------
 // -------====== Controll ======-------
 //-----------------------------------------
-    reg [1:0]  opmode_x_in;
-    reg [1:0]  opmode_z_in;
-    reg        opmode_use_preadd;
-    reg        opmode_cryin;
-    reg        opmode_preadd_sub;
-    reg        opmode_postadd_sub;
+    reg [1:0]   opmode_x_in;
+    reg [1:0]   opmode_z_in;
+    reg         opmode_use_preadd;
+    reg         opmode_cryin;
+    reg         opmode_preadd_sub;
+    reg         opmode_postadd_sub;
+    wire signed [17:0] a;
+    wire signed [17:0] b;
+    wire signed [47:0] p;
 
-    wire [7:0]  opmode_in = {opmode_postadd_sub, opmode_preadd_sub,
-                             opmode_cryin      , opmode_use_preadd,
-                             opmode_z_in       , opmode_x_in      };
+    wire [35:0] m_nc
 
-    reg [7:0] opmode_in_dly;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            opmode_in_dly <= 8'h00;
-        end
-        else begin
-            opmode_in_dly <= opmode_in;
-        end
-    end
-
-    wire        opmode_postadd_sub_dly = opmode_in_dly[7];
-    wire        opmode_preadd_sub_dly  = 1'b0; // opmode_in[6];
-    wire        opmode_cryin_dly       = opmode_in_dly[5];
-    wire        opmode_use_preadd_dly  = 1'b0; // opmode_in[4];
-    wire [1:0]  opmode_z_in_dly        = opmode_in_dly[3:2];
-    wire [1:0]  opmode_x_in_dly        = opmode_in_dly[1:0];
-
-    assign  opmode = {opmode_postadd_sub_dly, opmode_preadd_sub_dly,
-                      opmode_cryin_dly      , opmode_use_preadd_dly,
-                      opmode_z_in_dly       , opmode_x_in_dly      };
-
-
-//----------------------------------
-// -------====== ALU ======-------
-//------------------------------
-
-    localparam OP_X_IN_ZERO = 2'b00;
-    localparam OP_X_IN_MULT = 2'b01;
-    localparam OP_X_IN_POUT = 2'b10;
-    localparam OP_X_IN_DAB  = 2'b11;
-
-    localparam OP_Z_IN_ZERO = 2'b00;
-    localparam OP_Z_IN_PCIN = 2'b01;
-    localparam OP_Z_IN_POUT = 2'b10;
-    localparam OP_Z_IN_CIN  = 2'b11;
-
-    // not connected
-    wire signed [35:0] m_nc;
-    wire signed [17:0] bcout_nc;
-    wire signed [47:0] pcout_nc;
-    wire signed [47:0] pcin_nc = 0;
-    wire               carryout_nc;
-    wire               carryoutf_nc;
-    wire               carryin_nc = 0;
-
-    DSP48A1 #(
-        .A0REG      (0          ),  // First stage A pipeline register (0/1)
-        .A1REG      (1          ),  // Second stage A pipeline register (0/1)
-        .B0REG      (0          ),  // First stage B pipeline register (0/1)
-        .B1REG      (1          ),  // Second stage B pipeline register (0/1)
-        .CARRYINREG (0          ),  // CARRYIN pipeline register (0/1)
-        .CARRYINSEL ("OPMODE5"  ),  // Specify carry-in source, "CARRYIN" or "OPMODE5" 
-        .CARRYOUTREG(0          ),  // CARRYOUT output pipeline register (0/1)
-        .CREG       (0          ),  // C pipeline register (0/1)
-        .DREG       (0          ),  // D pre-adder pipeline register (0/1)
-        .MREG       (1          ),  // M pipeline register (0/1)
-        .OPMODEREG  (1          ),  // Enable=1/disable=0 OPMODE pipeline registers
-        .PREG       (1          ),  // P output pipeline register (0/1)
-        .RSTTYPE    ("SYNC"     )   // Specify reset type, "SYNC" or "ASYNC" 
-    )
-    DSP48A1_inst (
-        .BCOUT     (bcout_nc    ), // B port cascade output
-        .PCOUT     (pcout_nc    ), // P cascade output (if used, connect to PCIN of another DSP48A1)
-        .CARRYOUT  (carryout_nc ), // Carry output (if used, connect to CARRYIN pin of another DSP48A1)
-        .CARRYOUTF (carryoutf_nc), // Fabric carry output
-        .M         (m_nc        ), // Fabric multiplier data output
-        .P         (p           ), // Data output
-        .PCIN      (pcin_nc     ), // P cascade (if used, connect to PCOUT of another DSP48A1)
-        .CLK       (clk         ), // Clock 
-        .OPMODE    (opmode      ), // Operation mode 
-        .A         (a           ), // A data 
-        .B         (b           ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
-        .C         (48'b0       ), // C data 
-        .CARRYIN   (carryin_nc  ), // Carry signal (if used, connect to CARRYOUT pin of another DSP48A1)
-        .D         (18'h00000   ), // B pre-adder data 
-        .CEA       (1'b1        ), // Active high clock enable for A registers
-        .CEB       (1'b1        ), // Active high clock enable for B registers
-        .CEC       (1'b0        ), // Active high clock enable for C registers
-        .CECARRYIN (1'b0        ), // Active high clock enable for CARRYIN registers
-        .CED       (1'b0        ), // Active high clock enable for D registers
-        .CEM       (1'b1        ), // Active high clock enable for multiplier registers
-        .CEOPMODE  (1'b1        ), // Active high clock enable for OPMODE registers
-        .CEP       (1'b1        ), // Active high clock enable for P registers
-        .RSTA      (reset       ), // Reset for A pipeline registers
-        .RSTB      (reset       ), // Reset for B pipeline registers
-        .RSTC      (1'b0        ), // Reset for C pipeline registers
-        .RSTCARRYIN(1'b0        ), // Reset for CARRYIN pipeline registers
-        .RSTD      (1'b0        ), // Reset for D pipeline registers
-        .RSTM      (reset       ), // Reset for M pipeline registers
-        .RSTOPMODE (reset       ), // Reset for OPMODE pipeline registers
-        .RSTP      (reset       )  // Reset for P pipeline registers
+    dsp48a1_inst dsp48a1 (
+        .opmode_x_in        (opmode_x_in        ),
+        .opmode_z_in        (opmode_z_in        ),
+        .opmode_use_preadd  (opmode_use_preadd  ),
+        .opmode_cryin       (opmode_cryin       ),
+        .opmode_preadd_sub  (opmode_preadd_sub  ),
+        .opmode_postadd_sub (opmode_postadd_sub ),
+        .ain                (a                  ),
+        .bin                (b                  ),
+        .mout               (m_nc               ),
+        .pout               (p                  )
     );
 
 
