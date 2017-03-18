@@ -38,6 +38,18 @@
 `define MIDI_CMD_SIZE           5
 
 
+// DSP48A1 constants
+`define DSP_X_IN_ZERO            2'b00;
+`define DSP_X_IN_MULT            2'b01;
+`define DSP_X_IN_POUT            2'b10;
+`define DSP_X_IN_DAB             2'b11;
+
+`define DSP_Z_IN_ZERO            2'b00;
+`define DSP_Z_IN_PCIN            2'b01;
+`define DSP_Z_IN_POUT            2'b10;
+`define DSP_Z_IN_CIN             2'b11;
+
+
 ///// ????
 `define NBUFS                   16
 `define BUF_SIZE                1024
