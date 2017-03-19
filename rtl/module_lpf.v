@@ -27,6 +27,7 @@ module module_lpf (
     output signed [17:0]        sample_out
 );
 
+
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
@@ -66,6 +67,34 @@ module module_lpf (
                 next_state = ST_IDLE;
         endcase
     end
+
+
+//---------------------------------------------
+// -------====== ALU ======-------
+//-----------------------------------------
+    reg [1:0]   opmode_x_in;
+    reg [1:0]   opmode_z_in;
+    reg         opmode_use_preadd;
+    reg         opmode_cryin;
+    reg         opmode_preadd_sub;
+    reg         opmode_postadd_sub;
+    wire signed [17:0] a;
+    wire signed [17:0] b;
+    wire signed [47:0] p;
+    wire signed [35:0] m_nc;
+
+    dsp48a1_inst dsp48a1 (
+        .opmode_x_in        (opmode_x_in        ),
+        .opmode_z_in        (opmode_z_in        ),
+        .opmode_use_preadd  (opmode_use_preadd  ),
+        .opmode_cryin       (opmode_cryin       ),
+        .opmode_preadd_sub  (opmode_preadd_sub  ),
+        .opmode_postadd_sub (opmode_postadd_sub ),
+        .ain                (a                  ),
+        .bin                (b                  ),
+        .mout               (m_nc               ),
+        .pout               (p                  )
+    );
 
 
 //------------------------------------
@@ -156,35 +185,6 @@ module module_lpf (
             ST_DONE:           begin end
         endcase
     end
-
-
-//---------------------------------------------
-// -------====== Controll ======-------
-//-----------------------------------------
-    reg [1:0]   opmode_x_in;
-    reg [1:0]   opmode_z_in;
-    reg         opmode_use_preadd;
-    reg         opmode_cryin;
-    reg         opmode_preadd_sub;
-    reg         opmode_postadd_sub;
-    wire signed [17:0] a;
-    wire signed [17:0] b;
-    wire signed [47:0] p;
-
-    wire [35:0] m_nc
-
-    dsp48a1_inst dsp48a1 (
-        .opmode_x_in        (opmode_x_in        ),
-        .opmode_z_in        (opmode_z_in        ),
-        .opmode_use_preadd  (opmode_use_preadd  ),
-        .opmode_cryin       (opmode_cryin       ),
-        .opmode_preadd_sub  (opmode_preadd_sub  ),
-        .opmode_postadd_sub (opmode_postadd_sub ),
-        .ain                (a                  ),
-        .bin                (b                  ),
-        .mout               (m_nc               ),
-        .pout               (p                  )
-    );
 
 
 //--------------------------------------------------------
