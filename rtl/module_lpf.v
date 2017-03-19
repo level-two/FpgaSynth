@@ -84,6 +84,8 @@ module module_lpf (
     wire signed [35:0] m_nc;
 
     dsp48a1_inst dsp48a1 (
+        .clk                (clk                ),
+        .reset              (reset              ),
         .opmode_x_in        (opmode_x_in        ),
         .opmode_z_in        (opmode_z_in        ),
         .opmode_use_preadd  (opmode_use_preadd  ),

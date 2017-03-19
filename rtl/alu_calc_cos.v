@@ -27,6 +27,9 @@
 `include "globals.vh"
 
 module alu_calc_cos (
+    input                clk,
+    input                reset,
+
     input  signed [17:0] x_in,
     input                do_calc,
 
@@ -79,12 +82,14 @@ module alu_calc_cos (
     reg         opmode_cryin;
     reg         opmode_preadd_sub;
     reg         opmode_postadd_sub;
-    wire signed [17:0] a;
-    wire signed [17:0] b;
+    reg  signed [17:0] a;
+    reg  signed [17:0] b;
     wire signed [35:0] m;
     wire signed [47:0] p;
 
     dsp48a1_inst dsp48a1 (
+        .clk                (clk                ),
+        .reset              (reset              ),
         .opmode_x_in        (opmode_x_in        ),
         .opmode_z_in        (opmode_z_in        ),
         .opmode_use_preadd  (opmode_use_preadd  ),
@@ -101,7 +106,7 @@ module alu_calc_cos (
 //-------------------------------------------------------------
 // -------====== DSP Operation mode controll ======-------
 //---------------------------------------------------------
-    always @(state) begin
+    always @(*) begin
         store_idx          = 0;
         store_m_trig       = 1'b0;
         a                  = 18'h00000;
@@ -123,9 +128,9 @@ module alu_calc_cos (
             end
             ST_INTM_MUL_INTM:  begin
                 store_idx    = idx+1;
-                store_m_trig = last_idx ? 1'b0 : 1'b1;
-                a            = interm_val[idx];
-                b            = last_idx ? 18'h00000 : interm_val[idx+1];
+                store_m_trig = last_idx   ? 1'b0 : 1'b1;
+                a            = (idx == 0) ? interm_val[0] : m[33:16];
+                b            = last_idx   ? 18'h00000 : interm_val[idx+1];
                 opmode_x_in  = `DSP_X_IN_ZERO; // Skip result from multiplier
                 opmode_z_in  = `DSP_Z_IN_POUT;
             end
@@ -171,7 +176,7 @@ module alu_calc_cos (
             4'h7   : begin frac_coef <= 18'h02492; end // 1/7
             4'h8   : begin frac_coef <= 18'h02000; end // 1/8
             4'h9   : begin frac_coef <= 18'h01c72; end // 1/9
-            4'h10  : begin frac_coef <= 18'h0199a; end // 1/10
+            4'ha   : begin frac_coef <= 18'h0199a; end // 1/10
             default: begin frac_coef <= 18'h00000; end
         endcase
     end
@@ -189,7 +194,7 @@ module alu_calc_cos (
             4'h7   : begin deriv_coef <= 18'h30000; end
             4'h8   : begin deriv_coef <= 18'h00000; end
             4'h9   : begin deriv_coef <= 18'h10000; end
-            4'h10  : begin deriv_coef <= 18'h00000; end
+            4'ha   : begin deriv_coef <= 18'h00000; end
             default: begin deriv_coef <= 18'h30000; end
         endcase
     end
@@ -198,30 +203,34 @@ module alu_calc_cos (
 //----------------------------------------------------------------------
 // -------====== Obtain intermediate value from DSP ======-------
 //-------------------------------------------------------
-    wire       store_m_trig;
-    wire [3:0] store_idx;
+    reg       store_m_trig;
+    reg [3:0] store_idx;
 
-    reg        store_m_trig_dly;
-    reg  [3:0] store_idx_dly;
+    reg       store_m_trig_dly[0:1];
+    reg [3:0] store_idx_dly[0:1];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            store_m_trig_dly <= 1'b0;
-            store_idx_dly    <= 4'h0;
+            store_m_trig_dly[0] <= 1'b0;
+            store_m_trig_dly[1] <= 1'b0;
+            store_idx_dly[0]    <= 4'h0;
+            store_idx_dly[1]    <= 4'h0;
         end 
         else begin
-            store_m_trig_dly <= store_m_trig;
-            store_idx_dly    <= store_idx;
+            store_m_trig_dly[0] <= store_m_trig;
+            store_m_trig_dly[1] <= store_m_trig_dly[0];
+            store_idx_dly[0]    <= store_idx;
+            store_idx_dly[1]    <= store_idx_dly[0];
         end
     end
 
     
-    reg signed [17:0] interm_val[11];
+    reg signed [17:0] interm_val[0:10];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // do nothing
         end 
-        else if (store_m_trig_dly == 1'b1) begin
-            interm_val[store_idx_dly] <= m[33:16];
+        else if (store_m_trig_dly[1] == 1'b1) begin
+            interm_val[store_idx_dly[1]] <= m[33:16];
         end
     end
 
@@ -230,10 +239,12 @@ module alu_calc_cos (
 // -------====== idx counter ======-------
 //-----------------------------------
     reg [3:0] idx;
-    wire      last_idx = (idx == 4'h10);
+    wire      last_idx = (idx == 4'ha);
     always @(posedge reset or posedge clk) begin
         if (reset)
             idx <= 4'h0;
+        else if (state == ST_INTM_MUL_INTM)
+            idx <= idx;
         else if (last_idx)
             idx <= 4'h0;
         else if (state == ST_X_MUL_COEF || state == ST_INTM_MUL_DERIV)

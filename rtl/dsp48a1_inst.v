@@ -11,6 +11,9 @@
 `include "globals.vh"
 
 module dsp48a1_inst (
+    input        clk,
+    input        reset,
+
     input [1:0]  opmode_x_in,
     input [1:0]  opmode_z_in,
     input        opmode_use_preadd,
