@@ -11,18 +11,18 @@
 `include "globals.vh"
 
 module dsp48a1_inst (
-    input [1:0]  opmode_x_in;
-    input [1:0]  opmode_z_in;
-    input        opmode_use_preadd;
-    input        opmode_cryin;
-    input        opmode_preadd_sub;
-    input        opmode_postadd_sub;
+    input [1:0]  opmode_x_in,
+    input [1:0]  opmode_z_in,
+    input        opmode_use_preadd,
+    input        opmode_cryin,
+    input        opmode_preadd_sub,
+    input        opmode_postadd_sub,
 
-    input signed [17:0] ain;
-    input signed [17:0] bin;
+    input signed [17:0] ain,
+    input signed [17:0] bin,
 
-    output signed [35:0] mout;
-    output signed [47:0] pout;
+    output signed [35:0] mout,
+    output signed [47:0] pout
 );
 
 
@@ -71,17 +71,17 @@ module dsp48a1_inst (
 
     DSP48A1 #(
         .A0REG      (0          ),  // First stage A pipeline register (0/1)
-        .A1REG      (A1REG      ),  // Second stage A pipeline register (0/1)
+        .A1REG      (1          ),  // Second stage A pipeline register (0/1)
         .B0REG      (0          ),  // First stage B pipeline register (0/1)
-        .B1REG      (B1REG      ),  // Second stage B pipeline register (0/1)
+        .B1REG      (1          ),  // Second stage B pipeline register (0/1)
         .CARRYINREG (0          ),  // CARRYIN pipeline register (0/1)
         .CARRYINSEL ("OPMODE5"  ),  // Specify carry-in source, "CARRYIN" or "OPMODE5" 
         .CARRYOUTREG(0          ),  // CARRYOUT output pipeline register (0/1)
-        .CREG       (CREG       ),  // C pipeline register (0/1)
-        .DREG       (DREG       ),  // D pre-adder pipeline register (0/1)
-        .MREG       (MREG       ),  // M pipeline register (0/1)
-        .OPMODEREG  (OPMODEREG  ),  // Enable=1/disable=0 OPMODE pipeline registers
-        .PREG       (PREG       ),  // P output pipeline register (0/1)
+        .CREG       (0          ),  // C pipeline register (0/1)
+        .DREG       (0          ),  // D pre-adder pipeline register (0/1)
+        .MREG       (1          ),  // M pipeline register (0/1)
+        .OPMODEREG  (1          ),  // Enable=1/disable=0 OPMODE pipeline registers
+        .PREG       (1          ),  // P output pipeline register (0/1)
         .RSTTYPE    ("SYNC"     )   // Specify reset type, "SYNC" or "ASYNC" 
     )
     DSP48A1_inst (
