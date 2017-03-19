@@ -102,6 +102,10 @@ module alu_calc_cos (
 // -------====== DSP Operation mode controll ======-------
 //---------------------------------------------------------
     always @(state) begin
+        store_idx          = 0;
+        store_m_trig       = 1'b0;
+        a                  = 18'h00000;
+        b                  = 18'h00000;
         opmode_x_in        = DSP_X_IN_ZERO;
         opmode_z_in        = DSP_Z_IN_ZERO;
         opmode_use_preadd  = 1'b0;
@@ -112,13 +116,23 @@ module alu_calc_cos (
         case (state)
             ST_IDLE:           begin end
             ST_X_MUL_COEF:     begin end
+                store_m_trig = 1'b1;
+                store_idx    = idx;
+                a            = (idx != 0) ? x : 18'h10000;
+                b            = frac_coef;
             ST_INTM_MUL_INTM:  begin
-                opmode_x_in = DSP_X_IN_ZERO; // Skip result from multiplier
-                opmode_z_in = DSP_Z_IN_POUT;
+                store_idx    = idx+1;
+                store_m_trig = last_idx ? 1'b0 : 1'b1;
+                a            = interm_val[idx];
+                b            = last_idx ? 18'h00000 : interm_val[idx+1];
+                opmode_x_in  = DSP_X_IN_ZERO; // Skip result from multiplier
+                opmode_z_in  = DSP_Z_IN_POUT;
             end
             ST_INTM_MUL_DERIV: begin
-                opmode_x_in = DSP_X_IN_MULT; // Accept result from multiplier
-                opmode_z_in = DSP_Z_IN_POUT;
+                a            = interm_val[idx];
+                b            = deriv_coef;
+                opmode_x_in  = DSP_X_IN_MULT; // Accept result from multiplier
+                opmode_z_in  = DSP_Z_IN_POUT;
             end
             ST_WAIT_RESULT:    begin end
             ST_DONE:           begin end
@@ -126,13 +140,13 @@ module alu_calc_cos (
     end
 
 
-//-------------------------------------------------
-// -------====== X value ======-------
 //------------------------------------------
-    reg [17:0] x;
+// -------====== X value ======-------
+//-------------------------------
+    reg signed [17:0] x;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            x <= 18'h0;
+            x <= 18'h00000;
         end
         else if (state == ST_IDLE && do_calc == 1'b1) begin
             x <= x_in; // store input value for calculation
@@ -143,23 +157,41 @@ module alu_calc_cos (
 //---------------------------------------------------------------------
 // -------====== Numbers for factorial calculation ======-------
 //--------------------------------------------------------
-    reg [17:0] frac_coef;
+    reg signed [17:0] frac_coef;
     always @(idx) begin
         case (idx)
             4'h0   : begin frac_coef <= 18'h10000; end // 1
-            4'h1   : begin frac_coef <= 18'h08000; end // 1/2
-            4'h2   : begin frac_coef <= 18'h05555; end // 1/3
-            4'h3   : begin frac_coef <= 18'h04000; end // 1/4
-            4'h4   : begin frac_coef <= 18'h03333; end // 1/5
-            4'h5   : begin frac_coef <= 18'h02aab; end // 1/6
-            4'h6   : begin frac_coef <= 18'h02492; end // 1/7
-            4'h7   : begin frac_coef <= 18'h02000; end // 1/8
-            4'h8   : begin frac_coef <= 18'h01c72; end // 1/9
-            4'h9   : begin frac_coef <= 18'h0199a; end // 1/10
+            4'h1   : begin frac_coef <= 18'h10000; end // 1
+            4'h2   : begin frac_coef <= 18'h08000; end // 1/2
+            4'h3   : begin frac_coef <= 18'h05555; end // 1/3
+            4'h4   : begin frac_coef <= 18'h04000; end // 1/4
+            4'h5   : begin frac_coef <= 18'h03333; end // 1/5
+            4'h6   : begin frac_coef <= 18'h02aab; end // 1/6
+            4'h7   : begin frac_coef <= 18'h02492; end // 1/7
+            4'h8   : begin frac_coef <= 18'h02000; end // 1/8
+            4'h9   : begin frac_coef <= 18'h01c72; end // 1/9
+            4'h10  : begin frac_coef <= 18'h0199a; end // 1/10
             default: begin frac_coef <= 18'h00000; end
         endcase
     end
 
+    reg signed [17:0] deriv_coef;
+    always @(idx) begin
+        case (idx)
+            4'h0   : begin deriv_coef <= 18'h00000; end
+            4'h1   : begin deriv_coef <= 18'h10000; end
+            4'h2   : begin deriv_coef <= 18'h00000; end
+            4'h3   : begin deriv_coef <= 18'h30000; end
+            4'h4   : begin deriv_coef <= 18'h00000; end
+            4'h5   : begin deriv_coef <= 18'h10000; end
+            4'h6   : begin deriv_coef <= 18'h00000; end
+            4'h7   : begin deriv_coef <= 18'h30000; end
+            4'h8   : begin deriv_coef <= 18'h00000; end
+            4'h9   : begin deriv_coef <= 18'h10000; end
+            4'h10  : begin deriv_coef <= 18'h00000; end
+            default: begin deriv_coef <= 18'h30000; end
+        endcase
+    end
 
 
 //----------------------------------------------------------------------
@@ -172,7 +204,7 @@ module alu_calc_cos (
     reg  [3:0] store_idx_dly;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            store_m_trig_dly <= 0;
+            store_m_trig_dly <= 1'b0;
             store_idx_dly    <= 4'h0;
         end 
         else begin
@@ -182,10 +214,10 @@ module alu_calc_cos (
     end
 
     
-    reg signed [17:0] interm_val[10];
+    reg signed [17:0] interm_val[11];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            interm_val[0] = 18'h10000; // need initialize only this element
+            // do nothing
         end 
         else if (store_m_trig_dly == 1'b1) begin
             interm_val[store_idx_dly] <= m[33:16];
@@ -193,21 +225,20 @@ module alu_calc_cos (
     end
 
 
-
 //-----------------------------------------------
 // -------====== idx counter ======-------
 //-----------------------------------
     reg [3:0] idx;
-    wire      last_idx = (idx == 4'h9);
+    wire      last_idx = (idx == 4'h10);
     always @(posedge reset or posedge clk) begin
         if (reset)
-            idx <= 0;
+            idx <= 4'h0;
         else if (last_idx)
-            idx <= 0;
+            idx <= 4'h0;
         else if (state == ST_X_MUL_COEF || state == ST_INTM_MUL_DERIV)
             idx <= idx + 1;
         else
-            idx <= 0;
+            idx <= 4'h0;
     end
 
 
@@ -219,13 +250,13 @@ module alu_calc_cos (
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            wait_clac_cnt <= 0;
+            wait_clac_cnt <= 2'h0;
         end
         else if (state == ST_WAIT_RESULT) begin
             wait_clac_cnt <= wait_clac_cnt + 1;
         end
         else begin
-            wait_clac_cnt <= 0;
+            wait_clac_cnt <= 2'h0;
         end
     end
 
@@ -234,6 +265,6 @@ module alu_calc_cos (
 // -------====== Result ======-------
 //-----------------------------------------
     assign calc_done = (state == ST_DONE) ? 1'b1     : 1'b0;
-    assign cos       = (state == ST_DONE) ? p[33:16] : 18'h0;
+    assign cos       = (state == ST_DONE) ? p[33:16] : 18'h00000;
 endmodule
 
