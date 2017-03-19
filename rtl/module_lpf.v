@@ -100,8 +100,8 @@ module module_lpf (
 //------------------------------------
 // -------====== COEFS ======-------
 //--------------------------------
-    reg [1:0] coef_sel;
-    wire      coef_sel_last  = (coef_sel == 2'h4);
+    reg [2:0] coef_sel;
+    wire      coef_sel_last  = (coef_sel == 3'h4);
     reg signed [17:0] coef;
 
     
@@ -135,7 +135,7 @@ module module_lpf (
 // -------====== Delay line ======-------
 //-----------------------------------------
     reg  signed [17:0] xy_dly_line[0:4];
-    wire signed [17:0] xy = smpl_dly_line[coef_sel];
+    wire signed [17:0] xy = xy_dly_line[coef_sel];
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -150,7 +150,7 @@ module module_lpf (
             xy_dly_line[1] <= xy_dly_line[0];
             xy_dly_line[2] <= xy_dly_line[1];
         end
-        else if (state == ST_STORE_RESULT) begin
+        else if (state == ST_DONE) begin
             xy_dly_line[3] <= p[33:16];
             xy_dly_line[4] <= xy_dly_line[3];
         end
@@ -168,8 +168,8 @@ module module_lpf (
 // -------====== ALU Operation mode controll ======-------
 //---------------------------------------------------------
     always @(state) begin
-        opmode_x_in        = DSP_X_IN_ZERO;
-        opmode_z_in        = DSP_Z_IN_ZERO;
+        opmode_x_in        = `DSP_X_IN_ZERO;
+        opmode_z_in        = `DSP_Z_IN_ZERO;
         opmode_use_preadd  = 1'b0;
         opmode_cryin       = 1'b0;
         opmode_preadd_sub  = 1'b0;
@@ -178,8 +178,8 @@ module module_lpf (
         case (state)
             ST_IDLE:           begin end
             ST_CALC: begin
-                opmode_x_in = DSP_X_IN_MULT;
-                opmode_z_in = DSP_Z_IN_POUT;
+                opmode_x_in = `DSP_X_IN_MULT;
+                opmode_z_in = `DSP_Z_IN_POUT;
             end
             ST_WAIT_RESULT:  begin end
             ST_DONE:           begin end

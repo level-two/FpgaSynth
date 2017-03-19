@@ -24,6 +24,7 @@
 //   end
 // -----------------------------------------------------------------------------
 
+`include "globals.vh"
 
 module alu_calc_cos (
     input  signed [17:0] x_in,
@@ -32,7 +33,6 @@ module alu_calc_cos (
     output signed [17:0] cos,
     output               calc_done
 );
-
 
 //--------------------------------------------------------
 // -------====== State Machine ======-------
@@ -106,8 +106,8 @@ module alu_calc_cos (
         store_m_trig       = 1'b0;
         a                  = 18'h00000;
         b                  = 18'h00000;
-        opmode_x_in        = DSP_X_IN_ZERO;
-        opmode_z_in        = DSP_Z_IN_ZERO;
+        opmode_x_in        = `DSP_X_IN_ZERO;
+        opmode_z_in        = `DSP_Z_IN_ZERO;
         opmode_use_preadd  = 1'b0;
         opmode_cryin       = 1'b0;
         opmode_preadd_sub  = 1'b0;
@@ -115,24 +115,25 @@ module alu_calc_cos (
 
         case (state)
             ST_IDLE:           begin end
-            ST_X_MUL_COEF:     begin end
+            ST_X_MUL_COEF:     begin
                 store_m_trig = 1'b1;
                 store_idx    = idx;
                 a            = (idx != 0) ? x : 18'h10000;
                 b            = frac_coef;
+            end
             ST_INTM_MUL_INTM:  begin
                 store_idx    = idx+1;
                 store_m_trig = last_idx ? 1'b0 : 1'b1;
                 a            = interm_val[idx];
                 b            = last_idx ? 18'h00000 : interm_val[idx+1];
-                opmode_x_in  = DSP_X_IN_ZERO; // Skip result from multiplier
-                opmode_z_in  = DSP_Z_IN_POUT;
+                opmode_x_in  = `DSP_X_IN_ZERO; // Skip result from multiplier
+                opmode_z_in  = `DSP_Z_IN_POUT;
             end
             ST_INTM_MUL_DERIV: begin
                 a            = interm_val[idx];
                 b            = deriv_coef;
-                opmode_x_in  = DSP_X_IN_MULT; // Accept result from multiplier
-                opmode_z_in  = DSP_Z_IN_POUT;
+                opmode_x_in  = `DSP_X_IN_MULT; // Accept result from multiplier
+                opmode_z_in  = `DSP_Z_IN_POUT;
             end
             ST_WAIT_RESULT:    begin end
             ST_DONE:           begin end
@@ -208,7 +209,7 @@ module alu_calc_cos (
             store_idx_dly    <= 4'h0;
         end 
         else begin
-            store_m_trig_dly <= store_trig;
+            store_m_trig_dly <= store_m_trig;
             store_idx_dly    <= store_idx;
         end
     end
