@@ -77,15 +77,16 @@ module alu_taylor_calc (
 //---------------------------------------------------------------------------
 // -------====== Derivatives values for the Taylor series ======-------
 //----------------------------------------------------------------
-    wire signed [17:0] deriv_coef;
     reg [3:0] idx;
     wire last_idx;
+    reg [2:0] function_sel_st;
+    wire signed [17:0] deriv_coef;
 
     alu_taylor_coefs alu_taylor_coefs (
-        .function_sel(function_sel),
-        .idx         (idx         ),
-        .last_idx    (last_idx    ),
-        .deriv_coef  (deriv_coef  )
+        .function_sel(function_sel_st),
+        .idx         (idx            ),
+        .last_idx    (last_idx       ),
+        .deriv_coef  (deriv_coef     )
     );
 
 
@@ -172,6 +173,7 @@ module alu_taylor_calc (
         end
         else if (state == ST_IDLE && do_calc == 1'b1) begin
             x <= x_in; // store input value for calculation
+            function_sel_st <= function_sel;
         end
     end
 
