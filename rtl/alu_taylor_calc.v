@@ -4,7 +4,7 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: alu_calc_cos.v
+// File: alu_taylor_calc.v
 // Description: Module for cosine calculation. Algorithm is based on Taylor 
 //              series
 //
@@ -26,15 +26,16 @@
 
 `include "globals.vh"
 
-module alu_calc_cos (
+module alu_taylor_calc (
     input                clk,
     input                reset,
 
-    input  signed [17:0] x_in,
     input                do_calc,
+    input [2:0]          function_sel,
+    input signed [17:0]  x_in,
 
-    output signed [17:0] cos,
-    output               calc_done
+    output               calc_done,
+    output signed [17:0] result
 );
 
 //--------------------------------------------------------
@@ -71,6 +72,21 @@ module alu_calc_cos (
             ST_DONE:                          next_state = ST_IDLE;
         endcase
     end
+
+
+//---------------------------------------------------------------------------
+// -------====== Derivatives values for the Taylor series ======-------
+//----------------------------------------------------------------
+    wire signed [17:0] deriv_coef;
+    reg [3:0] idx;
+    wire last_idx;
+
+    alu_taylor_coefs alu_taylor_coefs (
+        .function_sel(function_sel),
+        .idx         (idx         ),
+        .last_idx    (last_idx    ),
+        .deriv_coef  (deriv_coef  )
+    );
 
 
 //----------------------------------------------------------
@@ -181,24 +197,6 @@ module alu_calc_cos (
         endcase
     end
 
-    reg signed [17:0] deriv_coef;
-    always @(idx) begin
-        case (idx)
-            4'h0   : begin deriv_coef <= 18'h00000; end
-            4'h1   : begin deriv_coef <= 18'h10000; end
-            4'h2   : begin deriv_coef <= 18'h00000; end
-            4'h3   : begin deriv_coef <= 18'h30000; end
-            4'h4   : begin deriv_coef <= 18'h00000; end
-            4'h5   : begin deriv_coef <= 18'h10000; end
-            4'h6   : begin deriv_coef <= 18'h00000; end
-            4'h7   : begin deriv_coef <= 18'h30000; end
-            4'h8   : begin deriv_coef <= 18'h00000; end
-            4'h9   : begin deriv_coef <= 18'h10000; end
-            4'ha   : begin deriv_coef <= 18'h00000; end
-            default: begin deriv_coef <= 18'h30000; end
-        endcase
-    end
-
 
 //----------------------------------------------------------------------
 // -------====== Obtain intermediate value from DSP ======-------
@@ -238,8 +236,6 @@ module alu_calc_cos (
 //-----------------------------------------------
 // -------====== idx counter ======-------
 //-----------------------------------
-    reg [3:0] idx;
-    wire      last_idx = (idx == 4'ha);
     always @(posedge reset or posedge clk) begin
         if (reset)
             idx <= 4'h0;
@@ -277,6 +273,6 @@ module alu_calc_cos (
 // -------====== Result ======-------
 //-----------------------------------------
     assign calc_done = (state == ST_DONE) ? 1'b1     : 1'b0;
-    assign cos       = (state == ST_DONE) ? p[33:16] : 18'h00000;
+    assign result    = (state == ST_DONE) ? p[33:16] : 18'h00000;
 endmodule
 
