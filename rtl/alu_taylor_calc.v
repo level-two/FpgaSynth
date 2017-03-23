@@ -35,7 +35,10 @@ module alu_taylor_calc (
     input signed [17:0]  x_in,
 
     output               calc_done,
-    output signed [17:0] result
+    output signed [17:0] result,
+
+    input  [43:0]        dsp_ins_flat,
+    output [83:0]        dsp_outs_flat
 );
 
 //--------------------------------------------------------
@@ -104,20 +107,14 @@ module alu_taylor_calc (
     wire signed [35:0] m;
     wire signed [47:0] p;
 
-    dsp48a1_inst dsp48a1 (
-        .clk                (clk                ),
-        .reset              (reset              ),
-        .opmode_x_in        (opmode_x_in        ),
-        .opmode_z_in        (opmode_z_in        ),
-        .opmode_use_preadd  (opmode_use_preadd  ),
-        .opmode_cryin       (opmode_cryin       ),
-        .opmode_preadd_sub  (opmode_preadd_sub  ),
-        .opmode_postadd_sub (opmode_postadd_sub ),
-        .ain                (a                  ),
-        .bin                (b                  ),
-        .mout               (m                  ),
-        .pout               (p                  )
-    );
+    // Gather local DSP signals 
+    assign dsp_ins_flat[43:0] =
+        { opmode_postadd_sub, opmode_preadd_sub,
+          opmode_cryin      , opmode_use_preadd,
+          opmode_z_in       , opmode_x_in      ,
+          a                 , b                 };
+
+    assign { m, p } = dsp_outs_flat;
 
 
 //-------------------------------------------------------------

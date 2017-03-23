@@ -4,20 +4,23 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: alu_filter.v
+// File: alu_filter_iir.v
 // Description: IIR implementation based on Xilinx DSP48A1
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module alu_filter (
+module alu_filter_iir (
     input                    clk,
     input                    reset,
     input  [5*18-1:0]        coefs_flat,
     input  signed [17:0]     sample_in,
     input                    sample_in_rdy,
     output signed [17:0]     sample_out,
-    output                   sample_out_rdy
+    output                   sample_out_rdy,
+
+    input  [43:0]            dsp_ins_flat,
+    output [83:0]            dsp_outs_flat
 );
 
 
@@ -63,7 +66,7 @@ module alu_filter (
 
 
 //---------------------------------------------
-// -------====== ALU ======-------
+// -------====== DSP signals ======-------
 //-----------------------------------------
     reg [1:0]   opmode_x_in;
     reg [1:0]   opmode_z_in;
@@ -76,20 +79,14 @@ module alu_filter (
     wire signed [47:0] p;
     wire signed [35:0] m_nc;
 
-    dsp48a1_inst dsp48a1 (
-        .clk                (clk                ),
-        .reset              (reset              ),
-        .opmode_x_in        (opmode_x_in        ),
-        .opmode_z_in        (opmode_z_in        ),
-        .opmode_use_preadd  (opmode_use_preadd  ),
-        .opmode_cryin       (opmode_cryin       ),
-        .opmode_preadd_sub  (opmode_preadd_sub  ),
-        .opmode_postadd_sub (opmode_postadd_sub ),
-        .ain                (a                  ),
-        .bin                (b                  ),
-        .mout               (m_nc               ),
-        .pout               (p                  )
-    );
+    // Gather local DSP signals 
+    assign dsp_ins_flat[43:0] =
+        { opmode_postadd_sub, opmode_preadd_sub,
+          opmode_cryin      , opmode_use_preadd,
+          opmode_z_in       , opmode_x_in      ,
+          a                 , b                 };
+
+    assign { m_nc, p } = dsp_outs_flat;
 
 
 //------------------------------------
