@@ -11,22 +11,28 @@
 `include "globals.vh"
 
 module dsp48a1_inst (
-    input        clk,
-    input        reset,
-
-    input [1:0]  opmode_x_in,
-    input [1:0]  opmode_z_in,
-    input        opmode_use_preadd,
-    input        opmode_cryin,
-    input        opmode_preadd_sub,
-    input        opmode_postadd_sub,
-
-    input signed [17:0] ain,
-    input signed [17:0] bin,
-
-    output signed [35:0] mout,
-    output signed [47:0] pout
+    input         clk,
+    input         reset,
+    input  [43:0] dsp_ins_flat,
+    output [83:0] dsp_outs_flat
 );
+
+    wire [1:0]   opmode_x_in;
+    wire [1:0]   opmode_z_in;
+    wire         opmode_use_preadd;
+    wire         opmode_cryin;
+    wire         opmode_preadd_sub;
+    wire         opmode_postadd_sub;
+    wire signed [17:0] a;
+    wire signed [17:0] b;
+
+    assign {opmode_postadd_sub, opmode_preadd_sub,
+            opmode_cryin      , opmode_use_preadd,
+            opmode_z_in       , opmode_x_in      ,
+            ain               , bin              }
+        = dsp_ins_flat[43:0];
+
+    assign dsp_outs_flat = { mout, pout };
 
 
 //---------------------------------------------
