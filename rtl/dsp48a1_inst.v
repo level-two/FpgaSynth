@@ -23,8 +23,10 @@ module dsp48a1_inst (
     wire         opmode_cryin;
     wire         opmode_preadd_sub;
     wire         opmode_postadd_sub;
-    wire signed [17:0] a;
-    wire signed [17:0] b;
+    wire signed [17:0] ain;
+    wire signed [17:0] bin;
+    wire signed [35:0] mout;
+    wire signed [47:0] pout;
 
     assign {opmode_postadd_sub, opmode_preadd_sub,
             opmode_cryin      , opmode_use_preadd,
