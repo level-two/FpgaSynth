@@ -116,8 +116,42 @@ module module_lpf (
         .sample_out_rdy  (sample_out_rdy      ),
         .sample_out      (sample_out          ),
         .dsp_ins_flat    (dsp_ins_flat_iir    ),
-        .dsp_outs_flat   (dsp_outs_flat_iir   )
+        .dsp_outs_flat   (dsp_outs_flat       )
     );
+
+// -----------------------------------------------------------------------------
+    reg                do_calc;
+    reg [2:0]          function_sel;
+    reg  signed [17:0] x_in;
+    wire               calc_done;
+    wire signed [17:0] result;
+
+    alu_taylor_calc alu_taylor_calc (
+        .clk            (clk                 ),
+        .reset          (reset               ),
+        .do_calc        (do_calc             ),
+        .function_sel   (function_sel        ),
+        .x_in           (x_in                ),
+        .calc_done      (calc_done           ),
+        .result         (result              ),
+        .dsp_ins_flat   (dsp_ins_flat_taylor ),
+        .dsp_outs_flat  (dsp_outs_flat       )
+    );
+
+// -----------------------------------------------------------------------------
+
+
+
+    dsp48a1_inst dsp48a1_inst (
+        .clk            (clk          ),
+        .reset          (reset        ),
+        .dsp_ins_flat   (dsp_ins_flat ),
+        .dsp_outs_flat  (dsp_outs_flat)
+    );
+
+
+
+
 
 
 //-----------------------------------------------------------------
