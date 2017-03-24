@@ -20,16 +20,29 @@ module tb_alu_taylor_calc();
     wire               calc_done;
     wire signed [17:0] result;
 
+    wire [43:0] dsp_ins_flat;
+    wire [83:0] dsp_outs_flat;
+
     // dut
-    alu_taylor_calc dut(
+    alu_taylor_calc dut (
         .clk            (clk            ),
         .reset          (reset          ),
         .do_calc        (do_calc        ),
         .function_sel   (function_sel   ),
         .x_in           (x_in           ),
         .calc_done      (calc_done      ),
-        .result         (result         )
+        .result         (result         ),
+        .dsp_ins_flat   (dsp_ins_flat   ),
+        .dsp_outs_flat  (dsp_outs_flat  )
     );
+
+    dsp48a1_inst dsp48a1_inst (
+        .clk            (clk          ),
+        .reset          (reset        ),
+        .dsp_ins_flat   (dsp_ins_flat ),
+        .dsp_outs_flat  (dsp_outs_flat)
+    );
+
 
 
     always begin
