@@ -29,120 +29,128 @@ module module_lpf (
 );
 
 
-    // DSP signals from this module
-    reg [1:0]   opmode_x_in;
-    reg [1:0]   opmode_z_in;
-    reg         opmode_use_preadd;
-    reg         opmode_cryin;
-    reg         opmode_preadd_sub;
-    reg         opmode_postadd_sub;
-    reg  signed [17:0] a;
-    reg  signed [17:0] b;
-    wire signed [35:0] m;
-    wire signed [47:0] p;
+//--------------------------------------------------------
+// -------====== State Machine ======-------
+//-----------------------------------------------------
+    localparam ST_IDLE           = 0;
+    localparam ST_CALC_SAMPLE    = 1;
+    localparam ST_CALC_COEFS     = 2;
+    localparam ST_DONE           = 3;
+
+    reg [1:0] state;
+    reg [1:0] next_state;
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            state <= ST_IDLE;
+        end
+        else begin
+            state <= next_state;
+        end
+    end
+
+    always @(*) begin
+        next_state = state;
+        case (state)
+            ST_IDLE:        if (sample_in_rdy     ) next_state = ST_CALC_SAMPLE;
+            ST_CALC_SAMPLE: if (iir_sample_out_rdy) next_state = lpf_params_changed ? ST_CALC_SAMPLE : ST_DONE;
+            ST_CALC_COEFS:  if (coef_calc_done    ) next_state = ST_DONE;
+            ST_DONE:                                next_state = ST_IDLE;
+        endcase
+    end
 
 
-    // Connectionn between DSP and calculation modules 
-    // (utilize same DSP from several modules)
+//-----------------------------------------------------------------------------
+// -------====== Connectionn between DSP and calculation modules ======-------
+//-------------------------------------------------------------------------
+    // Utilize same DSP from several modules
+    
     // DSP owner selection
-    localparam DSP_OWNER_LOCAL  = 0;
-    localparam DSP_OWNER_TAYLOR = 1;
-    localparam DSP_OWNER_IIR    = 2;
+    localparam DSP_OWNER_COEF_CALC  = 0;
+    localparam DSP_OWNER_IIR        = 1;
 
     reg  [1:0]  dsp_owner;
     always @(state) begin
-        dsp_owner = DSP_OWNER_LOCAL;
+        dsp_owner = DSP_OWNER_COEF_CALC;
         case (state)
-            ST_IDLE:           begin end
-            ST_IIR_CALC:       begin dsp_owner = DSP_OWNER_IIR; end
-            ST_COS_CALC:       begin dsp_owner = DSP_OWNER_TAYLOR; end
-            ST_WAIT_RESULT:    begin end
-            ST_DONE:           begin end
+            ST_IDLE:        begin end
+            ST_CALC_SAMPLE: begin dsp_owner = DSP_OWNER_IIR; end
+            ST_CALC_COEFS:  begin dsp_owner = DSP_OWNER_COEF_CALC; end
+            ST_DONE:        begin end
         endcase
     end
 
     // DSP signals interconnection
-    wire [43:0] dsp_ins_flat;
-    wire [43:0] dsp_ins_flat_local;
-    wire [43:0] dsp_ins_flat_taylor;
-    wire [43:0] dsp_ins_flat_iir;
     wire [83:0] dsp_outs_flat;
-
-    assign dsp_ins_flat = 
-        (owner == DSP_OWNER_LOCAL ) ?  dsp_ins_flat_local  :
-        (owner == DSP_OWNER_TAYLOR) ?  dsp_ins_flat_taylor :
-        (owner == DSP_OWNER_IIR   ) ?  dsp_ins_flat_iir    :
+    wire [43:0] dsp_ins_flat_coef_calc;
+    wire [43:0] dsp_ins_flat_iir;
+    wire [43:0] dsp_ins_flat =
+        (owner == DSP_OWNER_TAYLOR) ?  dsp_ins_flat_coef_calc :
+        (owner == DSP_OWNER_IIR   ) ?  dsp_ins_flat_iir       :
         44'h0;
 
 
-    // Gather local DSP signals 
-    assign dsp_ins_flat_local[43:0] =
-        { opmode_postadd_sub, opmode_preadd_sub,
-          opmode_cryin      , opmode_use_preadd,
-          opmode_z_in       , opmode_x_in      ,
-          ain               , bin               };
-
-    assign { m, p } = dsp_outs_flat;
-
-
-
-
-    reg signed [17:0] coefs[0:4];
+//-------------------------------------------------
+// -------====== Coefs ======-------
+//------------------------------------------
+    reg [89:0] iir_coefs_flat;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            coefs[0] <= 18'h10000; // should always be 1.0
-            coefs[1] <= 18'h3f000;
-            coefs[2] <= 18'h01000;
-            coefs[3] <= 18'h3f000;
-            coefs[4] <= 18'h01000;
+            iir_coefs_flat <= 90'h0;
+        end
+        else if (coefs_calc_done) begin
+            iir_coefs_flat <= coefs_flat_calc;
         end
     end
 
 
-    wire [18*5-1:0] coefs_flat;
-    genvar i;
-    generate
-        for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
-            assign coefs_flat[18*i +: 18] = coefs[i];
-        end
-    endgenerate
+//-----------------------------------------------------
+// -------====== Subblocks instances ======-------
+//------------------------------------------
+    // IIR filter
+    wire signed [17:0]    iir_sample_in     = sample_in;
+    wire                  iir_sample_in_rdy = sample_in_rdy;
 
+    wire signed [17:0]    iir_sample_out;
+    wire                  iir_sample_out_rdy;
 
     alu_filter_iir alu_filter_iir (
-        .clk             (clk                 ),
-        .reset           (reset               ),
-        .sample_in_rdy   (sample_in_rdy       ),
-        .sample_in       (sample_in           ),
-        .coefs_flat      (coefs_flat          ),
-        .sample_out_rdy  (sample_out_rdy      ),
-        .sample_out      (sample_out          ),
-        .dsp_ins_flat    (dsp_ins_flat_iir    ),
-        .dsp_outs_flat   (dsp_outs_flat       )
+        .clk             (clk                     ),
+        .reset           (reset                   ),
+        .sample_in_rdy   (iir_sample_in_rdy       ),
+        .sample_in       (iir_sample_in           ),
+        .coefs_flat      (iir_coefs_flat          ),
+        .sample_out_rdy  (iir_sample_out_rdy      ),
+        .sample_out      (iir_sample_out          ),
+        .dsp_ins_flat    (iir_dsp_ins_flat_iir    ),
+        .dsp_outs_flat   (dsp_outs_flat           )
     );
 
-// -----------------------------------------------------------------------------
-    reg                do_calc;
-    reg [2:0]          function_sel;
-    reg  signed [17:0] x_in;
-    wire               calc_done;
-    wire signed [17:0] result;
+    assign sample_out     = iir_sample_out;
+    assign sample_out_rdy = iir_sample_out_rdy;
 
-    alu_taylor_calc alu_taylor_calc (
-        .clk            (clk                 ),
-        .reset          (reset               ),
-        .do_calc        (do_calc             ),
-        .function_sel   (function_sel        ),
-        .x_in           (x_in                ),
-        .calc_done      (calc_done           ),
-        .result         (result              ),
-        .dsp_ins_flat   (dsp_ins_flat_taylor ),
-        .dsp_outs_flat  (dsp_outs_flat       )
+    // Coefficients calculator
+    reg signed [17:0] coef_calc_omega0;
+    reg signed [17:0] coef_calc_inv_2Q;
+    wire              coef_calc_do_calc;
+    wire [18*5-1:0]   coef_calc_coefs_flat;
+    wire              coef_calc_done;
+
+    mudule_lpf_coefs_calc mudule_lpf_coefs_calc (
+        .clk            (clk                    ),
+        .reset          (reset                  ),
+        .omega0         (coef_calc_omega0       ),
+        .inv_2Q         (coef_calc_inv_2Q       ),
+        .do_calc        (coef_calc_do_calc      ),
+        .coefs_flat     (coef_calc_coefs_flat   ),
+        .calc_done      (coef_calc_done         ),
+
+        .dsp_outs_flat  (dsp_outs_flat          ),
+        .dsp_ins_flat   (dsp_ins_flat_coef_calc )
     );
 
-// -----------------------------------------------------------------------------
 
-
-
+    // DSP
     dsp48a1_inst dsp48a1_inst (
         .clk            (clk          ),
         .reset          (reset        ),
@@ -172,12 +180,19 @@ module module_lpf (
     end
 
 
-
+//-------------------------------------------
+// -------====== Result ======-------
+//------------------------------
+assign sample_out_rdy = iir_sample_out_rdy;
+assign sample_out     = iir_sample_out;
 
 
 //-----------------------------------------------------------------
 // -------====== MIDI Events processing ======-------
 //-------------------------------------------------------------
+
+//TODO set lpf_params_changed
+
     wire      cc_event = (midi_rdy && midi_cmd == `MIDI_CMD_CC);
     reg [7:0] cc_num;
     always @(posedge reset or posedge clk) begin
@@ -188,4 +203,7 @@ module module_lpf (
             cc_num <= midi_data0;
         end
     end
+
+
+
 endmodule
