@@ -23,8 +23,9 @@ module module_lpf (
     input                       sample_in_rdy,
     input  signed [17:0]        sample_in,
 
-    output                      sample_out_rdy,
-    output signed [17:0]        sample_out
+    output reg                  sample_out_rdy,
+    output reg signed [17:0]    sample_out,
+    output reg                  err_overflow
 );
 
 
@@ -149,6 +150,26 @@ module module_lpf (
         .dsp_outs_flat  (dsp_outs_flat)
     );
 
+
+//-----------------------------------------------------------
+// -------====== Overflow error detection ======-------
+//----------------------------------------------
+    // When overflow occured, ie multiplication result is >= 2.0 or
+    // <= -2.0, higher bits will not be equal
+    wire err_overflow_m = m[35] ^ m[34];
+    wire err_overflow_p = (&p[47:34]) ^ (|p[47:34]); // 0000 or 0010; 1111 or 1101
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            err_overflow <= 1'b0;
+        end
+        else if (state == ST_IDLE) begin
+            err_overflow <= 1'b0;
+        end
+        else begin
+            err_overflow <= err_overflow | err_overflow_m | err_overflow_p;
+        end
+    end
 
 
 

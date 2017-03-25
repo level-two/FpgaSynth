@@ -12,9 +12,9 @@
 `include "globals.vh"
 
 module alu_taylor_coefs (
-    input [2:0] function_sel,
-    input [3:0] idx,
-    output      last_idx,
+    input [2:0]          function_sel,
+    input [3:0]          idx,
+    output               last_idx,
     output signed [17:0] deriv_coef
 );
 

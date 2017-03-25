@@ -27,19 +27,16 @@
 `include "globals.vh"
 
 module alu_taylor_calc (
-    input                clk,
-    input                reset,
+    input                    clk,
+    input                    reset,
+    input                    do_calc,
+    input [2:0]              function_sel,
+    input signed [17:0]      x_in,
+    output reg               calc_done,
+    output reg signed [17:0] result,
 
-    input                do_calc,
-    input [2:0]          function_sel,
-    input signed [17:0]  x_in,
-
-    output               calc_done,
-    output signed [17:0] result,
-    output reg           err_overflow,
-
-    input  [43:0]        dsp_ins_flat,
-    output [83:0]        dsp_outs_flat
+    input  [83:0]            dsp_outs_flat,
+    output [43:0]            dsp_ins_flat
 );
 
 //--------------------------------------------------------
@@ -268,26 +265,6 @@ module alu_taylor_calc (
     end
 
 
-//-----------------------------------------------------------
-// -------====== Overflow error detection ======-------
-//----------------------------------------------
-    // When overflow occured, ie multiplication result is >= 2.0 or
-    // <= -2.0, higher bits will not be equal
-    wire err_overflow_m = m[35]^m[34];
-    wire err_overflow_p = &p[48:34] != |p[48:34]; // 00000 or 00010; 11111 or 11101
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            err_overflow <= 1'b0;
-        end
-        else if (state == ST_IDLE) begin
-            err_overflow <= 1'b0;
-        end
-        else begin
-            err_overflow <= err_overflow | err_overflow_m | err_overflow_p;
-        end
-    end
-
 //-------------------------------------------
 // -------====== Result ======-------
 //------------------------------
@@ -305,7 +282,5 @@ module alu_taylor_calc (
             result    <= 18'h00000;
         end
     end
-
-
 endmodule
 
