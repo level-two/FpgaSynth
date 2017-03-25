@@ -36,6 +36,7 @@ module alu_taylor_calc (
 
     output               calc_done,
     output signed [17:0] result,
+    output reg           err_overflow,
 
     input  [43:0]        dsp_ins_flat,
     output [83:0]        dsp_outs_flat
@@ -267,10 +268,44 @@ module alu_taylor_calc (
     end
 
 
-//---------------------------------------------------
+//-----------------------------------------------------------
+// -------====== Overflow error detection ======-------
+//----------------------------------------------
+    // When overflow occured, ie multiplication result is >= 2.0 or
+    // <= -2.0, higher bits will not be equal
+    wire err_overflow_m = m[35]^m[34];
+    wire err_overflow_p = &p[48:34] != |p[48:34]; // 00000 or 00010; 11111 or 11101
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            err_overflow <= 1'b0;
+        end
+        else if (state == ST_IDLE) begin
+            err_overflow <= 1'b0;
+        end
+        else begin
+            err_overflow <= err_overflow | err_overflow_m | err_overflow_p;
+        end
+    end
+
+//-------------------------------------------
 // -------====== Result ======-------
-//-----------------------------------------
-    assign calc_done = (state == ST_DONE) ? 1'b1     : 1'b0;
-    assign result    = (state == ST_DONE) ? p[33:16] : 18'h00000;
+//------------------------------
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            calc_done <= 1'b0;
+            result    <= 18'h00000;
+        end
+        else if (state == ST_DONE) begin
+            calc_done <= 1'b1;
+            result    <= p[33:16];
+        end
+        else begin
+            calc_done <= 1'b0;
+            result    <= 18'h00000;
+        end
+    end
+
+
 endmodule
 
