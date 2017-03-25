@@ -16,11 +16,11 @@ module alu_filter_iir (
     input  [5*18-1:0]        coefs_flat,
     input  signed [17:0]     sample_in,
     input                    sample_in_rdy,
-    output signed [17:0]     sample_out,
-    output                   sample_out_rdy,
+    output reg signed [17:0] sample_out,
+    output reg               sample_out_rdy,
 
-    input  [43:0]            dsp_ins_flat,
-    output [83:0]            dsp_outs_flat
+    input  [83:0]            dsp_outs_flat,
+    output [43:0]            dsp_ins_flat
 );
 
 
@@ -190,11 +190,21 @@ module alu_filter_iir (
         end
     end
 
-
-//--------------------------------------------------------
+//-------------------------------------------
 // -------====== Output ======-------
-//----------------------------------------------------
-    assign sample_out     = (state == ST_DONE) ? p[33:16] : 18'h00000;
-    assign sample_out_rdy = (state == ST_DONE) ? 1 : 0;
-
+//------------------------------
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            sample_out_rdy <= 1'b0;
+            sample_out     <= 18'h00000;
+        end
+        else if (state == ST_DONE) begin
+            sample_out_rdy <= 1'b1;
+            sample_out     <= p[33:16];
+        end
+        else begin
+            sample_out_rdy <= 1'b0;
+            sample_out     <= 18'h00000;
+        end
+    end
 endmodule
