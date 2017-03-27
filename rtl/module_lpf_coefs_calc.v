@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: mudule_lpf_coefs_calc.v
+// File: module_lpf_coefs_calc.v
 // Description: Module for calculation of coefficients for LPF based on IIR
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module mudule_lpf_coefs_calc (
+module module_lpf_coefs_calc (
     input                    clk,
     input                    reset,
     input signed [17:0]      omega0,

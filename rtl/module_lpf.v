@@ -54,7 +54,6 @@ module module_lpf (
         case (state)
             ST_IDLE:        if (sample_in_rdy     ) next_state = ST_CALC_SAMPLE;
             ST_CALC_SAMPLE: if (iir_sample_out_rdy) next_state = lpf_params_changed ? ST_CALC_SAMPLE : ST_DONE;
-            ST_CALC_COEFS:  if (coef_calc_done    ) next_state = ST_DONE;
             ST_DONE:                                next_state = ST_IDLE;
         endcase
     end
@@ -80,13 +79,13 @@ module module_lpf (
         endcase
     end
 
-    // DSP signals interconnection
+// DSP signals interconnection
     wire [83:0] dsp_outs_flat;
-    wire [43:0] dsp_ins_flat_coef_calc;
+    wire [43:0] dsp_ins_flat_coefs_calc;
     wire [43:0] dsp_ins_flat_iir;
     wire [43:0] dsp_ins_flat =
-        (owner == DSP_OWNER_TAYLOR) ?  dsp_ins_flat_coef_calc :
-        (owner == DSP_OWNER_IIR   ) ?  dsp_ins_flat_iir       :
+        (owner == DSP_OWNER_COEF_CALC) ?  dsp_ins_flat_coefs_calc :
+        (owner == DSP_OWNER_IIR      ) ?  dsp_ins_flat_iir        :
         44'h0;
 
 
@@ -99,7 +98,7 @@ module module_lpf (
             iir_coefs_flat <= 90'h0;
         end
         else if (coefs_calc_done) begin
-            iir_coefs_flat <= coefs_flat_calc;
+            iir_coefs_flat <= coefs_calc_coefs_flat;
         end
     end
 
@@ -130,23 +129,33 @@ module module_lpf (
     assign sample_out_rdy = iir_sample_out_rdy;
 
     // Coefficients calculator
-    reg signed [17:0] coef_calc_omega0;
-    reg signed [17:0] coef_calc_inv_2Q;
-    wire              coef_calc_do_calc;
-    wire [18*5-1:0]   coef_calc_coefs_flat;
-    wire              coef_calc_done;
+    reg signed [17:0] coefs_calc_omega0;
+    reg signed [17:0] coefs_calc_inv_2Q;
+    wire              coefs_calc_do_calc;
+    wire [18*5-1:0]   coefs_calc_coefs_flat;
+    wire              coefs_calc_done;
 
-    mudule_lpf_coefs_calc mudule_lpf_coefs_calc (
+    // coefs_calc_do_calc
+    wire   st_calc = (state == ST_CALC_COEFS);
+    reg    st_calc_dly;
+    assign coefs_calc_do_calc = (st_calc & ~st_calc_dly);
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) st_calc_dly <= 1'b0;
+        else       st_calc_dly <= st_calc;
+    end
+
+
+    module_lpf_coefs_calc module_lpf_coefs_calc (
         .clk            (clk                    ),
         .reset          (reset                  ),
-        .omega0         (coef_calc_omega0       ),
-        .inv_2Q         (coef_calc_inv_2Q       ),
-        .do_calc        (coef_calc_do_calc      ),
-        .coefs_flat     (coef_calc_coefs_flat   ),
-        .calc_done      (coef_calc_done         ),
-
+        .omega0         (coefs_calc_omega0      ),
+        .inv_2Q         (coefs_calc_inv_2Q      ),
+        .do_calc        (coefs_calc_do_calc     ),
+        .coefs_flat     (coefs_calc_coefs_flat  ),
+        .calc_done      (coefs_calc_done        ),
         .dsp_outs_flat  (dsp_outs_flat          ),
-        .dsp_ins_flat   (dsp_ins_flat_coef_calc )
+        .dsp_ins_flat   (dsp_ins_flat_coefs_calc )
     );
 
 
@@ -190,20 +199,31 @@ assign sample_out     = iir_sample_out;
 //-----------------------------------------------------------------
 // -------====== MIDI Events processing ======-------
 //-------------------------------------------------------------
+    // TODO Get these values from registers
+    localparam MIDI_CHANNEL  = 4'h0;
+    localparam OMEGA0_CC_NUM = 7'h0;
+    localparam INV_2Q_CC_NUM = 7'h1;
 
-//TODO set lpf_params_changed
+    wire cc_event = midi_rdy     == 1'b1         &&
+                    midi_cmd     == `MIDI_CMD_CC &&
+                    midi_ch_sysn == MIDI_CHANNEL;
 
-    wire      cc_event = (midi_rdy && midi_cmd == `MIDI_CMD_CC);
-    reg [7:0] cc_num;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            cc_num <= 0;
+            lpf_params_changed <= 1'b0;
+            coefs_calc_omega0  <= 18'h00000;
+            coefs_calc_inv_2Q  <= 18'h00000;
         end
-        else if (cc_event) begin
-            cc_num <= midi_data0;
+        else if (cc_event && midi_data0 == OMEGA0_CC_NUM) begin
+            lpf_params_changed <= 1'b0;
+            coefs_calc_omega0  <= { 3'h0, midi_data0[6:0], 8'h0 };
+        end
+        else if (cc_event && midi_data0 == INV_2Q_CC_NUM) begin
+            lpf_params_changed <= 1'b0;
+            coefs_calc_inv_2Q  <= { 2'h0, midi_data0[6:0], 9'h0 };
+        end
+        else if (state == ST_CALC_COEFS) begin
+            lpf_params_changed <= 1'b0;
         end
     end
-
-
-
 endmodule
