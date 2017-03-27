@@ -123,7 +123,7 @@ module module_lpf (
         .coefs_flat      (iir_coefs_flat          ),
         .sample_out_rdy  (iir_sample_out_rdy      ),
         .sample_out      (iir_sample_out          ),
-        .dsp_ins_flat    (iir_dsp_ins_flat_iir    ),
+        .dsp_ins_flat    (dsp_ins_flat_iir        ),
         .dsp_outs_flat   (dsp_outs_flat           )
     );
 
