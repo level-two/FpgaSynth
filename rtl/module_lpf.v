@@ -23,8 +23,8 @@ module module_lpf (
     input                       sample_in_rdy,
     input  signed [17:0]        sample_in,
 
-    output reg                  sample_out_rdy,
-    output reg signed [17:0]    sample_out,
+    output                      sample_out_rdy,
+    output     signed [17:0]    sample_out,
     output reg                  err_overflow
 );
 
@@ -59,11 +59,9 @@ module module_lpf (
     end
 
 
-//-----------------------------------------------------------------------------
-// -------====== Connectionn between DSP and calculation modules ======-------
-//-------------------------------------------------------------------------
-    // Utilize same DSP from several modules
-    
+//---------------------------------------
+// -------====== DSP ======-------
+//--------------------------
     // DSP owner selection
     localparam DSP_OWNER_COEF_CALC  = 0;
     localparam DSP_OWNER_IIR        = 1;
@@ -79,19 +77,27 @@ module module_lpf (
         endcase
     end
 
-// DSP signals interconnection
+    // DSP signals interconnection
     wire [83:0] dsp_outs_flat;
     wire [43:0] dsp_ins_flat_coefs_calc;
     wire [43:0] dsp_ins_flat_iir;
     wire [43:0] dsp_ins_flat =
-        (owner == DSP_OWNER_COEF_CALC) ?  dsp_ins_flat_coefs_calc :
-        (owner == DSP_OWNER_IIR      ) ?  dsp_ins_flat_iir        :
+        (dsp_owner == DSP_OWNER_COEF_CALC) ?  dsp_ins_flat_coefs_calc :
+        (dsp_owner == DSP_OWNER_IIR      ) ?  dsp_ins_flat_iir        :
         44'h0;
 
+    // DSP instance
+    dsp48a1_inst dsp48a1_inst (
+        .clk            (clk          ),
+        .reset          (reset        ),
+        .dsp_ins_flat   (dsp_ins_flat ),
+        .dsp_outs_flat  (dsp_outs_flat)
+    );
 
-//-------------------------------------------------
-// -------====== Coefs ======-------
-//------------------------------------------
+
+//---------------------------------------------
+// -------====== IIR filter ======-------
+//-----------------------------------
     reg [89:0] iir_coefs_flat;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -102,10 +108,6 @@ module module_lpf (
         end
     end
 
-
-//-----------------------------------------------------
-// -------====== Subblocks instances ======-------
-//------------------------------------------
     // IIR filter
     wire signed [17:0]    iir_sample_in     = sample_in;
     wire                  iir_sample_in_rdy = sample_in_rdy;
@@ -125,12 +127,14 @@ module module_lpf (
         .dsp_outs_flat   (dsp_outs_flat           )
     );
 
-    assign sample_out     = iir_sample_out;
-    assign sample_out_rdy = iir_sample_out_rdy;
 
-    // Coefficients calculator
-    reg signed [17:0] coefs_calc_omega0;
-    reg signed [17:0] coefs_calc_inv_2Q;
+//---------------------------------------------------------
+// -------====== Coefficients calculator ======-------
+//-----------------------------------------------
+    reg signed [17:0] lpf_params_omega0;
+    reg signed [17:0] lpf_params_inv_2Q;
+    reg               lpf_params_changed;
+
     wire              coefs_calc_do_calc;
     wire [18*5-1:0]   coefs_calc_coefs_flat;
     wire              coefs_calc_done;
@@ -145,12 +149,12 @@ module module_lpf (
         else       st_calc_dly <= st_calc;
     end
 
-
+    // lpf coefficients calculator instance
     module_lpf_coefs_calc module_lpf_coefs_calc (
         .clk            (clk                    ),
         .reset          (reset                  ),
-        .omega0         (coefs_calc_omega0      ),
-        .inv_2Q         (coefs_calc_inv_2Q      ),
+        .omega0         (lpf_params_omega0      ),
+        .inv_2Q         (lpf_params_inv_2Q      ),
         .do_calc        (coefs_calc_do_calc     ),
         .coefs_flat     (coefs_calc_coefs_flat  ),
         .calc_done      (coefs_calc_done        ),
@@ -159,20 +163,21 @@ module module_lpf (
     );
 
 
-    // DSP
-    dsp48a1_inst dsp48a1_inst (
-        .clk            (clk          ),
-        .reset          (reset        ),
-        .dsp_ins_flat   (dsp_ins_flat ),
-        .dsp_outs_flat  (dsp_outs_flat)
-    );
 
+//-------------------------------------------
+// -------====== Result ======-------
+//------------------------------
+    assign sample_out_rdy = iir_sample_out_rdy;
+    assign sample_out     = iir_sample_out;
 
-//-----------------------------------------------------------
-// -------====== Overflow error detection ======-------
-//----------------------------------------------
+    // Overflow error detection
     // When overflow occured, ie multiplication result is >= 2.0 or
     // <= -2.0, higher bits will not be equal
+
+    wire signed [47:0] p;
+    wire signed [35:0] m;
+    assign { m, p } = dsp_outs_flat;
+
     wire err_overflow_m = m[35] ^ m[34];
     wire err_overflow_p = (&p[47:34]) ^ (|p[47:34]); // 0000 or 0010; 1111 or 1101
 
@@ -187,13 +192,6 @@ module module_lpf (
             err_overflow <= err_overflow | err_overflow_m | err_overflow_p;
         end
     end
-
-
-//-------------------------------------------
-// -------====== Result ======-------
-//------------------------------
-assign sample_out_rdy = iir_sample_out_rdy;
-assign sample_out     = iir_sample_out;
 
 
 //-----------------------------------------------------------------
@@ -211,16 +209,16 @@ assign sample_out     = iir_sample_out;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             lpf_params_changed <= 1'b0;
-            coefs_calc_omega0  <= 18'h00000;
-            coefs_calc_inv_2Q  <= 18'h00000;
+            lpf_params_omega0  <= 18'h00000;
+            lpf_params_inv_2Q  <= 18'h00000;
         end
         else if (cc_event && midi_data0 == OMEGA0_CC_NUM) begin
             lpf_params_changed <= 1'b0;
-            coefs_calc_omega0  <= { 3'h0, midi_data0[6:0], 8'h0 };
+            lpf_params_omega0  <= { 3'h0, midi_data0[6:0], 8'h0 };
         end
         else if (cc_event && midi_data0 == INV_2Q_CC_NUM) begin
             lpf_params_changed <= 1'b0;
-            coefs_calc_inv_2Q  <= { 2'h0, midi_data0[6:0], 9'h0 };
+            lpf_params_inv_2Q  <= { 2'h0, midi_data0[6:0], 9'h0 };
         end
         else if (state == ST_CALC_COEFS) begin
             lpf_params_changed <= 1'b0;
