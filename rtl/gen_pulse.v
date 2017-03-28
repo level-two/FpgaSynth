@@ -33,7 +33,7 @@ module gen_pulse (
     wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
     wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
 
-    reg [7:0] note;
+    reg [6:0] note;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             note <= 0;
