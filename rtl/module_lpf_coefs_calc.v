@@ -23,6 +23,27 @@ module module_lpf_coefs_calc (
     output [43:0]            dsp_ins_flat
 );
 
+
+// STUB
+    assign dsp_ins_flat = 44'h0;
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            coefs_flat <= 90'h0;
+            calc_done  <= 1'b0;
+        end
+        else begin
+            calc_done  <= do_calc;
+            if (do_calc) begin
+                coefs_flat <= {3{$random()}};
+            end
+        end
+    end
+
+
+
+/*
+
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
@@ -83,11 +104,9 @@ module module_lpf_coefs_calc (
     end
 
     // DSP signals interconnection
-    wire [43:0] dsp_ins_flat;
     wire [43:0] dsp_ins_flat_local;
     wire [43:0] dsp_ins_flat_taylor;
     wire [43:0] dsp_ins_flat_iir;
-    wire [83:0] dsp_outs_flat;
 
     assign dsp_ins_flat = 
         (owner == DSP_OWNER_LOCAL ) ?  dsp_ins_flat_local  :
@@ -145,5 +164,6 @@ module module_lpf_coefs_calc (
             result    <= 18'h00000;
         end
     end
+*/
 endmodule
 
