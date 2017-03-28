@@ -25,7 +25,7 @@ module module_lpf (
 
     output                      sample_out_rdy,
     output     signed [17:0]    sample_out,
-    output reg                  err_overflow
+    output                      err_overflow
 );
 
 
@@ -53,7 +53,8 @@ module module_lpf (
         next_state = state;
         case (state)
             ST_IDLE:        if (sample_in_rdy     ) next_state = ST_CALC_SAMPLE;
-            ST_CALC_SAMPLE: if (iir_sample_out_rdy) next_state = lpf_params_changed ? ST_CALC_SAMPLE : ST_DONE;
+            ST_CALC_SAMPLE: if (iir_sample_out_rdy) next_state = lpf_params_changed ? ST_CALC_COEFS : ST_DONE;
+            ST_CALC_COEFS : if (coefs_calc_done   ) next_state = ST_DONE;
             ST_DONE:                                next_state = ST_IDLE;
         endcase
     end
@@ -178,20 +179,10 @@ module module_lpf (
     wire signed [35:0] m;
     assign { m, p } = dsp_outs_flat;
 
+    // TODO: Write errors into OneToClear-registers
     wire err_overflow_m = m[35] ^ m[34];
     wire err_overflow_p = (&p[47:34]) ^ (|p[47:34]); // 0000 or 0010; 1111 or 1101
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            err_overflow <= 1'b0;
-        end
-        else if (state == ST_IDLE) begin
-            err_overflow <= 1'b0;
-        end
-        else begin
-            err_overflow <= err_overflow | err_overflow_m | err_overflow_p;
-        end
-    end
+    assign err_overflow = err_overflow_m | err_overflow_p;
 
 
 //-----------------------------------------------------------------
@@ -208,7 +199,8 @@ module module_lpf (
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            lpf_params_changed <= 1'b0;
+            // TODO: revert to right default value
+            lpf_params_changed <= 1'b1;
             lpf_params_omega0  <= 18'h00000;
             lpf_params_inv_2Q  <= 18'h00000;
         end
