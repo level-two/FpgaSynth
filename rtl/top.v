@@ -90,6 +90,8 @@ module top (
     wire signed [17:0]  lpf_smpl_in_r;
     wire signed [17:0]  lpf_smpl_out_l;
     wire signed [17:0]  lpf_smpl_out_r;
+    wire                err_overflow_l_nc;
+    wire                err_overflow_r_nc;
 
     gen_pulse gen_pulse (
         .clk             (clk               ),
@@ -119,7 +121,8 @@ module top (
         .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
         .sample_in      (lpf_smpl_in_l            ),
         .sample_out_rdy (lpf_smpl_out_rdy_l       ),
-        .sample_out     (lpf_smpl_out_l           )
+        .sample_out     (lpf_smpl_out_l           ),
+        .err_overflow   (err_overflow_l_nc        )
     );
 
     module_lpf module_lpf_r (
@@ -133,7 +136,8 @@ module top (
         .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
         .sample_in      (lpf_smpl_in_r            ),
         .sample_out_rdy (lpf_smpl_out_rdy_r       ),
-        .sample_out     (lpf_smpl_out_r           )
+        .sample_out     (lpf_smpl_out_r           ),
+        .err_overflow   (err_overflow_r_nc        )
     );
 
 
