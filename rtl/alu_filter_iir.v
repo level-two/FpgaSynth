@@ -24,6 +24,72 @@ module alu_filter_iir (
 );
 
 
+    // opcodes
+    localparam NOP = 4'h0;
+    localparam MUL = 4'h1;
+    localparam ADD = 4'h2;
+    localparam SUB = 4'h3;
+    //localparam MOV = 4h'3;
+    localparam MOV = {4'h3, NOA, 4'h0};
+    localparam END = 4'hF;
+
+    // arguments
+    localparam NOA = 3'h0; // no argument
+    localparam REG = 3'h1; // register
+    localparam CON = 3'h2; // constant
+    localparam ACC = 3'h3; // accumulator
+
+    localparam R0 = {REG, 4'h0};
+    localparam R1 = {REG, 4'h1};
+    localparam R2 = {REG, 4'h2};
+    localparam R3 = {REG, 4'h3};
+    localparam R4 = {REG, 4'h4};
+
+    localparam C0 = {CON, 4'h0};
+    localparam C1 = {CON, 4'h1};
+    localparam C2 = {CON, 4'h2};
+    localparam C3 = {CON, 4'h3};
+    localparam C4 = {CON, 4'h4};
+
+    localparam AC = {ACC, 4'h0}; // usual accumulator
+    localparam AS = {ACC, 4'h1}; // summing accumulator
+
+
+    reg [3:0] pc;
+    reg [24:0] instr;
+    always @(pc) begin
+        case (pc)
+            4'h0   : begin instr <= { MUL, R0, C0, AC }; end
+            4'h1   : begin instr <= { MUL, R1, C1, AS }; end
+            4'h2   : begin instr <= { MUL, R2, C2, AS }; end
+            4'h3   : begin instr <= { MUL, R3, C3, AS }; end
+            4'h4   : begin instr <= { MUL, R4, C4, AS }; end
+            4'h5   : begin instr <= { MOV, R0, R1     }; end
+            4'h6   : begin instr <= { MOV, R1, R2     }; end
+            4'h7   : begin instr <= { MOV, R2, R3     }; end
+            4'h8   : begin instr <= { MOV, R3, R4     }; end
+            4'h9   : begin instr <= { MOV, AC, R0     }; end
+            default: begin instr <= { END             }; end
+        endcase
+    end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
