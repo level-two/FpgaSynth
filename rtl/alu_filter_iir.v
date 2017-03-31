@@ -25,38 +25,68 @@ module alu_filter_iir (
 
 
     // opcodes
-    localparam NOP = 4'h0;
-    localparam MUL = 4'h1;
-    localparam ADD = 4'h2;
-    localparam SUB = 4'h3;
-    //localparam MOV = 4h'3;
-    localparam MOV = {4'h3, NOA, 4'h0};
-    localparam END = 4'hF;
+    localparam NOP = 8'h0;
+    localparam MUL = 8'h1;
+    localparam ADD = 8'h2;
+    localparam SUB = 8'h3;
+    //localparam MOV = 8h'3;
+    localparam MOV = 8'h4;
+    localparam END = 8'hF;
+
+    // opts
+    localparam OPT_NOP = 8'h1;
+    localparam INC_I0  = 8'h1;
+    localparam INC_I1  = 8'h2;
+    localparam INC_I2  = 8'h3;
+    localparam INC_I3  = 8'h4;
 
     // arguments
-    localparam NOA = 3'h0; // no argument
-    localparam REG = 3'h1; // register
-    localparam CON = 3'h2; // constant
-    localparam ACC = 3'h3; // accumulator
+    localparam NOA  = 4'h0; // no argument
+    localparam REG  = 4'h1; // register
+    localparam CON  = 4'h2; // constant addr reg
+    localparam CONI = 4'h3; // indexed constant addr reg
+    localparam MEM  = 4'h4; // memory addr reg
+    localparam MEMI = 4'h5; // indexed memory addr reg
+    localparam ACC  = 4'h6; // accumulator output
+    localparam IDX  = 4'h7; // index reg
+    localparam MULR = 4'h8; // multiplication output
 
-    localparam R0 = {REG, 4'h0};
-    localparam R1 = {REG, 4'h1};
-    localparam R2 = {REG, 4'h2};
-    localparam R3 = {REG, 4'h3};
-    localparam R4 = {REG, 4'h4};
+    localparam AC    = {ACC, 4'h0}; // usual accumulator
+    localparam AS    = {ACC, 4'h1}; // summing accumulator
 
-    localparam C0 = {CON, 4'h0};
-    localparam C1 = {CON, 4'h1};
-    localparam C2 = {CON, 4'h2};
-    localparam C3 = {CON, 4'h3};
-    localparam C4 = {CON, 4'h4};
+    localparam MR    = {MULR, 4'h0}; // summing accumulator
 
-    localparam AC = {ACC, 4'h0}; // usual accumulator
-    localparam AS = {ACC, 4'h1}; // summing accumulator
+    localparam R0    = {REG, 4'h0};
+    localparam R1    = {REG, 4'h1};
+    localparam R2    = {REG, 4'h2};
+    localparam R3    = {REG, 4'h3};
+    localparam R4    = {REG, 4'h4};
+
+    localparam CONI0 = {CONI, 2'h0};
+    localparam CONI1 = {CONI, 2'h1};
+    localparam CONI2 = {CONI, 2'h2};
+    localparam CONI3 = {CONI, 2'h3};
+
+    localparam MEMI0 = {MEMI, 2'h0};
+    localparam MEMI1 = {MEMI, 2'h1};
+    localparam MEMI2 = {MEMI, 2'h2};
+    localparam MEMI3 = {MEMI, 2'h3};
+
+    localparam IX0  = {IDX, 2'h0};
+    localparam IX1  = {IDX, 2'h1};
+    localparam IX2  = {IDX, 2'h2};
+    localparam IX3  = {IDX, 2'h3};
 
 
-    reg [3:0] pc;
-    reg [24:0] instr;
+    reg  [3:0]  pc;
+    reg  [23:0] instr;
+    wire [8:0]  opcode;
+    wire [8:0]  arg1;
+    wire [8:0]  arg2;
+    wire [8:0]  opt;
+
+    assign { opcode, arg1, arg2, opt } = instr;
+
     always @(pc) begin
         case (pc)
             4'h0   : begin instr <= { MUL, R0, C0, AC }; end
