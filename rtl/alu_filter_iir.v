@@ -33,91 +33,63 @@ module alu_filter_iir (
     localparam MOV = 8'h4;
     localparam END = 8'hF;
 
-    // opts
-    localparam OPT_NOP = 8'b00000000;
-
     // arguments
-    localparam NOA  = 4'h0; // no argument
-    localparam REG  = 4'h1; // register
-    localparam CON  = 4'h2; // constant addr reg
-    localparam CI   = 4'h3; // indexed constant addr reg
-    localparam MEM  = 4'h4; // memory addr reg
-    localparam MI   = 4'h5; // indexed memory addr reg
-    localparam ACC  = 4'h6; // accumulator output
-    localparam IDX  = 4'h7; // index reg
-    localparam MULR = 4'h8; // multiplication output
+    localparam REG_ID_NOA  = 4'h0; // no argument
+    localparam REG_ID_REG  = 4'h1; // register
+    localparam REG_ID_BASE = 4'h4; // base reg
+    localparam REG_ID_ACC  = 4'h6; // accumulator output
+    localparam REG_ID_IDX  = 4'h7; // index reg
+    localparam REG_ID_MULR = 4'h8; // multiplication output
 
-    localparam AC    = {ACC, 4'h0}; // usual accumulator
-    localparam AS    = {ACC, 4'h1}; // summing accumulator
-    localparam MR    = {MULR, 4'h0}; // multiplier result
+    // For the indexed operations:
+    // 2 bits: reg id for indexed operation
+    // 2 bits: base reg num
+    // 2 bits: index reg num 
+    // 2 bits: index reg post-inc/dec 
+    localparam REG_ID_IDX   = 2'b11; // indexed constant addr reg
 
+    localparam B0  = 2'h0;
+    localparam B1  = 2'h1;
+    localparam B2  = 2'h2;
+    localparam B3  = 2'h3;
 
-    localparam R0    = {REG, 4'h0};
-    localparam R1    = {REG, 4'h1};
-    localparam R2    = {REG, 4'h2};
-    localparam R3    = {REG, 4'h3};
+    localparam IX0  = 2'h0;
+    localparam IX1  = 2'h1;
+    localparam IX2  = 2'h2;
+    localparam IX3  = 2'h3;
 
+    localparam INOI = 2'b00; // index register
+    localparam IINC = 2'b01; // index register with post-increment
+    localparam IDEC = 2'b10; // index register with post-decrement
 
-    `define CI(_CN_, _IN_, _II_) {  }
+    // {BX0, IX0, IINC}
+    localparam BX0   = {REG_ID_IDX, B0};
+    localparam BX1   = {REG_ID_IDX, B1};
+    localparam BX2   = {REG_ID_IDX, B2};
+    localparam BX3   = {REG_ID_IDX, B3};
 
-    localparam CB0  = { CON, 4'h0 };
-    localparam CB1  = { CON, 4'h1 };
-    localparam CB2  = { CON, 4'h2 };
-    localparam CB3  = { CON, 4'h3 };
-    
-    localparam MB0  = { MEM, 4'h0 };
-    localparam MB1  = { MEM, 4'h1 };
-    localparam MB2  = { MEM, 4'h2 };
-    localparam MB3  = { MEM, 4'h3 };
-    
-
-    // { CI0,  I2 }
-    // { CI1I, I1 }
-    // { CI2D, I0 }
-    localparam CI0   = { CI , 2'h0 };
-    localparam CI1   = { CI , 2'h1 };
-    localparam CI2   = { CI , 2'h2 };
-    localparam CI3   = { CI , 2'h3 };
-
-    localparam CI0I  = { CII, 2'h0 };
-    localparam CI1I  = { CII, 2'h1 };
-    localparam CI2I  = { CII, 2'h2 };
-    localparam CI3I  = { CII, 2'h3 };
-
-    localparam CI0D  = { CID, 2'h0 };
-    localparam CI1D  = { CID, 2'h1 };
-    localparam CI2D  = { CID, 2'h2 };
-    localparam CI3D  = { CID, 2'h3 };
-
-    localparam I0    = 2'h0;
-    localparam I1    = 2'h1;
-    localparam I2    = 2'h2;
-    localparam I3    = 2'h3;
-
-    // { MI0,  I2 }
-    // { MI1I, I1 }
-    // { MI2D, I0 }
-    localparam MI0   = { MI , 2'h0 };
-    localparam MI1   = { MI , 2'h1 };
-    localparam MI2   = { MI , 2'h2 };
-    localparam MI3   = { MI , 2'h3 };
-
-    localparam MI0I  = { MII, 2'h0 };
-    localparam MI1I  = { MII, 2'h1 };
-    localparam MI2I  = { MII, 2'h2 };
-    localparam MI3I  = { MII, 2'h3 };
-
-    localparam MI0D  = { MID, 2'h0 };
-    localparam MI1D  = { MID, 2'h1 };
-    localparam MI2D  = { MID, 2'h2 };
-    localparam MI3D  = { MID, 2'h3 };
+    //
+    localparam AC   = {REG_ID_ACC , 4'h0}; // usual accumulator
+    localparam AS   = {REG_ID_ACC , 4'h1}; // summing accumulator
+    localparam MR   = {REG_ID_MULR, 4'h0}; // multiplier result
 
 
+    localparam R0   = {REG_ID_REG, 4'h0};
+    localparam R1   = {REG_ID_REG, 4'h1};
+    localparam R2   = {REG_ID_REG, 4'h2};
+    localparam R3   = {REG_ID_REG, 4'h3};
 
-    localparam IX0  = {IDX, 2'h0};
-    localparam IX1  = {IDX, 2'h1};
-    localparam IX2  = {IDX, 2'h2};
-    localparam IX3  = {IDX, 2'h3};
+
+    localparam IR0  = {REG_ID_IDX, 2'h0};
+    localparam IR1  = {REG_ID_IDX, 2'h1};
+    localparam IR2  = {REG_ID_IDX, 2'h2};
+    localparam IR3  = {REG_ID_IDX, 2'h3};
+
+    localparam BR0  = {REG_ID_BASE, 2'h0};
+    localparam BR1  = {REG_ID_BASE, 2'h1};
+    localparam BR2  = {REG_ID_BASE, 2'h2};
+    localparam BR3  = {REG_ID_BASE, 2'h3};
+
 
 
     reg  [3:0]  pc;
