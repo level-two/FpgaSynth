@@ -24,96 +24,41 @@ module alu_filter_iir (
 );
 
 
-    // opcodes
-    localparam NOP = 8'h0;
-    localparam MUL = 8'h1;
-    localparam ADD = 8'h2;
-    localparam SUB = 8'h3;
-    //localparam MOV = 8h'3;
-    localparam MOV = 8'h4;
-    localparam END = 8'hF;
-
-    // arguments
-    localparam REG_ID_NOA  = 4'h0; // no argument
-    localparam REG_ID_REG  = 4'h1; // register
-    localparam REG_ID_BASE = 4'h4; // base reg
-    localparam REG_ID_ACC  = 4'h6; // accumulator output
-    localparam REG_ID_IDX  = 4'h7; // index reg
-    localparam REG_ID_MULR = 4'h8; // multiplication output
-
-    // For the indexed operations:
-    // 2 bits: reg id for indexed operation
-    // 2 bits: base reg num
-    // 2 bits: index reg num 
-    // 2 bits: index reg post-inc/dec 
-    localparam REG_ID_IDX   = 2'b11; // indexed constant addr reg
-
-    localparam B0  = 2'h0;
-    localparam B1  = 2'h1;
-    localparam B2  = 2'h2;
-    localparam B3  = 2'h3;
-
-    localparam IX0  = 2'h0;
-    localparam IX1  = 2'h1;
-    localparam IX2  = 2'h2;
-    localparam IX3  = 2'h3;
-
-    localparam INOI = 2'b00; // index register
-    localparam IINC = 2'b01; // index register with post-increment
-    localparam IDEC = 2'b10; // index register with post-decrement
-
-    // {BX0, IX0, IINC}
-    localparam BX0   = {REG_ID_IDX, B0};
-    localparam BX1   = {REG_ID_IDX, B1};
-    localparam BX2   = {REG_ID_IDX, B2};
-    localparam BX3   = {REG_ID_IDX, B3};
-
-    //
-    localparam AC   = {REG_ID_ACC , 4'h0}; // usual accumulator
-    localparam AS   = {REG_ID_ACC , 4'h1}; // summing accumulator
-    localparam MR   = {REG_ID_MULR, 4'h0}; // multiplier result
-
-
-    localparam R0   = {REG_ID_REG, 4'h0};
-    localparam R1   = {REG_ID_REG, 4'h1};
-    localparam R2   = {REG_ID_REG, 4'h2};
-    localparam R3   = {REG_ID_REG, 4'h3};
-
-
-    localparam IR0  = {REG_ID_IDX, 2'h0};
-    localparam IR1  = {REG_ID_IDX, 2'h1};
-    localparam IR2  = {REG_ID_IDX, 2'h2};
-    localparam IR3  = {REG_ID_IDX, 2'h3};
-
-    localparam BR0  = {REG_ID_BASE, 2'h0};
-    localparam BR1  = {REG_ID_BASE, 2'h1};
-    localparam BR2  = {REG_ID_BASE, 2'h2};
-    localparam BR3  = {REG_ID_BASE, 2'h3};
+    localparam NOP            = 16'h0000;
+    localparam MUL_C0_IN_AS   = 16'h0001;
+    localparam MUL_CI_XYI_AC  = 16'h0002;
+    localparam MOV_I_0        = 16'h0004;
+    localparam INC_I          = 16'h0008;
+    localparam MOV_RES_AC     = 16'h0010;
+    localparam PUSH_X_IN      = 16'h0020;
+    localparam PUSH_Y_AC      = 16'h0040;
+    localparam REPEAT_4       = 16'h0080;
+    localparam CAL_COEFS      = 16'h0100;
+    localparam CAL_COEFS_WAIT = 16'h0200;
+    localparam END            = 16'h8000;
 
 
 
-    reg  [3:0]  pc;
-    reg  [23:0] instr;
-    wire [8:0]  opcode;
-    wire [8:0]  arg1;
-    wire [8:0]  arg2;
-    wire [8:0]  opt;
-
-    assign { opcode, arg1, arg2, opt } = instr;
+    reg [15:0] tasks;
 
     always @(pc) begin
         case (pc)
-            4'h0   : begin instr <= { MUL, R0, C0, AC }; end
-            4'h1   : begin instr <= { MUL, R1, C1, AS }; end
-            4'h2   : begin instr <= { MUL, R2, C2, AS }; end
-            4'h3   : begin instr <= { MUL, R3, C3, AS }; end
-            4'h4   : begin instr <= { MUL, R4, C4, AS }; end
-            4'h5   : begin instr <= { MOV, R0, R1     }; end
-            4'h6   : begin instr <= { MOV, R1, R2     }; end
-            4'h7   : begin instr <= { MOV, R2, R3     }; end
-            4'h8   : begin instr <= { MOV, R3, R4     }; end
-            4'h9   : begin instr <= { MOV, AC, R0     }; end
-            default: begin instr <= { END             }; end
+            4'h0   : tasks = PUSH_X_IN     |
+                             MOV_I_0       |
+                             MUL_C0_IN_AS;
+
+            4'h1   : tasks = REPEAT_4      |
+                             MUL_CI_XYI_AC |
+                             INC_I;
+
+            4'h2   : tasks = NOP;
+            4'h3   : tasks = NOP;
+            4'h4   : tasks = MOV_RES_AC    |
+                             PUSH_Y_AC;
+
+            4'h2   : tasks = CAL_COEFS;
+            4'h3   : tasks = CAL_COEFS_WAIT;
+            default: tasks = END;
         endcase
     end
 
@@ -121,15 +66,7 @@ module alu_filter_iir (
 
 
 
-
-
-
-
-
-
-
-
-
+    reg [3:0] pc;
 
 
 
