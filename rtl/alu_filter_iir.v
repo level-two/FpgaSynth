@@ -23,6 +23,7 @@ module alu_filter_iir (
     output [43:0]            dsp_ins_flat
 );
 
+
     // STORE SAMPLE_IN
     reg signed [17:0] sample_in_reg;
     always @(posedge reset or posedge clk) begin
@@ -49,7 +50,6 @@ module alu_filter_iir (
     localparam CAL_COEFS_WAIT = 16'h0200;
     localparam JP_0           = 16'h0400;
     localparam WAIT_IN        = 16'h0800;
-
 
     reg [15:0] tasks;
     always @(pc) begin
@@ -150,6 +150,43 @@ module alu_filter_iir (
     end
 
 
+    // Coefficients
+    wire signed [17:0] coefs[0:4];
+    genvar i;
+    generate
+        for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
+            assign coefs[i] = coefs_flat[18*i +: 18];
+        end
+    endgenerate
+
+
+    // MUL TASKS
+    wire signed [17:0] ci  = coefs[i_reg];
+    wire signed [17:0] xyi = xy_dly_line[i_reg];
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            opmode <= `DSP_NOP;
+            a      <= 18'h00000;
+            b      <= 18'h00000;
+        end
+        else if (tasks & MUL_C0_IN_AS) begin
+            opmode <= `DSP_XIN_MULT | DSP_ZIN_ZERO;
+            a      <= ci;
+            b      <= sample_in_reg;
+        end
+        else if (tasks & MUL_CI_XYI_AC) begin
+            opmode <= `DSP_XIN_MULT | DSP_ZIN_PCIN;
+            a      <= ci;
+            b      <= xyi;
+        end
+        else begin
+            opmode <= `DSP_NOP;
+            a      <= 18'h00000;
+            b      <= 18'h00000;
+        end
+    end
+
+
     // MOVE AC VALUE TO RESULTS
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -167,109 +204,15 @@ module alu_filter_iir (
     end
 
 
-
-
-    wire signed [17:0] xyi = xy_dly_line[i_reg];
-
-    localparam MUL_C0_IN_AS   = 16'h0001;
-    localparam MUL_CI_XYI_AC  = 16'h0002;
-
-    // MUL TASKS
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
-        end
-        else if (tasks & MOV_RES_AC) begin
-            sample_out_rdy <= 1'b1;
-            sample_out     <= p[33:16];
-        end
-        else begin
-            sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
-        end
-    end
-
-
-
-
-
-
-
-
-
-
-//----------------------------------
-// -------====== A,B ======-------
-//------------------------------
-    assign a = xy;
-    assign b = coefs[coef_sel];
-
-
-//-------------------------------------------------------------
-// -------====== ALU Operation mode controll ======-------
-//---------------------------------------------------------
-    always @(state) begin
-        opmode_x_in        = `DSP_X_IN_ZERO;
-        opmode_z_in        = `DSP_Z_IN_ZERO;
-        opmode_use_preadd  = 1'b0;
-        opmode_cryin       = 1'b0;
-        opmode_preadd_sub  = 1'b0;
-        opmode_postadd_sub = 1'b0;
-
-        case (state)
-            ST_IDLE:           begin end
-            ST_CALC: begin
-                opmode_x_in = `DSP_X_IN_MULT;
-                opmode_z_in = `DSP_Z_IN_POUT;
-            end
-            ST_WAIT_RESULT:  begin end
-            ST_DONE:           begin end
-        endcase
-    end
-
-
-
-
-
-
-
-
-//---------------------------------------------
-// -------====== DSP signals ======-------
-//-----------------------------------------
-    reg [1:0]   opmode_x_in;
-    reg [1:0]   opmode_z_in;
-    reg         opmode_use_preadd;
-    reg         opmode_cryin;
-    reg         opmode_preadd_sub;
-    reg         opmode_postadd_sub;
+    // DSP signals
+    reg [7:0]          opmode;
     wire signed [17:0] a;
     wire signed [17:0] b;
     wire signed [47:0] p;
     wire signed [35:0] m_nc;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat[43:0] =
-        { opmode_postadd_sub, opmode_preadd_sub, opmode_cryin,
-          opmode_use_preadd , opmode_z_in      , opmode_x_in ,
-          a                 , b };
-
-    assign { m_nc, p } = dsp_outs_flat;
-
-
-//------------------------------------
-// -------====== COEFS ======-------
-//--------------------------------
-    wire signed [17:0] coefs[0:4];
-    genvar i;
-    generate
-        for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
-            assign coefs[i] = coefs_flat[18*i +: 18];
-        end
-    endgenerate
-
-
-
+    assign dsp_ins_flat[43:0] = { opmode, a, b };
+    assign { m_nc, p }        = dsp_outs_flat;
 
 endmodule

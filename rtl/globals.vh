@@ -42,6 +42,8 @@
 `define ALU_TAYLOR_COS          3'h1
 
 // DSP48A1 constants
+`define DSP_NOP                 2'h00;
+
 `define DSP_XIN_ZERO            2'h00;
 `define DSP_XIN_MULT            2'h01;
 `define DSP_XIN_POUT            2'h02;
