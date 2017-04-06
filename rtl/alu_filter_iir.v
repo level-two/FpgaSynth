@@ -38,14 +38,14 @@ module alu_filter_iir (
 
     // TASKS
     localparam NOP            = 16'h0000;
-    localparam MUL_C0_IN_AS   = 16'h0001;
+    localparam MUL_CI_IN_AS   = 16'h0001;
     localparam MUL_CI_XYI_AC  = 16'h0002;
     localparam MOV_I_0        = 16'h0004;
     localparam INC_I          = 16'h0008;
     localparam MOV_RES_AC     = 16'h0010;
     localparam PUSH_X_IN      = 16'h0020;
     localparam PUSH_Y_AC      = 16'h0040;
-    localparam REPEAT_4       = 16'h0080;
+    localparam REPEAT_3       = 16'h0080;
     localparam CAL_COEFS      = 16'h0100;
     localparam CAL_COEFS_WAIT = 16'h0200;
     localparam JP_0           = 16'h0400;
@@ -55,21 +55,23 @@ module alu_filter_iir (
     always @(pc) begin
         case (pc)
             4'h0   : tasks = WAIT_IN;
-            4'h1   : tasks = PUSH_X_IN     |
-                             MOV_I_0       |
-                             MUL_C0_IN_AS;
 
-            4'h2   : tasks = REPEAT_4      |
+            4'h1   : tasks = PUSH_X_IN     |
+                             MUL_CI_IN_AS  |
+                             INC_I;
+
+            4'h2   : tasks = REPEAT_3      |
                              MUL_CI_XYI_AC |
                              INC_I;
 
-            4'h3   : tasks = NOP;
-            4'h4   : tasks = NOP;
+            4'h3   : tasks = MUL_CI_XYI_AC |
+                             MOV_I_0;
+
+            4'h4   : tasks = REPEAT_3      |
+                             NOP;
+
             4'h5   : tasks = MOV_RES_AC    |
                              PUSH_Y_AC;
-
-            4'h6   : tasks = CAL_COEFS;
-            4'h7   : tasks = CAL_COEFS_WAIT;
             default: tasks = JP_0;
         endcase
     end
@@ -85,7 +87,7 @@ module alu_filter_iir (
             pc <= 4'h0;
         end
         else if((tasks & WAIT_IN  && !sample_in_rdy) ||      
-                (tasks & REPEAT_4 && repeat_st     ))
+                (tasks & REPEAT_3 && repeat_st     ))
         begin
             pc <= pc;
         end
@@ -97,7 +99,7 @@ module alu_filter_iir (
 
     // REPEAT
     reg  [3:0] repeat_cnt;
-    wire [3:0] repeat_cnt_max = (tasks & REPEAT_4) ? 4'h3 : 4'h0;
+    wire [3:0] repeat_cnt_max = (tasks & REPEAT_3) ? 4'h2 : 4'h0;
     wire       repeat_st      = (repeat_cnt != repeat_cnt_max);
 
     always @(posedge reset or posedge clk) begin
@@ -169,13 +171,13 @@ module alu_filter_iir (
             a      <= 18'h00000;
             b      <= 18'h00000;
         end
-        else if (tasks & MUL_C0_IN_AS) begin
-            opmode <= `DSP_XIN_MULT | DSP_ZIN_ZERO;
+        else if (tasks & MUL_CI_IN_AS) begin
+            opmode <= `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      <= ci;
             b      <= sample_in_reg;
         end
         else if (tasks & MUL_CI_XYI_AC) begin
-            opmode <= `DSP_XIN_MULT | DSP_ZIN_PCIN;
+            opmode <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
             a      <= ci;
             b      <= xyi;
         end
@@ -205,9 +207,9 @@ module alu_filter_iir (
 
 
     // DSP signals
-    reg [7:0]          opmode;
-    wire signed [17:0] a;
-    wire signed [17:0] b;
+    reg         [7:0]  opmode;
+    reg  signed [17:0] a;
+    reg  signed [17:0] b;
     wire signed [47:0] p;
     wire signed [35:0] m_nc;
 
