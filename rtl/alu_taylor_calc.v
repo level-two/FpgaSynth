@@ -39,6 +39,7 @@ module alu_taylor_calc (
     output [43:0]            dsp_ins_flat
 );
 
+/*
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
@@ -282,5 +283,6 @@ module alu_taylor_calc (
             result    <= 18'h00000;
         end
     end
+*/
 endmodule
 

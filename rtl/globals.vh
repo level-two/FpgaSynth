@@ -42,27 +42,27 @@
 `define ALU_TAYLOR_COS          3'h1
 
 // DSP48A1 constants
-`define DSP_NOP                 2'h00;
+`define DSP_NOP                 2'h00
 
-`define DSP_XIN_ZERO            2'h00;
-`define DSP_XIN_MULT            2'h01;
-`define DSP_XIN_POUT            2'h02;
-`define DSP_XIN_DAB             2'h03;
+`define DSP_XIN_ZERO            2'h00
+`define DSP_XIN_MULT            2'h01
+`define DSP_XIN_POUT            2'h02
+`define DSP_XIN_DAB             2'h03
 
-`define DSP_ZIN_ZERO            8'h00;
-`define DSP_ZIN_PCIN            8'h04;
-`define DSP_ZIN_POUT            8'h08;
-`define DSP_ZIN_CIN             8'h0c;
+`define DSP_ZIN_ZERO            8'h00
+`define DSP_ZIN_PCIN            8'h04
+`define DSP_ZIN_POUT            8'h08
+`define DSP_ZIN_CIN             8'h0c
 
 `define DSP_USE_PREADD          8'h10
 
 `define DSP_CRYIN               8'h20
 
- define DSP_PREADD_ADD          8'h00
- define DSP_PREADD_SUB          8'h40
+`define DSP_PREADD_ADD          8'h00
+`define DSP_PREADD_SUB          8'h40
 
- define DSP_POSTADD_ADD         8'h00
- define DSP_POSTADD_SUB         8'h80
+`define DSP_POSTADD_ADD         8'h00
+`define DSP_POSTADD_SUB         8'h80
 
 
 ///// ????
