@@ -14,7 +14,7 @@
 module alu_taylor_coefs (
     input [2:0]          function_sel,
     input [3:0]          idx,
-    output               last_idx,
+//    output               last_idx,
     output signed [17:0] deriv_coef
 );
 
@@ -23,14 +23,16 @@ module alu_taylor_coefs (
         (function_sel == `ALU_TAYLOR_COS) ? deriv_coef_cos :
         18'h00000;
 
+    /*
     assign last_idx =
         (function_sel == `ALU_TAYLOR_SIN) ? last_idx_sin :
         (function_sel == `ALU_TAYLOR_COS) ? last_idx_cos :
         18'h00000;
+    */
 
 
     reg signed [17:0] deriv_coef_sin;
-    wire last_idx_sin = (idx == 4'ha);
+    //wire last_idx_sin = (idx == 4'ha);
     always @(idx) begin
         case (idx)
             4'h0   : begin deriv_coef_sin <= 18'h00000; end
@@ -50,7 +52,7 @@ module alu_taylor_coefs (
 
 
     reg signed [17:0] deriv_coef_cos;
-    wire last_idx_cos = (idx == 4'h9);
+    //wire last_idx_cos = (idx == 4'h9);
     always @(idx) begin
         case (idx)
             4'h0   : begin deriv_coef_cos <= 18'h10000; end
