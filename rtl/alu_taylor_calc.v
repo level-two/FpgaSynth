@@ -14,13 +14,13 @@
 //   for n = 1:10
 //       fac_nums(n) = 1/n;
 //   end
-//   interm_val = 1;
+//   val = 1;
 //   sum = deriv(1);
 //   x = pi/2;
 //   for n = 1:10
-//       a1 = interm_val * fac_nums(n);
-//       interm_val = a1 * x;
-//       sum = sum + interm_val*deriv(n+1);
+//       a1 = val * fac_nums(n);
+//       val = a1 * x;
+//       sum = sum + val*deriv(n+1);
 //   end
 // -----------------------------------------------------------------------------
 
@@ -30,7 +30,7 @@ module alu_taylor_calc (
     input                    clk,
     input                    reset,
     input                    do_calc,
-    input [2:0]              function_sel,
+    input [2:0]              func_sel,
     input signed [17:0]      x_in,
     output reg               calc_done,
     output reg signed [17:0] result,
@@ -39,57 +39,226 @@ module alu_taylor_calc (
     output [43:0]            dsp_ins_flat
 );
 
-/*
-//--------------------------------------------------------
-// -------====== State Machine ======-------
-//-----------------------------------------------------
-    localparam ST_IDLE           = 0;
-    localparam ST_X_MUL_COEF     = 1;
-    localparam ST_INTM_MUL_INTM  = 2;
-    localparam ST_INTM_MUL_DERIV = 3;
-    localparam ST_WAIT_RESULT    = 4;
-    localparam ST_DONE           = 5;
 
-    reg [2:0] state;
-    reg [2:0] next_state;
 
+
+    // STORE SAMPLE_IN
+    reg signed [17:0] x_reg;
+    reg        [2:0]  func_sel_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            state <= ST_IDLE;
+            x_reg        <= 18'h00000;
+            func_sel_reg <= 3'h0;
         end
-        else begin
-            state <= next_state;
+        else if (do_calc) begin
+            x_reg        <= x_in;
+            func_sel_reg <= func_sel;
         end
     end
 
-    always @(*) begin
-        next_state = state;
-        case (state)
-            ST_IDLE:           if (do_calc )  next_state = ST_X_MUL_COEF;
-            ST_X_MUL_COEF:     if (last_idx)  next_state = ST_INTM_MUL_INTM;
-            ST_INTM_MUL_INTM:                 next_state = ST_INTM_MUL_DERIV;
-            ST_INTM_MUL_DERIV: if (!last_idx) next_state = ST_INTM_MUL_INTM;
-                               else           next_state = ST_WAIT_RESULT;
-            ST_WAIT_RESULT:    if (wait_done) next_state = ST_DONE;
-            ST_DONE:                          next_state = ST_IDLE;
+    // TASKS
+    localparam [15:0] NOP              = 16'h0000;
+    localparam [15:0] MUL_X_FJ_VJ      = 16'h0001;
+    localparam [15:0] MUL_VI_VJ_VJ     = 16'h0002;
+    localparam [15:0] MUL_VI_VJ_VJ_AC0 = 16'h0004;
+    localparam [15:0] MUL_VI_CI_AS     = 16'h0008;
+    localparam [15:0] MUL_VI_CI_AC     = 16'h0010;
+    localparam [15:0] MOV_V0_1         = 16'h0020;
+    localparam [15:0] MOV_I_0          = 16'h0040;
+    localparam [15:0] MOV_J_1          = 16'h0080;
+    localparam [15:0] INC_I            = 16'h0100;
+    localparam [15:0] INC_J            = 16'h0200;
+    localparam [15:0] JP_J_N10_UP1     = 16'h0400;
+    localparam [15:0] REPEAT_8         = 16'h0800;
+    localparam [15:0] MOV_RES_AC       = 16'h1000;
+    localparam [15:0] JP_1             = 16'h2000;
+    localparam [15:0] WAIT_IN          = 16'h4000;
+
+    reg [15:0] tasks;
+    always @(pc) begin
+        case (pc)
+            4'h0   : tasks = MOV_V0_1        ;
+            4'h1   : tasks = WAIT_IN         |
+                             MOV_J_1         ;
+            4'h2   : tasks = REPEAT_8        |
+                             MUL_X_FJ_VJ     |
+                             INC_J           ;
+            4'h3   : tasks = MUL_X_FJ_VJ_AC0 |
+                             MOV_I_0         |
+                             MOV_J_1         ;
+            4'h4   : tasks = MUL_VI_VJ_VJ    ;
+            4'h5   : tasks = MUL_VI_CI_AC    |
+                             INC_I           |
+                             INC_J           |
+                             JP_J_N10_UP1    ;
+            4'h6   : tasks = NOP             ;
+            4'h7   : tasks = MUL_VI_CI_AC    ;
+            4'h8   : tasks = REPEAT_3        |
+                             NOP             ;
+            4'h9   : tasks = MOV_RES_AC      |
+                             JP_1            ;
+            default: tasks = JP_1            ;
         endcase
     end
 
 
-//---------------------------------------------------------------------------
-// -------====== Derivatives values for the Taylor series ======-------
-//----------------------------------------------------------------
-    reg [3:0] idx;
-    wire last_idx;
-    reg [2:0] function_sel_st;
-    wire signed [17:0] deriv_coef;
+    // PC
+    reg [3:0] pc;
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            pc <= 4'h0;
+        else if (tasks & JP_1)
+            pc <= 4'h1;
+        else if ((tasks & WAIT_IN  && !do_calc ) ||      
+                 (tasks & REPEAT_3 && repeat_st) ||
+                 (tasks & REPEAT_8 && repeat_st))
+            pc <= pc;
+        else if (tasks & JP_J_N10_UP1)
+            pc <= pc - 4'h1;
+        else
+            pc <= pc + 4'h1;
+    end
 
+
+    // REPEAT
+    reg  [3:0] repeat_cnt;
+    wire [3:0] repeat_cnt_max = (tasks & REPEAT_3) ? 4'h2 :
+                                (tasks & REPEAT_8) ? 4'h7 : 4'h0;
+    wire       repeat_st      = (repeat_cnt != repeat_cnt_max);
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            repeat_cnt <= 4'h0;
+        else if (repeat_cnt == repeat_cnt_max)
+            repeat_cnt <= 4'h0;
+        else
+            repeat_cnt <= repeat_cnt + 4'h1;
+        end
+    end
+
+
+    // INDEX REGISTER I
+    reg  [3:0] i_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            i_reg <= 4'h0;
+        else if (tasks & MOV_I_0)
+            i_reg <= 4'h0;
+        else if (tasks & INC_I)
+            i_reg <= i_reg + 4'h1;
+    end
+
+
+    // INDEX REGISTER J
+    reg  [3:0] j_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            j_reg <= 4'h0;
+        else if (tasks & MOV_J_0)
+            j_reg <= 4'h0;
+        else if (tasks & INC_J)
+            j_reg <= j_reg + 4'h1;
+    end
+
+
+    // Taylor coefficients
+    wire signed [17:0] deriv_coef_i;
     alu_taylor_coefs alu_taylor_coefs (
-        .function_sel(function_sel_st),
-        .idx         (idx            ),
-        .last_idx    (last_idx       ),
-        .deriv_coef  (deriv_coef     )
+        .function_sel (func_sel_reg ),
+        .idx          (i_reg        ),
+        .deriv_coef   (deriv_coef_i )
     );
+
+
+    // Values for factorial calculation
+    reg signed [17:0] frac_coef_j;
+    always @(j_reg) begin
+        case (j_reg)
+            4'h0   : frac_coef_j <= 18'h10000; // 1
+            4'h1   : frac_coef_j <= 18'h10000; // 1
+            4'h2   : frac_coef_j <= 18'h08000; // 1/2
+            4'h3   : frac_coef_j <= 18'h05555; // 1/3
+            4'h4   : frac_coef_j <= 18'h04000; // 1/4
+            4'h5   : frac_coef_j <= 18'h03333; // 1/5
+            4'h6   : frac_coef_j <= 18'h02aab; // 1/6
+            4'h7   : frac_coef_j <= 18'h02492; // 1/7
+            4'h8   : frac_coef_j <= 18'h02000; // 1/8
+            4'h9   : frac_coef_j <= 18'h01c72; // 1/9
+            4'ha   : frac_coef_j <= 18'h0199a; // 1/10
+            default: frac_coef_j <= 18'h00000;
+        endcase
+    end
+
+
+
+    // MUL TASKS
+    MUL_X_FJ_VJ     
+    MUL_VI_VJ_VJ    
+    MUL_VI_VJ_VJ_AC0
+    MUL_VI_CI_AS    
+    MUL_VI_CI_AC    
+
+    wire signed [17:0] fj  = frac_coef_j;
+    wire signed [17:0] ci  = deriv_coef_i;
+    wire signed [17:0] vi  = val[i_reg];
+    wire signed [17:0] vj  = val[j_reg];
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            opmode <= `DSP_NOP;
+            a      <= 18'h00000;
+            b      <= 18'h00000;
+        end
+        else if (tasks & MUL_CI_IN_AS) begin
+            opmode <= `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            a      <= ci;
+            b      <= sample_in_reg;
+        end
+        else if (tasks & MUL_CI_XYI_AC) begin
+            opmode <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            a      <= ci;
+            b      <= xyi;
+        end
+        else begin
+            opmode <= `DSP_NOP;
+            a      <= 18'h00000;
+            b      <= 18'h00000;
+        end
+    end
+
+
+    // MOVE AC VALUE TO RESULTS
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            sample_out_rdy <= 1'b0;
+            sample_out     <= 18'h00000;
+        end
+        else if (tasks & MOV_RES_AC) begin
+            sample_out_rdy <= 1'b1;
+            sample_out     <= p[33:16];
+        end
+        else begin
+            sample_out_rdy <= 1'b0;
+            sample_out     <= 18'h00000;
+        end
+    end
+
+
+    // DSP signals
+    reg         [7:0]  opmode;
+    reg  signed [17:0] a;
+    reg  signed [17:0] b;
+    wire signed [47:0] p;
+    wire signed [35:0] m_nc;
+
+    // Gather local DSP signals 
+    assign dsp_ins_flat[43:0] = { opmode, a, b };
+    assign { m_nc, p }        = dsp_outs_flat;
+
+
+
+
+
+
 
 
 //----------------------------------------------------------
@@ -141,13 +310,13 @@ module alu_taylor_calc (
             ST_INTM_MUL_INTM:  begin
                 store_idx    = idx+1;
                 store_m_trig = last_idx   ? 1'b0 : 1'b1;
-                a            = (idx == 0) ? interm_val[0] : m[33:16];
-                b            = last_idx   ? 18'h00000 : interm_val[idx+1];
+                a            = (idx == 0) ? val[0] : m[33:16];
+                b            = last_idx   ? 18'h00000 : val[idx+1];
                 opmode_x_in  = `DSP_X_IN_ZERO; // Skip result from multiplier
                 opmode_z_in  = `DSP_Z_IN_POUT;
             end
             ST_INTM_MUL_DERIV: begin
-                a            = interm_val[idx];
+                a            = val[idx];
                 b            = deriv_coef;
                 opmode_x_in  = `DSP_X_IN_MULT; // Accept result from multiplier
                 opmode_z_in  = `DSP_Z_IN_POUT;
@@ -172,27 +341,6 @@ module alu_taylor_calc (
         end
     end
 
-
-//---------------------------------------------------------------------
-// -------====== Numbers for factorial calculation ======-------
-//--------------------------------------------------------
-    reg signed [17:0] frac_coef;
-    always @(idx) begin
-        case (idx)
-            4'h0   : begin frac_coef <= 18'h10000; end // 1
-            4'h1   : begin frac_coef <= 18'h10000; end // 1
-            4'h2   : begin frac_coef <= 18'h08000; end // 1/2
-            4'h3   : begin frac_coef <= 18'h05555; end // 1/3
-            4'h4   : begin frac_coef <= 18'h04000; end // 1/4
-            4'h5   : begin frac_coef <= 18'h03333; end // 1/5
-            4'h6   : begin frac_coef <= 18'h02aab; end // 1/6
-            4'h7   : begin frac_coef <= 18'h02492; end // 1/7
-            4'h8   : begin frac_coef <= 18'h02000; end // 1/8
-            4'h9   : begin frac_coef <= 18'h01c72; end // 1/9
-            4'ha   : begin frac_coef <= 18'h0199a; end // 1/10
-            default: begin frac_coef <= 18'h00000; end
-        endcase
-    end
 
 
 //----------------------------------------------------------------------
@@ -219,13 +367,13 @@ module alu_taylor_calc (
     end
 
     
-    reg signed [17:0] interm_val[0:10];
+    reg signed [17:0] val[0:10];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // do nothing
         end 
         else if (store_m_trig_dly[1] == 1'b1) begin
-            interm_val[store_idx_dly[1]] <= m[33:16];
+            val[store_idx_dly[1]] <= m[33:16];
         end
     end
 
@@ -283,6 +431,5 @@ module alu_taylor_calc (
             result    <= 18'h00000;
         end
     end
-*/
 endmodule
 
