@@ -24,6 +24,7 @@ module module_lpf_coefs_calc (
 );
 
 
+/*
 // STUB
     assign dsp_ins_flat = 44'h0;
 
@@ -39,45 +40,75 @@ module module_lpf_coefs_calc (
             end
         end
     end
+*/
 
 
+    // TASKS
+    localparam [15:0] NOP              = 16'h0000;
 
-/*
+    localparam [15:0] CALC_SIN_W0      = 16'h0001;
+    localparam [15:0] CALC_COS_W0      = 16'h0001;
+    localparam [15:0] RECIP_1_PLUS_X   = 16'h0001;
 
-//--------------------------------------------------------
-// -------====== State Machine ======-------
-//-----------------------------------------------------
-    localparam ST_IDLE           = 0;
-    localparam ST_X_MUL_COEF     = 1;
-    localparam ST_INTM_MUL_INTM  = 2;
-    localparam ST_INTM_MUL_DERIV = 3;
-    localparam ST_WAIT_RESULT    = 4;
-    localparam ST_DONE           = 5;
+    localparam [15:0] ADD_R_RES        = 16'h0001;
+    localparam [15:0] SUB_R_RES        = 16'h0001;
 
-    reg [2:0] state;
-    reg [2:0] next_state;
+    localparam [15:0] NEG_R            = 16'h0001;
 
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            state <= ST_IDLE;
-        end
-        else begin
-            state <= next_state;
-        end
-    end
+    localparam [15:0] MUL_R_RES        = 16'h0001;
 
-    always @(*) begin
-        next_state = state;
-        case (state)
-            ST_IDLE:           if (do_calc )  next_state = ST_X_MUL_COEF;
-            ST_X_MUL_COEF:     if (last_idx)  next_state = ST_INTM_MUL_INTM;
-            ST_INTM_MUL_INTM:                 next_state = ST_INTM_MUL_DERIV;
-            ST_INTM_MUL_DERIV: if (!last_idx) next_state = ST_INTM_MUL_INTM;
-                               else           next_state = ST_WAIT_RESULT;
-            ST_WAIT_RESULT:    if (wait_done) next_state = ST_DONE;
-            ST_DONE:                          next_state = ST_IDLE;
+
+    localparam [15:0] MUL_X_FJ_VJ      = 16'h0001;
+    localparam [15:0] MUL_X_FJ_VJ_AC0  = 16'h0002;
+    localparam [15:0] MUL_VI_VJ_VJ     = 16'h0004;
+    localparam [15:0] MUL_M_VJ_VJ      = 16'h0008;
+    localparam [15:0] MUL_VI_CI_AC     = 16'h0010;
+    localparam [15:0] MOV_V0_1         = 16'h0020;
+    localparam [15:0] MOV_I_0          = 16'h0040;
+    localparam [15:0] MOV_J_1          = 16'h0080;
+    localparam [15:0] INC_I            = 16'h0100;
+    localparam [15:0] INC_J            = 16'h0200;
+    localparam [15:0] JP_J_N10_UP1     = 16'h0400;
+    localparam [15:0] REPEAT_3         = 16'h0800;
+    localparam [15:0] REPEAT_10        = 16'h1000;
+    localparam [15:0] MOV_RES_AC       = 16'h2000;
+    localparam [15:0] JP_1             = 16'h4000;
+    localparam [15:0] WAIT_IN          = 16'h8000;
+
+    reg [15:0] tasks;
+    always @(pc) begin
+        case (pc)
+            4'h0   : tasks = MOV_V0_1        ;
+            4'h1   : tasks = WAIT_IN         |
+                             MOV_J_1         ;
+            4'h2   : tasks = REPEAT_10       |
+                             MUL_X_FJ_VJ     |
+                             INC_J           ;
+            4'h3   : tasks = MUL_X_FJ_VJ_AC0 |
+                             MOV_I_0         |
+                             MOV_J_1         ;
+            4'h4   : tasks = (i_reg == 0) ?
+                                 MUL_VI_VJ_VJ:
+                                 MUL_M_VJ_VJ ;
+            4'h5   : tasks = MUL_VI_CI_AC    |
+                             INC_I           |
+                             INC_J           |
+                             JP_J_N10_UP1    ;
+            4'h6   : tasks = NOP             ;
+            4'h7   : tasks = MUL_VI_CI_AC    ;
+            4'h8   : tasks = REPEAT_3        |
+                             NOP             ;
+            4'h9   : tasks = MOV_RES_AC      |
+                             JP_1            ;
+            default: tasks = JP_1            ;
         endcase
     end
+
+
+
+
+
+
 
 
 
@@ -91,17 +122,10 @@ module module_lpf_coefs_calc (
     localparam DSP_OWNER_TAYLOR = 1;
 
     // TODO
-    reg  [1:0]  dsp_owner;
-    always @(state) begin
-        dsp_owner = DSP_OWNER_LOCAL;
-        case (state)
-            ST_IDLE:           begin end
-            ST_IIR_CALC:       begin dsp_owner = DSP_OWNER_IIR; end
-            ST_COS_CALC:       begin dsp_owner = DSP_OWNER_TAYLOR; end
-            ST_WAIT_RESULT:    begin end
-            ST_DONE:           begin end
-        endcase
-    end
+    wire  [1:0]  dsp_owner = (tasks & TODO) ? DSP_OWNER_IIR :
+                             (tasks & TODO) ? DSP_OWNER_TAYLOR :
+                             DSP_OWNER_LOCAL;
+
 
     // DSP signals interconnection
     wire [43:0] dsp_ins_flat_local;
@@ -113,19 +137,21 @@ module module_lpf_coefs_calc (
         (owner == DSP_OWNER_TAYLOR) ?  dsp_ins_flat_taylor :
         44'h0;
 
+    // DSP signals
+    reg         [7:0]  opmode;
+    reg  signed [17:0] a;
+    reg  signed [17:0] b;
+    wire signed [47:0] p;
+    wire signed [35:0] m;
+
     // Gather local DSP signals 
-    assign dsp_ins_flat_local[43:0] =
-        { opmode_postadd_sub, opmode_preadd_sub,
-          opmode_cryin      , opmode_use_preadd,
-          opmode_z_in       , opmode_x_in      ,
-          ain               , bin               };
-
-    assign { m, p } = dsp_outs_flat;
+    assign dsp_ins_flat_local[43:0] = { opmode, a, b };
+    assign { m, p }        = dsp_ins_flat;
 
 
-//-----------------------------------------------------------
-// -------====== Overflow error detection ======-------
-//----------------------------------------------
+
+
+
     // Taylor
     reg                taylor_do_calc;
     reg [2:0]          taylor_function_sel;
@@ -145,25 +171,5 @@ module module_lpf_coefs_calc (
         .dsp_outs_flat  (dsp_outs_flat       )
     );
 
-
-//-------------------------------------------
-// -------====== Result ======-------
-//------------------------------
-// TODO
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            calc_done <= 1'b0;
-            result    <= 18'h00000;
-        end
-        else if (state == ST_DONE) begin
-            calc_done <= 1'b1;
-            result    <= p[33:16];
-        end
-        else begin
-            calc_done <= 1'b0;
-            result    <= 18'h00000;
-        end
-    end
-*/
 endmodule
 
