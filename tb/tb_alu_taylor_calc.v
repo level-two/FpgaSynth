@@ -66,7 +66,7 @@ module tb_alu_taylor_calc();
         repeat (10) begin
             do_calc      <= 1;
             func_sel     <= `ALU_TAYLOR_SIN;
-            x_in         <= 18'h19220;
+            x_in         <= 18'h0860A;
             @(posedge clk);
             do_calc      <= 0;
 
