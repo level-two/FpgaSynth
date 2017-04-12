@@ -44,66 +44,88 @@ module module_lpf_coefs_calc (
 
 
     // TASKS
-    localparam [15:0] NOP              = 16'h0000;
+    localparam [15:0] NOP               = 16'h0000;
 
-    localparam [15:0] CALC_SIN_W0      = 16'h0001;
-    localparam [15:0] CALC_COS_W0      = 16'h0001;
-    localparam [15:0] RECIP_1_PLUS_X   = 16'h0001;
+    localparam [15:0] CAL_INV_1_PLUS_R1 = 16'h0001;
+    localparam [15:0] CAL_SIN_W0        = 16'h0001;
+    localparam [15:0] CAL_COS_W0        = 16'h0001;
+    localparam [15:0] WAIT_CAL_DONE     = 16'h0001;
+    localparam [15:0] MOV_R0_RES        = 16'h0001;
+    localparam [15:0] MOV_R2_RES        = 16'h0001;
+    localparam [15:0] MOV_R3_RES        = 16'h0001;
 
-    localparam [15:0] ADD_R_RES        = 16'h0001;
-    localparam [15:0] SUB_R_RES        = 16'h0001;
+    localparam [15:0] MUL_R2_INVQ_R1    = 16'h0001;
 
-    localparam [15:0] NEG_R            = 16'h0001;
+    localparam [15:0] SUB_R1_1_C1       = 16'h0001;
+    localparam [15:0] SUB_1_R3_C3       = 16'h0001;
 
-    localparam [15:0] MUL_R_RES        = 16'h0001;
+    localparam [15:0] SHLS_R3_C0        = 16'h0001;
+    localparam [15:0] SHRS_C3_C2        = 16'h0001;
+    localparam [15:0] SHRS_C3_C4        = 16'h0001;
 
-
-    localparam [15:0] MUL_X_FJ_VJ      = 16'h0001;
-    localparam [15:0] MUL_X_FJ_VJ_AC0  = 16'h0002;
-    localparam [15:0] MUL_VI_VJ_VJ     = 16'h0004;
-    localparam [15:0] MUL_M_VJ_VJ      = 16'h0008;
-    localparam [15:0] MUL_VI_CI_AC     = 16'h0010;
-    localparam [15:0] MOV_V0_1         = 16'h0020;
     localparam [15:0] MOV_I_0          = 16'h0040;
-    localparam [15:0] MOV_J_1          = 16'h0080;
     localparam [15:0] INC_I            = 16'h0100;
-    localparam [15:0] INC_J            = 16'h0200;
-    localparam [15:0] JP_J_N10_UP1     = 16'h0400;
-    localparam [15:0] REPEAT_3         = 16'h0800;
-    localparam [15:0] REPEAT_10        = 16'h1000;
-    localparam [15:0] MOV_RES_AC       = 16'h2000;
+    localparam [15:0] REPEAT_5         = 16'h0800;
     localparam [15:0] JP_1             = 16'h4000;
     localparam [15:0] WAIT_IN          = 16'h8000;
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            4'h0   : tasks = MOV_V0_1        ;
-            4'h1   : tasks = WAIT_IN         |
-                             MOV_J_1         ;
-            4'h2   : tasks = REPEAT_10       |
-                             MUL_X_FJ_VJ     |
-                             INC_J           ;
-            4'h3   : tasks = MUL_X_FJ_VJ_AC0 |
-                             MOV_I_0         |
-                             MOV_J_1         ;
-            4'h4   : tasks = (i_reg == 0) ?
-                                 MUL_VI_VJ_VJ:
-                                 MUL_M_VJ_VJ ;
-            4'h5   : tasks = MUL_VI_CI_AC    |
-                             INC_I           |
-                             INC_J           |
-                             JP_J_N10_UP1    ;
-            4'h6   : tasks = NOP             ;
-            4'h7   : tasks = MUL_VI_CI_AC    ;
-            4'h8   : tasks = REPEAT_3        |
+            5'h0   : tasks = MOV_V0_1        ;
+            5'h1   : tasks = WAIT_IN         ;
+
+            5'h2   : tasks = CAL_SIN_W0      ;
+            5'h3   : tasks = WAIT_CAL_DONE   |
+                             MOV_R2_RES      ;
+            5'h4   : tasks = CAL_COS_W0      ;
+            5'h5   : tasks = WAIT_CAL_DONE   |
+                             MOV_R3_RES      ;
+
+            5'h6   : tasks = MUL_R2_INVQ_R1  ;
+            5'h7   : tasks = NOP             ;
+            5'h8   : tasks = NOP             ;
+
+            5'h9   : tasks = CAL_INV_1_PLUS_R1;
+            5'ha   : tasks = WAIT_CAL_DONE   |
+                             MOV_R0_RES      ;
+
+            5'hb   : tasks = SHLS_R3_C0      ;
+            5'hc   : tasks = SUB_R1_1_C1     ;
+            5'hd   : tasks = SUB_1_R3_C3     ;
+            5'he   : tasks = SHRS_C3_C2      ;
+            5'hf   : tasks = SHRS_C3_C4      ;
+
+            5'h10  : tasks = MOV_I_0         |
+            5'h11  : tasks = REPEAT_5        |
+                             MUL_CI_R0_CI    |
+                             INC_I           ;
+            5'h12  : tasks = REPEAT_3        |
                              NOP             ;
-            4'h9   : tasks = MOV_RES_AC      |
+            5'h13  : tasks = MOV_RES_AC      |
                              JP_1            ;
             default: tasks = JP_1            ;
         endcase
     end
 
+
+
+    // PC
+    reg [4:0] pc;
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            pc <= 5'h0;
+        else if (tasks & JP_1)
+            pc <= 5'h1;
+        else if ((tasks & WAIT_IN   && !do_calc ) ||      
+                 (tasks & REPEAT_3  && repeat_st) ||
+                 (tasks & REPEAT_10 && repeat_st))
+            pc <= pc;
+        else if (tasks & JP_J_N10_UP1 && j_reg != 5'ha)
+            pc <= pc - 5'h1;
+        else
+            pc <= pc + 5'h1;
+    end
 
 
 
