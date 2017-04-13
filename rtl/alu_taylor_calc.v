@@ -198,7 +198,13 @@ module alu_taylor_calc (
         opmode = `DSP_XIN_ZERO | `DSP_ZIN_POUT;
         a      = 18'h00000;
         b      = 18'h00000;
-        if (tasks & MUL_X_FJ_VJ) begin
+
+        if (tasks & WAIT_IN) begin
+            opmode = `DSP_NONE;
+            a      = 18'h00000;
+            b      = 18'h00000;
+        end
+        else if (tasks & MUL_X_FJ_VJ) begin
             a      = x_reg;
             b      = fj;
         end
