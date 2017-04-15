@@ -13,7 +13,7 @@
 module dsp48a1_inst (
     input         clk,
     input         reset,
-    input  [43:0] dsp_ins_flat,
+    input  [91:0] dsp_ins_flat,
     output [83:0] dsp_outs_flat
 );
 
@@ -25,14 +25,16 @@ module dsp48a1_inst (
     wire         opmode_postadd_sub;
     wire signed [17:0] ain;
     wire signed [17:0] bin;
+    wire signed [47:0] cin;
     wire signed [35:0] mout;
     wire signed [47:0] pout;
 
     assign {opmode_postadd_sub, opmode_preadd_sub,
             opmode_cryin      , opmode_use_preadd,
             opmode_z_in       , opmode_x_in      ,
-            ain               , bin              }
-        = dsp_ins_flat[43:0];
+            ain               , bin              ,
+            cin                                  }
+        = dsp_ins_flat[91:0];
 
     assign dsp_outs_flat = { mout, pout };
 
@@ -71,7 +73,6 @@ module dsp48a1_inst (
 //------------------------------
     // not connected
     wire signed [47:0] pcin_nc    = 0;
-    wire signed [47:0] cin_nc     = 48'b0;
     wire signed [17:0] din_nc     = 18'h00000;
     wire               carryin_nc = 0;
 
@@ -88,7 +89,7 @@ module dsp48a1_inst (
         .CARRYINREG (0          ),  // CARRYIN pipeline register (0/1)
         .CARRYINSEL ("OPMODE5"  ),  // Specify carry-in source, "CARRYIN" or "OPMODE5" 
         .CARRYOUTREG(0          ),  // CARRYOUT output pipeline register (0/1)
-        .CREG       (0          ),  // C pipeline register (0/1)
+        .CREG       (1          ),  // C pipeline register (0/1)
         .DREG       (0          ),  // D pre-adder pipeline register (0/1)
         .MREG       (1          ),  // M pipeline register (0/1)
         .OPMODEREG  (1          ),  // Enable=1/disable=0 OPMODE pipeline registers
@@ -107,12 +108,12 @@ module dsp48a1_inst (
         .OPMODE    (opmode      ), // Operation mode 
         .A         (ain         ), // A data 
         .B         (bin         ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
-        .C         (cin_nc      ), // C data 
+        .C         (cin         ), // C data 
         .CARRYIN   (carryin_nc  ), // Carry signal (if used, connect to CARRYOUT pin of another DSP48A1)
         .D         (din_nc      ), // B pre-adder data 
         .CEA       (1'b1        ), // Active high clock enable for A registers
         .CEB       (1'b1        ), // Active high clock enable for B registers
-        .CEC       (1'b0        ), // Active high clock enable for C registers
+        .CEC       (1'b1        ), // Active high clock enable for C registers
         .CECARRYIN (1'b0        ), // Active high clock enable for CARRYIN registers
         .CED       (1'b0        ), // Active high clock enable for D registers
         .CEM       (1'b1        ), // Active high clock enable for multiplier registers
@@ -120,7 +121,7 @@ module dsp48a1_inst (
         .CEP       (1'b1        ), // Active high clock enable for P registers
         .RSTA      (reset       ), // Reset for A pipeline registers
         .RSTB      (reset       ), // Reset for B pipeline registers
-        .RSTC      (1'b0        ), // Reset for C pipeline registers
+        .RSTC      (reset       ), // Reset for C pipeline registers
         .RSTCARRYIN(1'b0        ), // Reset for CARRYIN pipeline registers
         .RSTD      (1'b0        ), // Reset for D pipeline registers
         .RSTM      (reset       ), // Reset for M pipeline registers
