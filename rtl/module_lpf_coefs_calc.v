@@ -14,7 +14,7 @@ module module_lpf_coefs_calc (
     input                    clk,
     input                    reset,
     input signed [17:0]      omega0,
-    input signed [17:0]      inv_2Q,
+    input signed [17:0]      inv_2q,
     input                    do_calc,
     output reg [18*5-1:0]    coefs_flat,
     output reg               calc_done,
@@ -22,6 +22,20 @@ module module_lpf_coefs_calc (
     input  [83:0]            dsp_outs_flat,
     output [43:0]            dsp_ins_flat
 );
+
+    // STORE SAMPLE_IN
+    reg signed [17:0] omega0_reg;
+    reg signed [17:0] inv_2q_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            omega0_reg <= 18'h00000;
+            inv_2q_reg <= 18'h00000;
+        end
+        else if (do_calc) begin
+            omega0_reg <= omega0;
+            inv_2q_reg <= inv_2Q;
+        end
+    end
 
 
     // TASKS
@@ -33,19 +47,18 @@ module module_lpf_coefs_calc (
     localparam [19:0] MOV_R0_RES        = 20'h00010;
     localparam [19:0] MOV_R1_RES        = 20'h00020;
     localparam [19:0] MOV_R2_RES        = 20'h00040;
-    localparam [19:0] MOV_R1_M          = 20'h00080;
-    localparam [19:0] MUL_R1_INV2Q      = 20'h00100;
-    localparam [19:0] MUL_CI_R0_CI      = 20'h00200;
-    localparam [19:0] SUB_M_1_C1        = 20'h00400;
-    localparam [19:0] SUB_1_R2_C3       = 20'h00800;
-    localparam [19:0] SHLS_R2_C0        = 20'h01000;
-    localparam [19:0] SHRS_C3_C2        = 20'h02000;
-    localparam [19:0] SHRS_C3_C4        = 20'h04000;
-    localparam [19:0] MOV_I_0           = 20'h08000;
-    localparam [19:0] INC_I             = 20'h10000;
-    localparam [19:0] REPEAT_5          = 20'h20000;
-    localparam [19:0] JP_0              = 20'h40000;
-    localparam [19:0] WAIT_IN           = 20'h80000;
+    localparam [19:0] MUL_R1_INV2Q      = 20'h00080;
+    localparam [19:0] MUL_CI_R0_CI      = 20'h00100;
+    localparam [19:0] SUB_M_1_C1        = 20'h00200;
+    localparam [19:0] SUB_1_R2_C3       = 20'h00400;
+    localparam [19:0] SHLS_R2_C0        = 20'h00800;
+    localparam [19:0] SHRS_C3_C2        = 20'h01000;
+    localparam [19:0] SHRS_C3_C4        = 20'h02000;
+    localparam [19:0] MOV_I_0           = 20'h04000;
+    localparam [19:0] INC_I             = 20'h08000;
+    localparam [19:0] REPEAT_5          = 20'h10000;
+    localparam [19:0] JP_0              = 20'h20000;
+    localparam [19:0] WAIT_IN           = 20'h40000;
 
     reg [19:0] tasks;
     always @(pc) begin
@@ -87,11 +100,10 @@ module module_lpf_coefs_calc (
             pc <= 5'h0;
         else if (tasks & JP_0)
             pc <= 5'h0;
-        else if ((tasks & WAIT_IN  && !do_calc ) ||      
-                 (tasks & REPEAT_5 && repeat_st))
+        else if ((tasks & WAIT_IN       && !do_calc ) ||      
+                 (tasks & REPEAT_5      && repeat_st) ||
+                 (tasks & WAIT_CAL_DONE && taylor_calc_done))
             pc <= pc;
-        else if (tasks & JP_J_N10_UP1 && j_reg != 5'ha)
-            pc <= pc - 5'h1;
         else
             pc <= pc + 5'h1;
     end
@@ -125,7 +137,7 @@ module module_lpf_coefs_calc (
 
 
     // REGISTERS R0-R2
-    reg signed [17:0] r[0:3];
+    reg signed [17:0] r[0:2];
 
     always @(posedge reset or posedge clk) begin
         if (reset)
@@ -156,70 +168,84 @@ module module_lpf_coefs_calc (
 
     // MUL TASKS
     wire signed [17:0] ci  = c[i_reg];
-
     always @(*) begin
         opmode = `DSP_NONE;
         a      = 18'h00000;
         b      = 18'h00000;
-        if (tasks & MUL_R1_INV2Q_R1) begin
+        c      = 48'h00000;
+        if (tasks & MUL_R1_INV2Q) begin
             a      = r[2];
-            b      = inv_2Q;
+            b      = inv_2q_reg;
         end
         else if (tasks & MUL_CI_R0_CI) begin
             a      = r[0];
             b      = ci;
         end
+        else if (tasks & SUB_M_1_C1) begin
+            opmode = `DSP_XIN_DAB | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
+            a      = 18'h00000;
+            b      = m[33:16];
+            c      = {30'h0, 18'h10000};
+        end
+        else if (tasks & SUB_1_R2_C3) begin
+            opmode = `DSP_XIN_DAB | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
+            a      = 18'h00000;
+            b      = 18'h10000;
+            c      = {30'h0, r[2]};
+        end
     end
         
 
     // Array of the intermediate values
-    reg       mov_val_m_trig[0:1];
-    reg [3:0] mov_val_m_idx[0:1];
-
+    reg       mov_c_m_trig[0:1];
+    reg       mov_c_p_trig[0:1];
+    reg [3:0] mov_c_m_idx[0:1];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            mov_val_m_trig[0] <= 1'b0;
-            mov_val_m_trig[1] <= 1'b0;
-            mov_val_m_idx [0] <= 4'h0;
-            mov_val_m_idx [1] <= 4'h0;
+            mov_c_m_trig[0:1] <= {2'{1'b0}};
+            mov_c_p_trig[0:1] <= {2'{1'b0}};
+            mov_c_m_idx [0:1] <= {2'{4'h0}};
         end 
         else begin
-            if ((tasks & MUL_X_FJ_VJ    ) ||
-                (tasks & MUL_VI_VJ_VJ   ) ||
-                (tasks & MUL_M_VJ_VJ    ) ||
-                (tasks & MUL_X_FJ_VJ_AC0))
+            if ((tasks & MUL_R1_INV2Q) ||
+                (tasks & MUL_CI_R0_CI))
             begin
-                mov_val_m_trig[0] <= 1'b1;
+                mov_c_m_trig[0] <= 1'b1;
             end
             else begin
-                mov_val_m_trig[0] <= 1'b0;
+                mov_c_m_trig[0] <= 1'b0;
             end
 
-            mov_val_m_idx [0] <= j_reg;
-            mov_val_m_idx [1] <= mov_val_m_idx [0];
+            if ((tasks & MUL_R1_INV2Q) ||
+                (tasks & MUL_CI_R0_CI))
+            begin
+                mov_c_p_trig[0] <= 1'b1;
+            end
+            else begin
+                mov_c_p_trig[0] <= 1'b0;
+            end
 
-            mov_val_m_trig[1] <= mov_val_m_trig[0];
+            mov_c_m_idx [0] <= i_reg;
+            mov_c_m_idx [0] <= i_reg;
+            mov_c_m_idx [1] <= mov_c_m_idx [0];
+            mov_c_m_trig[1] <= mov_c_m_trig[0];
         end
     end
     
-    reg signed [17:0] val[0:10];
+    reg signed [17:0] c[0:4];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // do nothing
         end 
-        else if (tasks & MOV_V0_1) begin
-            val[0] <= 18'h10000;
-        end
-        else if (mov_val_m_trig[1] == 1'b1) begin
-            val[mov_val_m_idx[1]] <= m[33:16];
-        end
+        else if (tasks & SHLS_R2_C0)
+            c[0] <= r[2] <<< 1;
+        else if (tasks & SHRS_C3_C2)
+            c[2] <= c[3] >>> 1;
+        else if (tasks & SHRS_C3_C4)
+            c[4] <= c[3] >>> 1;
+        else if (mov_c_m_trig[1] == 1'b1)
+            c[mov_c_m_idx[1]] <= m[33:16];
     end
-
-
-
-
-
-
 
 
     // Taylor
@@ -228,6 +254,34 @@ module module_lpf_coefs_calc (
     reg  signed [17:0] taylor_x_in;
     wire               taylor_calc_done;
     wire signed [17:0] taylor_result;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            taylor_do_calc      <= 1'b0;
+            taylor_function_sel <= `ALU_TAYLOR_NONE;
+            taylor_x_in         <= 18'h00000;
+        end
+        else if (tasks & CAL_SIN_W0) begin
+            taylor_do_calc      <= 1'b1;
+            taylor_function_sel <= `ALU_TAYLOR_SIN;
+            taylor_x_in         <= omega0_reg;
+        end
+        else if (tasks & CAL_COS_W0) begin
+            taylor_do_calc      <= 1'b1;
+            taylor_function_sel <= `ALU_TAYLOR_COS;
+            taylor_x_in         <= omega0_reg;
+        end
+        else if (tasks & CAL_INV_1_PLUS_M) begin
+            taylor_do_calc      <= 1'b1;
+            taylor_function_sel <= `ALU_TAYLOR_INV_1_PLUS_M;
+            taylor_x_in         <= m[33:16];
+        end
+        else begin
+            taylor_do_calc      <= 1'b0;
+            taylor_function_sel <= 3'b0;
+            taylor_x_in         <= 18'h00000;
+        end
+    end
+
 
     alu_taylor_calc alu_taylor_calc (
         .clk            (clk                 ),
@@ -246,12 +300,13 @@ module module_lpf_coefs_calc (
     reg         [7:0]  opmode;
     reg  signed [17:0] a;
     reg  signed [17:0] b;
+    reg  signed [47:0] c;
     wire signed [47:0] p;
     wire signed [35:0] m;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat_local[43:0] = { opmode, a, b };
-    assign { m, p }                 = dsp_outs_flat;
+    assign dsp_ins_flat_local[43:0] = {opmode, a, b, c};
+    assign {m, p}                   = dsp_outs_flat;
 
     // DSP signals interconnection
     wire [43:0] dsp_ins_flat_local;
