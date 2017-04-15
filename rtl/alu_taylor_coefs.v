@@ -21,6 +21,7 @@ module alu_taylor_coefs (
     assign deriv_coef = 
         (function_sel == `ALU_TAYLOR_SIN) ? deriv_coef_sin :
         (function_sel == `ALU_TAYLOR_COS) ? deriv_coef_cos :
+        (function_sel == `ALU_TAYLOR_INV_1_PLUS_X) ? deriv_coef_inv_1_plus_x :
         18'h00000;
 
     /*

@@ -235,10 +235,8 @@ module alu_taylor_calc (
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            mov_val_m_trig[0] <= 1'b0;
-            mov_val_m_trig[1] <= 1'b0;
-            mov_val_m_idx [0] <= 4'h0;
-            mov_val_m_idx [1] <= 4'h0;
+            mov_val_m_trig[0:1] <= {2'{1'b0}};
+            mov_val_m_idx [0:1] <= {2'{4'h0}};
         end 
         else begin
             if ((tasks & MUL_X_FJ_VJ    ) ||
