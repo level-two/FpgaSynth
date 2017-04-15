@@ -20,7 +20,7 @@ module module_lpf_coefs_calc (
     output reg               calc_done,
 
     input  [83:0]            dsp_outs_flat,
-    output [43:0]            dsp_ins_flat
+    output [91:0]            dsp_ins_flat
 );
 
     // STORE SAMPLE_IN
@@ -306,7 +306,7 @@ module module_lpf_coefs_calc (
     wire signed [35:0] m;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat_local[43:0] = {opmode, a, b, c};
+    assign dsp_ins_flat_local[91:0] = {opmode, a, b, c};
     assign {m, p}                   = dsp_outs_flat;
 
     // DSP signals interconnection

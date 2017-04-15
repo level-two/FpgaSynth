@@ -20,7 +20,7 @@ module alu_filter_iir (
     output reg               sample_out_rdy,
 
     input  [83:0]            dsp_outs_flat,
-    output [43:0]            dsp_ins_flat
+    output [91:0]            dsp_ins_flat
 );
 
 
@@ -205,11 +205,12 @@ module alu_filter_iir (
     reg         [7:0]  opmode;
     reg  signed [17:0] a;
     reg  signed [17:0] b;
+    reg  signed [47:0] c_nc = 48'b0;
     wire signed [47:0] p;
     wire signed [35:0] m_nc;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat[43:0] = { opmode, a, b };
+    assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
     assign { m_nc, p }        = dsp_outs_flat;
 
 endmodule

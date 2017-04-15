@@ -63,29 +63,11 @@ module module_lpf (
 //---------------------------------------
 // -------====== DSP ======-------
 //--------------------------
-    // DSP owner selection
-    localparam DSP_OWNER_COEF_CALC  = 0;
-    localparam DSP_OWNER_IIR        = 1;
-
-    reg  [1:0]  dsp_owner;
-    always @(state) begin
-        dsp_owner = DSP_OWNER_COEF_CALC;
-        case (state)
-            ST_IDLE:        begin end
-            ST_CALC_SAMPLE: begin dsp_owner = DSP_OWNER_IIR; end
-            ST_CALC_COEFS:  begin dsp_owner = DSP_OWNER_COEF_CALC; end
-            ST_DONE:        begin end
-        endcase
-    end
-
     // DSP signals interconnection
     wire [83:0] dsp_outs_flat;
     wire [43:0] dsp_ins_flat_coefs_calc;
     wire [43:0] dsp_ins_flat_iir;
-    wire [43:0] dsp_ins_flat =
-        (dsp_owner == DSP_OWNER_COEF_CALC) ?  dsp_ins_flat_coefs_calc :
-        (dsp_owner == DSP_OWNER_IIR      ) ?  dsp_ins_flat_iir        :
-        44'h0;
+    wire [91:0] dsp_ins_flat = dsp_ins_flat_coefs_calc | dsp_ins_flat_iir;
 
     // DSP instance
     dsp48a1_inst dsp48a1_inst (
@@ -155,7 +137,7 @@ module module_lpf (
         .clk            (clk                    ),
         .reset          (reset                  ),
         .omega0         (lpf_params_omega0      ),
-        .inv_2Q         (lpf_params_inv_2Q      ),
+        .inv_2q         (lpf_params_inv_2Q      ),
         .do_calc        (coefs_calc_do_calc     ),
         .coefs_flat     (coefs_calc_coefs_flat  ),
         .calc_done      (coefs_calc_done        ),
