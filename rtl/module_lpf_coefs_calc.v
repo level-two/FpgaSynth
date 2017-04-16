@@ -33,7 +33,7 @@ module module_lpf_coefs_calc (
         end
         else if (do_calc) begin
             omega0_reg <= omega0;
-            inv_2q_reg <= inv_2Q;
+            inv_2q_reg <= inv_2q;
         end
     end
 
@@ -59,6 +59,7 @@ module module_lpf_coefs_calc (
     localparam [19:0] REPEAT_5          = 20'h10000;
     localparam [19:0] JP_0              = 20'h20000;
     localparam [19:0] WAIT_IN           = 20'h40000;
+    localparam [19:0] MOV_RES_AC        = 20'h80000;
 
     reg [19:0] tasks;
     always @(pc) begin
@@ -87,7 +88,7 @@ module module_lpf_coefs_calc (
                              INC_I             ;
             5'h10  : tasks = NOP               ;
             5'h11  : tasks = NOP               ;
-            4'h12  : tasks = MOV_RES_AC        |
+            5'h12  : tasks = MOV_RES_AC        |
                              JP_0              ;
             default: tasks = JP_0              ;
         endcase
@@ -170,7 +171,7 @@ module module_lpf_coefs_calc (
     // MUL TASKS
     wire signed [17:0] ci  = c_reg[i_reg];
     always @(*) begin
-        opmode = `DSP_NONE;
+        opmode = `DSP_NOP;
         a      = 18'h00000;
         b      = 18'h00000;
         c      = 48'h00000;
@@ -202,8 +203,10 @@ module module_lpf_coefs_calc (
     reg [3:0] mov_c_idx[0:1];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            mov_c_trig[0:1] <= {2'{2'b00}};
-            mov_c_idx [0:1] <= {2'{4'h0}};
+            mov_c_trig[0] <= 2'b00;
+            mov_c_trig[1] <= 2'b00;
+            mov_c_idx [0] <= 4'h0;
+            mov_c_idx [1] <= 4'h0;
         end 
         else begin
             if (tasks & MUL_CI_R0_CI) begin
@@ -242,10 +245,10 @@ module module_lpf_coefs_calc (
             c_reg[2] <= c_reg[3] >>> 1;
         else if (tasks & SHRS_C3_C4)
             c_reg[4] <= c_reg[3] >>> 1;
-        else if (mov_c_m_trig[1] == 2'b01)
-            c_reg[mov_c_m_idx[1]] <= m[33:16];
-        else if (mov_c_p_trig[1] == 2'b10)
-            c_reg[mov_c_p_idx[1]] <= p[33:16];
+        else if (mov_c_trig[1] == 2'b01)
+            c_reg[mov_c_idx[1]] <= m[33:16];
+        else if (mov_c_trig[1] == 2'b10)
+            c_reg[mov_c_idx[1]] <= p[33:16];
     end
 
 
@@ -255,6 +258,8 @@ module module_lpf_coefs_calc (
     reg  signed [17:0] taylor_x_in;
     wire               taylor_calc_done;
     wire signed [17:0] taylor_result;
+    wire [91:0]        taylor_dsp_ins_flat;
+
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             taylor_do_calc      <= 1'b0;
@@ -273,7 +278,7 @@ module module_lpf_coefs_calc (
         end
         else if (tasks & CAL_INV_1_PLUS_C1) begin
             taylor_do_calc      <= 1'b1;
-            taylor_function_sel <= `ALU_TAYLOR_INV_1_PLUS_M;
+            taylor_function_sel <= `ALU_TAYLOR_INV_1_PLUS_X;
             taylor_x_in         <= c_reg[1];
         end
         else begin
@@ -288,7 +293,7 @@ module module_lpf_coefs_calc (
         .clk            (clk                 ),
         .reset          (reset               ),
         .do_calc        (taylor_do_calc      ),
-        .function_sel   (taylor_function_sel ),
+        .func_sel       (taylor_function_sel ),
         .x_in           (taylor_x_in         ),
         .calc_done      (taylor_calc_done    ),
         .result         (taylor_result       ),
@@ -310,16 +315,15 @@ module module_lpf_coefs_calc (
     assign {m, p}                   = dsp_outs_flat;
 
     // DSP signals interconnection
-    wire [43:0] dsp_ins_flat_local;
-    wire [43:0] dsp_ins_flat_taylor;
-    assign dsp_ins_flat = dsp_ins_flat_local | dsp_ins_flat_taylor:
+    wire [91:0] dsp_ins_flat_local;
+    assign dsp_ins_flat = dsp_ins_flat_local | taylor_dsp_ins_flat;
 
 
     // MOVE AC VALUE TO RESULTS
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             calc_done <= 1'b0;
-            result    <= 18'h00000;
+            coefs_flat<= 90'h0;
         end
         else if (tasks & MOV_RES_AC) begin
             calc_done  <= 1'b1;
@@ -327,7 +331,7 @@ module module_lpf_coefs_calc (
         end
         else begin
             calc_done <= 1'b0;
-            result    <= 90'h0;
+            coefs_flat<= 90'h0;
         end
     end
 

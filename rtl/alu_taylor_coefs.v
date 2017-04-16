@@ -69,4 +69,23 @@ module alu_taylor_coefs (
             default: begin deriv_coef_cos <= 18'h00000; end
         endcase
     end
+
+
+    reg signed [17:0] deriv_coef_inv_1_plus_x;
+    //wire last_idx_cos = (idx == 4'h9);
+    always @(idx) begin
+        case (idx)
+            4'h0   : begin deriv_coef_inv_1_plus_x <= 18'h10000; end
+            4'h1   : begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+            4'h2   : begin deriv_coef_inv_1_plus_x <= 18'h30000; end
+            4'h3   : begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+            4'h4   : begin deriv_coef_inv_1_plus_x <= 18'h10000; end
+            4'h5   : begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+            4'h6   : begin deriv_coef_inv_1_plus_x <= 18'h30000; end
+            4'h7   : begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+            4'h8   : begin deriv_coef_inv_1_plus_x <= 18'h10000; end
+            4'h9   : begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+            default: begin deriv_coef_inv_1_plus_x <= 18'h00000; end
+        endcase
+    end
 endmodule
