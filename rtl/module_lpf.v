@@ -65,8 +65,8 @@ module module_lpf (
 //--------------------------
     // DSP signals interconnection
     wire [83:0] dsp_outs_flat;
-    wire [43:0] dsp_ins_flat_coefs_calc;
-    wire [43:0] dsp_ins_flat_iir;
+    wire [91:0] dsp_ins_flat_coefs_calc;
+    wire [91:0] dsp_ins_flat_iir;
     wire [91:0] dsp_ins_flat = dsp_ins_flat_coefs_calc | dsp_ins_flat_iir;
 
     // DSP instance
