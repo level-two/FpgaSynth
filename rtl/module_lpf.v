@@ -183,8 +183,8 @@ module module_lpf (
         if (reset) begin
             // TODO: revert to right default value
             lpf_params_changed <= 1'b1;
-            lpf_params_omega0  <= 18'h00000;
-            lpf_params_inv_2Q  <= 18'h00000;
+            lpf_params_omega0  <= 18'h08000;
+            lpf_params_inv_2Q  <= 18'h08000;
         end
         else if (cc_event && midi_data0 == OMEGA0_CC_NUM) begin
             lpf_params_changed <= 1'b0;
