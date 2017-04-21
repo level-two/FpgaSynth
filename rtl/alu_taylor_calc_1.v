@@ -65,25 +65,28 @@ module alu_taylor_calc_1 (
     localparam [15:0] REPEAT_3         = 16'h0080;
     localparam [15:0] REPEAT_10        = 16'h0100;
     localparam [15:0] MOV_RES_AC       = 16'h0200;
-    localparam [15:0] JP_1             = 16'h0400;
+    localparam [15:0] JP_0             = 16'h0400;
     localparam [15:0] WAIT_IN          = 16'h0800;
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = WAIT_IN         ;
-            4'h1   : tasks = SUB_X_A0_XA     ;
-            4'h2   : tasks = MOV_I_0         ;
+            4'h1   : tasks = SUB_X_A0_XA     |
+                             MOV_I_0         ;
+            4'h2   : tasks = REPEAT_3        |
+                             NOP             ;
             4'h3   : tasks = REPEAT_10       |
                              ((i_reg == 0) ? MUL_1_CI_SI : MUL_XA_CI_SI) |
                              ((i_reg == 9) ? MOV_I_0 : INC_I);
-            4'h4   : tasks = ((i_reg == 0) ? MUL_SI_1_AS : MUL_SI_SIM1_AC) |
+            4'h4   : tasks = REPEAT_10       |
+                             ((i_reg == 0) ? MUL_SI_1_AS : MUL_SI_SIM1_AC) |
                              INC_I           ;
             4'h5   : tasks = REPEAT_3        |
                              NOP             ;
             4'h6   : tasks = MOV_RES_AC      |
-                             JP_1            ;
-            default: tasks = JP_1            ;
+                             JP_0            ;
+            default: tasks = JP_0            ;
         endcase
     end
 
@@ -93,8 +96,8 @@ module alu_taylor_calc_1 (
     always @(posedge reset or posedge clk) begin
         if (reset)
             pc <= 4'h0;
-        else if (tasks & JP_1)
-            pc <= 4'h1;
+        else if (tasks & JP_0)
+            pc <= 4'h0;
         else if ((tasks & WAIT_IN   && !do_calc ) ||      
                  (tasks & REPEAT_3  && repeat_st) ||
                  (tasks & REPEAT_10 && repeat_st))
@@ -159,7 +162,7 @@ module alu_taylor_calc_1 (
             b      = xa;
         end
         else if (tasks & MUL_SI_1_AS) begin
-            opmode = `DSP_XIN_ZERO | `DSP_ZIN_ZERO;
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = si;
             b      = 18'h10000;
         end
@@ -169,18 +172,16 @@ module alu_taylor_calc_1 (
             b      = sim1;
         end
         else if (tasks & SUB_X_A0_XA) begin
-            opmode = `DSP_XIN_DAB | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
-            a      = 18'h00000;
-            b      = x_reg;
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
+            a      = x_reg;
+            b      = 18'h10000;
             c      = {30'h0, a0};
         end
     end
         
 
-        
-
     // Array of the intermediate values
-    reg [1:0] mov_trig[0:1];
+    reg [1:0] mov_trig[0:2];
     reg [3:0] mov_idx[0:1];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -208,6 +209,7 @@ module alu_taylor_calc_1 (
 
             mov_idx [1] <= mov_idx [0];
             mov_trig[1] <= mov_trig[0];
+            mov_trig[2] <= mov_trig[1];
         end
     end
     
@@ -219,7 +221,7 @@ module alu_taylor_calc_1 (
         end 
         else if (mov_trig[1] == 2'b01)
             s_reg[mov_idx[1]] <= m[33:16];
-        else if (mov_trig[1] == 2'b10)
+        else if (mov_trig[2] == 2'b10)
             xa <= p[33:16];
     end
 

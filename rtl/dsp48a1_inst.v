@@ -39,6 +39,17 @@ module dsp48a1_inst (
     assign dsp_outs_flat = { mout, pout };
 
 
+    reg signed [47:0] cin_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            cin_reg <= 48'h0;
+        end 
+        else begin
+            cin_reg <= cin;
+        end
+    end
+
+
 //---------------------------------------------
 // -------====== Controll ======-------
 //-----------------------------------------
@@ -108,7 +119,7 @@ module dsp48a1_inst (
         .OPMODE    (opmode      ), // Operation mode 
         .A         (ain         ), // A data 
         .B         (bin         ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
-        .C         (cin         ), // C data 
+        .C         (cin_reg     ), // C data 
         .CARRYIN   (carryin_nc  ), // Carry signal (if used, connect to CARRYOUT pin of another DSP48A1)
         .D         (din_nc      ), // B pre-adder data 
         .CEA       (1'b1        ), // Active high clock enable for A registers

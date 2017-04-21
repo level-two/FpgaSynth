@@ -104,7 +104,7 @@ module module_lpf_coefs_calc (
             pc <= 5'h0;
         else if ((tasks & WAIT_IN       && !do_calc ) ||      
                  (tasks & REPEAT_5      && repeat_st) ||
-                 (tasks & WAIT_CAL_DONE && taylor_calc_done))
+                 (tasks & WAIT_CAL_DONE && !(taylor_calc_done || taylor_1_calc_done)))
             pc <= pc;
         else
             pc <= pc + 5'h1;
@@ -184,14 +184,14 @@ module module_lpf_coefs_calc (
             b      = ci;
         end
         else if (tasks & SUB_C1_1_C1) begin
-            opmode = `DSP_XIN_DAB | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
-            a      = 18'h00000;
-            b      = c_reg[1];
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
+            a      = c_reg[1];
+            b      = 18'h10000;
             c      = {30'h0, 18'h10000};
         end
         else if (tasks & SUB_1_R2_C3) begin
-            opmode = `DSP_XIN_DAB | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
-            a      = 18'h00000;
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
+            a      = 18'h10000;
             b      = 18'h10000;
             c      = {30'h0, r_reg[2]};
         end
