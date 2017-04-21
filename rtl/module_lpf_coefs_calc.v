@@ -145,7 +145,7 @@ module module_lpf_coefs_calc (
         if (reset)
             r_reg[0] <= 18'h00000;
         else if (tasks & MOV_R0_RES)
-            r_reg[0] <= taylor_result;
+            r_reg[0] <= taylor_1_result;
     end
 
     always @(posedge reset or posedge clk) begin
@@ -276,11 +276,6 @@ module module_lpf_coefs_calc (
             taylor_function_sel <= `ALU_TAYLOR_COS;
             taylor_x_in         <= omega0_reg;
         end
-        else if (tasks & CAL_INV_1_PLUS_C1) begin
-            taylor_do_calc      <= 1'b1;
-            taylor_function_sel <= `ALU_TAYLOR_INV_1_PLUS_X;
-            taylor_x_in         <= c_reg[1];
-        end
         else begin
             taylor_do_calc      <= 1'b0;
             taylor_function_sel <= 3'b0;
@@ -302,6 +297,50 @@ module module_lpf_coefs_calc (
     );
 
 
+
+    // Taylor 1
+    reg                taylor_1_do_calc;
+    reg [2:0]          taylor_1_function_sel;
+    reg  signed [17:0] taylor_1_x_in;
+    wire               taylor_1_calc_done;
+    wire signed [17:0] taylor_1_result;
+    wire [91:0]        taylor_1_dsp_ins_flat;
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            taylor_1_do_calc      <= 1'b0;
+            taylor_1_function_sel <= `ALU_TAYLOR_NONE;
+            taylor_1_x_in         <= 18'h00000;
+        end
+        else if (tasks & CAL_INV_1_PLUS_C1) begin
+            taylor_1_do_calc      <= 1'b1;
+            taylor_1_function_sel <= `ALU_TAYLOR_INV_1_PLUS_X;
+            taylor_1_x_in         <= c_reg[1];
+        end
+        else begin
+            taylor_1_do_calc      <= 1'b0;
+            taylor_1_function_sel <= 3'b0;
+            taylor_1_x_in         <= 18'h00000;
+        end
+    end
+
+
+    alu_taylor_calc_1 alu_taylor_calc_1 (
+        .clk            (clk                   ),
+        .reset          (reset                 ),
+        .do_calc        (taylor_1_do_calc      ),
+        .func_sel       (taylor_1_function_sel ),
+        .x_in           (taylor_1_x_in         ),
+        .calc_done      (taylor_1_calc_done    ),
+        .result         (taylor_1_result       ),
+        .dsp_ins_flat   (taylor_1_dsp_ins_flat ),
+        .dsp_outs_flat  (dsp_outs_flat         )
+    );
+
+
+
+
+
     // DSP signals
     reg         [7:0]  opmode;
     reg  signed [17:0] a;
@@ -316,7 +355,9 @@ module module_lpf_coefs_calc (
 
     // DSP signals interconnection
     wire [91:0] dsp_ins_flat_local;
-    assign dsp_ins_flat = dsp_ins_flat_local | taylor_dsp_ins_flat;
+    assign dsp_ins_flat = dsp_ins_flat_local  |
+                          taylor_dsp_ins_flat |
+                          taylor_1_dsp_ins_flat;
 
 
     // MOVE AC VALUE TO RESULTS
@@ -334,7 +375,5 @@ module module_lpf_coefs_calc (
             coefs_flat<= 90'h0;
         end
     end
-
-
 endmodule
 
