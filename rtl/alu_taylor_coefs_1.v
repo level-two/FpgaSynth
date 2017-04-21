@@ -25,8 +25,8 @@ module alu_taylor_coefs_1 (
         (function_sel == `ALU_TAYLOR_INV_1_PLUS_X) ? a0_inv_1_plus_x :
         18'h00000;
 
-    wire a0_inv_1_plus_x = 18'h10000;
-    reg signed [17:0] deriv_coef_inv_1_plus_x;
+    wire signed [17:0] a0_inv_1_plus_x = 18'h10000;
+    reg  signed [17:0] deriv_coef_inv_1_plus_x;
     always @(idx) begin
         case (idx)
             4'h0   : begin deriv_coef_inv_1_plus_x <= 18'h08000; end
