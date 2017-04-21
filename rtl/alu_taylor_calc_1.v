@@ -4,7 +4,7 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: alu_taylor_calc.v
+// File: alu_taylor_calc_1.v
 // Description: Module for cosine calculation. Algorithm is based on Taylor 
 //              series
 //
@@ -26,7 +26,7 @@
 
 `include "globals.vh"
 
-module alu_taylor_calc (
+module alu_taylor_calc_1 (
     input                    clk,
     input                    reset,
     input                    do_calc,
@@ -137,7 +137,7 @@ module alu_taylor_calc (
     alu_taylor_coefs_1 alu_taylor_coefs_1 (
         .function_sel (func_sel_reg ),
         .idx          (i_reg        ),
-        .deriv_coef   (ci           )
+        .deriv_coef   (ci           ),
         .a0           (a0           )
     );
 
