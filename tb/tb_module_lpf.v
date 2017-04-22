@@ -47,7 +47,7 @@ module tb_module_lpf();
 
 
     always begin
-        #1;
+        #0.5;
         clk <= ~clk;
     end
 
@@ -74,7 +74,7 @@ module tb_module_lpf();
             sample_in     <= $random();
             @(posedge clk);
             sample_in_rdy <= 0;
-            repeat (100) @(posedge clk);
+            repeat (1000) @(posedge clk);
         end
 
         #100;

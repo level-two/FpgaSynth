@@ -82,9 +82,9 @@ module alu_taylor_calc_1 (
             4'h4   : tasks = REPEAT_10       |
                              ((i_reg == 0) ? MUL_SI_1_AS : MUL_SI_SIM1_AC) |
                              INC_I           ;
-            4'h5   : tasks = REPEAT_3        |
-                             NOP             ;
-            4'h6   : tasks = MOV_RES_AC      |
+            4'h5   : tasks = NOP             ;
+            4'h6   : tasks = NOP             ;
+            4'h7   : tasks = MOV_RES_AC      |
                              JP_0            ;
             default: tasks = JP_0            ;
         endcase
@@ -173,9 +173,9 @@ module alu_taylor_calc_1 (
         end
         else if (tasks & SUB_X_A0_XA) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
-            a      = x_reg;
+            a      = a0;
             b      = 18'h10000;
-            c      = {30'h0, a0};
+            c      = {14'h0000, x_reg, 16'h0000};
         end
     end
         
