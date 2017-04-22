@@ -188,7 +188,7 @@ module module_lpf_coefs_calc (
             opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
             a      = 18'h10000;
             b      = 18'h10000;
-            c      = {14'h0000, c_reg[1], 16'h0000};
+            c      = { {15{c_reg[1][17]}}, c_reg[1][16:0], 16'h0000};
         end
         else if (tasks & SUB_1_R2_C3) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
@@ -262,7 +262,7 @@ module module_lpf_coefs_calc (
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[2] <= 18'h00000;
-        if (tasks & SHRS_C3_C2)
+        else if (tasks & SHRS_C3_C2)
             c_reg[2] <= c_reg[3] >>> 1;
         else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h2)
             c_reg[2] <= m[33:16];
@@ -282,7 +282,7 @@ module module_lpf_coefs_calc (
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[4] <= 18'h00000;
-        if (tasks & SHRS_C3_C4)
+        else if (tasks & SHRS_C3_C4)
             c_reg[4] <= c_reg[3] >>> 1;
         else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h4)
             c_reg[4] <= m[33:16];
