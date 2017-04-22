@@ -32,10 +32,10 @@ module module_lpf (
 //--------------------------------------------------------
 // -------====== State Machine ======-------
 //-----------------------------------------------------
-    localparam ST_IDLE           = 0;
-    localparam ST_CALC_SAMPLE    = 1;
-    localparam ST_CALC_COEFS     = 2;
-    localparam ST_DONE           = 3;
+    localparam [1:0] ST_IDLE           = 2'h0;
+    localparam [1:0] ST_CALC_SAMPLE    = 2'h1;
+    localparam [1:0] ST_CALC_COEFS     = 2'h2;
+    localparam [1:0] ST_DONE           = 2'h3;
 
     reg [1:0] state;
     reg [1:0] next_state;
@@ -172,8 +172,8 @@ module module_lpf (
 //-------------------------------------------------------------
     // TODO Get these values from registers
     localparam MIDI_CHANNEL  = 4'h0;
-    localparam OMEGA0_CC_NUM = 7'h0;
-    localparam INV_2Q_CC_NUM = 7'h1;
+    localparam OMEGA0_CC_NUM = 7'd21;
+    localparam INV_2Q_CC_NUM = 7'd22;
 
     wire cc_event = midi_rdy     == 1'b1         &&
                     midi_cmd     == `MIDI_CMD_CC &&
@@ -187,11 +187,11 @@ module module_lpf (
             lpf_params_inv_2Q  <= 18'h08000;
         end
         else if (cc_event && midi_data0 == OMEGA0_CC_NUM) begin
-            lpf_params_changed <= 1'b0;
+            lpf_params_changed <= 1'b1;
             lpf_params_omega0  <= { 3'h0, midi_data0[6:0], 8'h0 };
         end
         else if (cc_event && midi_data0 == INV_2Q_CC_NUM) begin
-            lpf_params_changed <= 1'b0;
+            lpf_params_changed <= 1'b1;
             lpf_params_inv_2Q  <= { 2'h0, midi_data0[6:0], 9'h0 };
         end
         else if (state == ST_CALC_COEFS) begin
