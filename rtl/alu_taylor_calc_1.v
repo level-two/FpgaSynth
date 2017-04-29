@@ -35,7 +35,7 @@ module alu_taylor_calc_1 (
     output reg               calc_done,
     output reg signed [17:0] result,
 
-    input  [83:0]            dsp_outs_flat,
+    input  [47:0]            dsp_outs_flat,
     output [91:0]            dsp_ins_flat
 );
 
@@ -57,35 +57,49 @@ module alu_taylor_calc_1 (
     localparam [15:0] NOP              = 16'h0000;
     localparam [15:0] MUL_1_CI_SI      = 16'h0001;
     localparam [15:0] MUL_XA_CI_SI     = 16'h0002;
-    localparam [15:0] MUL_SI_1_AS      = 16'h0004;
-    localparam [15:0] MUL_SI_M_AC      = 16'h0008;
-    localparam [15:0] SUB_X_A0_XA      = 16'h0010;
-    localparam [15:0] MOV_I_0          = 16'h0020;
-    localparam [15:0] INC_I            = 16'h0040;
-    localparam [15:0] REPEAT_3         = 16'h0080;
-    localparam [15:0] REPEAT_10        = 16'h0100;
-    localparam [15:0] MOV_RES_AC       = 16'h0200;
-    localparam [15:0] JP_0             = 16'h0400;
-    localparam [15:0] JP_4             = 16'h0800;
-    localparam [15:0] WAIT_IN          = 16'h1000;
+    localparam [15:0] MUL_SI_1         = 16'h0004;
+    localparam [15:0] MUL_SI_AC        = 16'h0008;
+    localparam [15:0] MADD_SI_MR_AC    = 16'h0010;
+    localparam [15:0] SUB_X_A0_XA      = 16'h0020;
+    localparam [15:0] MOV_I_0          = 16'h0040;
+    localparam [15:0] INC_I            = 16'h0080;
+    localparam [15:0] REPEAT_3         = 16'h0100;
+    localparam [15:0] REPEAT_10        = 16'h0200;
+    localparam [15:0] MOV_RES_AC       = 16'h0400;
+    localparam [15:0] MOV_MR_AC        = 16'h0800;
+    localparam [15:0] JP_0             = 16'h1000;
+    localparam [15:0] JP_4             = 16'h2000;
+    localparam [15:0] WAIT_IN          = 16'h4000;
 
     reg [15:0] tasks;
     always @(*) begin
         case (pc)
-            4'h0   : tasks = WAIT_IN         ;
-            4'h1   : tasks = SUB_X_A0_XA     |
-                             MOV_I_0         ;
-            4'h2   : tasks = REPEAT_3        |
-                             NOP             ;
-            4'h3   : tasks = REPEAT_10       |
-                             ((i_reg == 4'h0) ? MUL_1_CI_SI : MUL_XA_CI_SI) |
-                             ((i_reg == 4'h9) ? MOV_I_0     : INC_I);
-            4'h4   : tasks = ((i_reg == 4'h0) ? MUL_SI_1_AS : MUL_SI_M_AC) |
-                             INC_I           ;
-            4'h5   : tasks = ((i_reg != 4'ha) ? JP_4 : NOP);
-            4'h6   : tasks = MOV_RES_AC      |
-                             JP_0            ;
-            default: tasks = JP_0            ;
+            4'h0   : tasks = WAIT_IN                                           ;
+
+            4'h1   : tasks = SUB_X_A0_XA                                       |
+                             MOV_I_0                                           ;
+                             MOV_SUM_0                                         ;
+
+            4'h2   : tasks = REPEAT_3                                          |
+                             NOP                                               ;
+
+            4'h3   : tasks = REPEAT_10                                         |
+                             ((i_reg == 4'h0) ? MUL_1_CI_SI : MUL_XA_CI_SI)    |
+                             ((i_reg == 4'h9) ? MOV_I_0     : INC_I)           ;
+
+
+            4'h4   : tasks = ((i_reg == 4'h0) ? MUL_SI_1    : MUL_SI_AC)       |
+                             MOV_MR_AC                                         ;
+
+            4'h5   : tasks = ((i_reg == 4'h0) ? MUL_SI_1    : MADD_SI_MR_AC)   |
+                             INC_I                                             ;
+
+            4'h6   : tasks = ((i_reg != 4'ha) ? JP_4        : NOP)             ;
+
+            4'h7   : tasks = MOV_RES_AC                                        |
+                             JP_0                                              ;
+
+            default: tasks = JP_0                                              ;
         endcase
     end
 
@@ -249,10 +263,9 @@ module alu_taylor_calc_1 (
     reg  signed [17:0] b;
     reg  signed [47:0] c;
     wire signed [47:0] p;
-    wire signed [35:0] m;
 
     // Gather local DSP signals 
     assign dsp_ins_flat[91:0] = {opmode, a, b, c};
-    assign { m, p }           = dsp_outs_flat;
+    assign { p }              = dsp_outs_flat;
 endmodule
 
