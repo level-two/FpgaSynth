@@ -14,7 +14,7 @@ module dsp48a1_inst (
     input         clk,
     input         reset,
     input  [91:0] dsp_ins_flat,
-    output [83:0] dsp_outs_flat
+    output [47:0] dsp_outs_flat
 );
 
     wire [1:0]   opmode_x_in;
@@ -26,7 +26,6 @@ module dsp48a1_inst (
     wire signed [17:0] ain;
     wire signed [17:0] bin;
     wire signed [47:0] cin;
-    wire signed [35:0] mout;
     wire signed [47:0] pout;
 
     assign {opmode_postadd_sub, opmode_preadd_sub,
@@ -36,7 +35,7 @@ module dsp48a1_inst (
             cin                                  }
         = dsp_ins_flat[91:0];
 
-    assign dsp_outs_flat = { mout, pout };
+    assign dsp_outs_flat = { pout };
 
 
     reg signed [47:0] cin_reg;
@@ -89,6 +88,7 @@ module dsp48a1_inst (
 
     wire signed [17:0] bcout_nc;
     wire signed [47:0] pcout_nc;
+    wire signed [35:0] m_nc;
     wire               carryout_nc;
     wire               carryoutf_nc;
 
@@ -112,7 +112,7 @@ module dsp48a1_inst (
         .PCOUT     (pcout_nc    ), // P cascade output (if used, connect to PCIN of another DSP48A1)
         .CARRYOUT  (carryout_nc ), // Carry output (if used, connect to CARRYIN pin of another DSP48A1)
         .CARRYOUTF (carryoutf_nc), // Fabric carry output
-        .M         (mout        ), // Fabric multiplier data output
+        .M         (m_nc        ), // Fabric multiplier data output
         .P         (pout        ), // Data output
         .PCIN      (pcin_nc     ), // P cascade (if used, connect to PCOUT of another DSP48A1)
         .CLK       (clk         ), // Clock 
