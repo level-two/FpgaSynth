@@ -78,7 +78,6 @@ module alu_taylor_calc_1 (
 
             4'h1   : tasks = SUB_X_A0_XA                                       |
                              MOV_I_0                                           ;
-                             MOV_SUM_0                                         ;
             4'h2   : tasks = REPEAT_3                                          |
                              NOP                                               ;
             4'h3   : tasks = REPEAT_10                                         |
@@ -140,7 +139,7 @@ module alu_taylor_calc_1 (
             i_reg <= i_reg + 4'h1;
     end
 
-    reg  [17:0] mr_reg;
+    reg signed [17:0] mr_reg;
     always @(posedge reset or posedge clk) begin
         if (reset)
             mr_reg <= 18'h00000;
@@ -168,10 +167,12 @@ module alu_taylor_calc_1 (
         b      = 18'h00000;
         c      = 48'h00000;
         if (tasks & MUL_1_CI_SI) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = ci;
             b      = 18'h10000;
         end
         else if (tasks & MUL_XA_CI_SI) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = ci;
             b      = xa;
         end
@@ -188,7 +189,7 @@ module alu_taylor_calc_1 (
         else if (tasks & MADD_SI_MR_AC) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN;
             a      = si;
-            b      = mr;
+            b      = mr_reg;
             c      = p;
         end
         else if (tasks & SUB_X_A0_XA) begin
