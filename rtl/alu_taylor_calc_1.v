@@ -79,26 +79,18 @@ module alu_taylor_calc_1 (
             4'h1   : tasks = SUB_X_A0_XA                                       |
                              MOV_I_0                                           ;
                              MOV_SUM_0                                         ;
-
             4'h2   : tasks = REPEAT_3                                          |
                              NOP                                               ;
-
             4'h3   : tasks = REPEAT_10                                         |
                              ((i_reg == 4'h0) ? MUL_1_CI_SI : MUL_XA_CI_SI)    |
                              ((i_reg == 4'h9) ? MOV_I_0     : INC_I)           ;
-
-
             4'h4   : tasks = ((i_reg == 4'h0) ? MUL_SI_1    : MUL_SI_AC)       |
                              MOV_MR_AC                                         ;
-
             4'h5   : tasks = ((i_reg == 4'h0) ? MUL_SI_1    : MADD_SI_MR_AC)   |
                              INC_I                                             ;
-
             4'h6   : tasks = ((i_reg != 4'ha) ? JP_4        : NOP)             ;
-
             4'h7   : tasks = MOV_RES_AC                                        |
                              JP_0                                              ;
-
             default: tasks = JP_0                                              ;
         endcase
     end
@@ -148,6 +140,14 @@ module alu_taylor_calc_1 (
             i_reg <= i_reg + 4'h1;
     end
 
+    reg  [17:0] mr_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset)
+            mr_reg <= 18'h00000;
+        else if (tasks & MOV_MR_AC)
+            mr_reg <= p[33:16];
+    end
+
 
     // Taylor coefficients
     wire signed [17:0] ci;
@@ -175,15 +175,21 @@ module alu_taylor_calc_1 (
             a      = ci;
             b      = xa;
         end
-        else if (tasks & MUL_SI_1_AS) begin
+        else if (tasks & MUL_SI_1) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = si;
             b      = 18'h10000;
         end
-        else if (tasks & MUL_SI_M_AC) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+        else if (tasks & MUL_SI_AC) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = si;
-            b      = m[33:16];
+            b      = p[33:16];
+        end
+        else if (tasks & MADD_SI_MR_AC) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN;
+            a      = si;
+            b      = mr;
+            c      = p;
         end
         else if (tasks & SUB_X_A0_XA) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
@@ -196,13 +202,15 @@ module alu_taylor_calc_1 (
 
     // Array of the intermediate values
     reg [1:0] mov_trig[0:2];
-    reg [3:0] mov_idx[0:1];
+    reg [3:0] mov_idx[0:2];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             mov_trig[0] <= 2'b00;
             mov_trig[1] <= 2'b00;
+            mov_trig[2] <= 2'b00;
             mov_idx [0] <= 4'h0;
             mov_idx [1] <= 4'h0;
+            mov_idx [2] <= 4'h0;
         end 
         else begin
             if (tasks & MUL_1_CI_SI) begin
@@ -222,6 +230,7 @@ module alu_taylor_calc_1 (
             end
 
             mov_idx [1] <= mov_idx [0];
+            mov_idx [2] <= mov_idx [1];
             mov_trig[1] <= mov_trig[0];
             mov_trig[2] <= mov_trig[1];
         end
@@ -233,8 +242,8 @@ module alu_taylor_calc_1 (
         if (reset) begin
             // do nothing
         end 
-        else if (mov_trig[1] == 2'b01)
-            s_reg[mov_idx[1]] <= m[33:16];
+        else if (mov_trig[2] == 2'b01)
+            s_reg[mov_idx[2]] <= p[33:16];
         else if (mov_trig[2] == 2'b10)
             xa <= p[33:16];
     end

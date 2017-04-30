@@ -35,7 +35,7 @@ module alu_taylor_calc (
     output reg               calc_done,
     output reg signed [17:0] result,
 
-    input  [83:0]            dsp_outs_flat,
+    input  [47:0]            dsp_outs_flat,
     output [91:0]            dsp_ins_flat
 );
 
@@ -56,21 +56,19 @@ module alu_taylor_calc (
     // TASKS
     localparam [15:0] NOP              = 16'h0000;
     localparam [15:0] MUL_X_FJ_VJ      = 16'h0001;
-    localparam [15:0] MUL_X_FJ_VJ_AC0  = 16'h0002;
-    localparam [15:0] MUL_VI_VJ_VJ     = 16'h0004;
-    localparam [15:0] MUL_M_VJ_VJ      = 16'h0008;
-    localparam [15:0] MUL_VI_CI_AC     = 16'h0010;
-    localparam [15:0] MOV_V0_1         = 16'h0020;
-    localparam [15:0] MOV_I_0          = 16'h0040;
-    localparam [15:0] MOV_J_1          = 16'h0080;
-    localparam [15:0] INC_I            = 16'h0100;
-    localparam [15:0] INC_J            = 16'h0200;
-    localparam [15:0] JP_J_N10_UP1     = 16'h0400;
-    localparam [15:0] REPEAT_3         = 16'h0800;
-    localparam [15:0] REPEAT_10        = 16'h1000;
-    localparam [15:0] MOV_RES_AC       = 16'h2000;
-    localparam [15:0] JP_1             = 16'h4000;
-    localparam [15:0] WAIT_IN          = 16'h8000;
+    localparam [15:0] MUL_VI_VJ_VJ     = 16'h0002;
+    localparam [15:0] MUL_AC_VJ_VJ     = 16'h0004;
+    localparam [15:0] MUL_VI_CI_AC     = 16'h0008;
+    localparam [15:0] MOV_V0_1         = 16'h0010;
+    localparam [15:0] MOV_I_0          = 16'h0020;
+    localparam [15:0] MOV_J_1          = 16'h0040;
+    localparam [15:0] INC_I            = 16'h0080;
+    localparam [15:0] INC_J            = 16'h0100;
+    localparam [15:0] REPEAT_3         = 16'h0200;
+    localparam [15:0] REPEAT_10        = 16'h0400;
+    localparam [15:0] MOV_RES_AC       = 16'h0800;
+    localparam [15:0] JP_1             = 16'h1000;
+    localparam [15:0] WAIT_IN          = 16'h2000;
 
     reg [15:0] tasks;
     always @(pc) begin
@@ -81,21 +79,19 @@ module alu_taylor_calc (
             4'h2   : tasks = REPEAT_10       |
                              MUL_X_FJ_VJ     |
                              INC_J           ;
-            4'h3   : tasks = MUL_X_FJ_VJ_AC0 |
-                             MOV_I_0         |
+            4'h3   : tasks = MOV_I_0         |
                              MOV_J_1         ;
-            4'h4   : tasks = (i_reg == 0) ?
-                                 MUL_VI_VJ_VJ:
-                                 MUL_M_VJ_VJ ;
-            4'h5   : tasks = MUL_VI_CI_AC    |
+            4'h4   : tasks = ((i_reg == 0) ? MUL_VI_VJ_VJ : MUL_AC_VJ_VJ);
+            4'h5   : tasks = MADD_VI_CI_AC   |
                              INC_I           |
-                             INC_J           |
-                             JP_J_N10_UP1    ;
-            4'h6   : tasks = NOP             ;
-            4'h7   : tasks = MUL_VI_CI_AC    ;
-            4'h8   : tasks = REPEAT_3        |
+                             INC_J           ;
+            4'h6   : tasks = ((j_reg != 4'ha) ? JP_4 : NOP);
+            4'h7   : tasks = NOP             ;
+            4'h8   : tasks = NOP             ;
+            4'h9   : tasks = MADD_VI_CI_AC   ;
+            4'ha   : tasks = REPEAT_3        |
                              NOP             ;
-            4'h9   : tasks = MOV_RES_AC      |
+            4'hb   : tasks = MOV_RES_AC      |
                              JP_1            ;
             default: tasks = JP_1            ;
         endcase
@@ -109,12 +105,12 @@ module alu_taylor_calc (
             pc <= 4'h0;
         else if (tasks & JP_1)
             pc <= 4'h1;
+        else if (tasks & JP_4)
+            pc <= 4'h4;
         else if ((tasks & WAIT_IN   && !do_calc ) ||      
                  (tasks & REPEAT_3  && repeat_st) ||
                  (tasks & REPEAT_10 && repeat_st))
             pc <= pc;
-        else if (tasks & JP_J_N10_UP1 && j_reg != 4'ha)
-            pc <= pc - 4'h1;
         else
             pc <= pc + 4'h1;
     end
@@ -205,46 +201,46 @@ module alu_taylor_calc (
             b      = 18'h00000;
         end
         else if (tasks & MUL_X_FJ_VJ) begin
-            a      = x_reg;
-            b      = fj;
-        end
-        else if (tasks & MUL_X_FJ_VJ_AC0) begin
-            opmode = `DSP_XIN_ZERO | `DSP_ZIN_ZERO;
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = x_reg;
             b      = fj;
         end
         else if (tasks & MUL_VI_VJ_VJ) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = vi;
             b      = vj;
         end
-        else if (tasks & MUL_M_VJ_VJ) begin
-            a      = m[33:16];
+        else if (tasks & MUL_AC_VJ_VJ) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            a      = p[33:16];
             b      = vj;
         end
-        else if (tasks & MUL_VI_CI_AC) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+        else if (tasks & MADD_VI_CI_AC) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN;
             a      = vi;
             b      = ci;
+            c      = p;
         end
     end
         
 
     // Array of the intermediate values
-    reg       mov_val_m_trig[0:1];
-    reg [3:0] mov_val_m_idx[0:1];
+    reg       mov_val_m_trig[0:2];
+    reg [3:0] mov_val_m_idx [0:2];
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             mov_val_m_trig[0] <= 1'b0;
             mov_val_m_trig[1] <= 1'b0;
+            mov_val_m_trig[2] <= 1'b0;
             mov_val_m_idx [0] <= 4'h0;
             mov_val_m_idx [1] <= 4'h0;
+            mov_val_m_idx [2] <= 4'h0;
         end 
         else begin
             if ((tasks & MUL_X_FJ_VJ    ) ||
                 (tasks & MUL_VI_VJ_VJ   ) ||
-                (tasks & MUL_M_VJ_VJ    ) ||
-                (tasks & MUL_X_FJ_VJ_AC0))
+                (tasks & MUL_AC_VJ_VJ   ))
             begin
                 mov_val_m_trig[0] <= 1'b1;
             end
@@ -254,8 +250,10 @@ module alu_taylor_calc (
 
             mov_val_m_idx [0] <= j_reg;
             mov_val_m_idx [1] <= mov_val_m_idx [0];
+            mov_val_m_idx [2] <= mov_val_m_idx [1];
 
             mov_val_m_trig[1] <= mov_val_m_trig[0];
+            mov_val_m_trig[2] <= mov_val_m_trig[1];
         end
     end
     
@@ -267,8 +265,8 @@ module alu_taylor_calc (
         else if (tasks & MOV_V0_1) begin
             val[0] <= 18'h10000;
         end
-        else if (mov_val_m_trig[1] == 1'b1) begin
-            val[mov_val_m_idx[1]] <= m[33:16];
+        else if (mov_val_m_trig[2] == 1'b1) begin
+            val[mov_val_m_idx[2]] <= p[33:16];
         end
     end
 
@@ -296,10 +294,9 @@ module alu_taylor_calc (
     reg  signed [17:0] b;
     reg  signed [47:0] c_nc = 48'b0;
     wire signed [47:0] p;
-    wire signed [35:0] m;
 
     // Gather local DSP signals 
     assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
-    assign { m, p }           = dsp_outs_flat;
+    assign { p }              = dsp_outs_flat;
 endmodule
 
