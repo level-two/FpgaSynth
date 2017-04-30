@@ -35,7 +35,7 @@ module dsp48a1_inst (
             cin                                  }
         = dsp_ins_flat[91:0];
 
-    assign dsp_outs_flat = { pout };
+    assign dsp_outs_flat = pout;
 
 
     reg signed [47:0] cin_reg;

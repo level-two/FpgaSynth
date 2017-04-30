@@ -210,6 +210,6 @@ module alu_filter_iir (
 
     // Gather local DSP signals 
     assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
-    assign { p }              = dsp_outs_flat;
+    assign p = dsp_outs_flat;
 
 endmodule

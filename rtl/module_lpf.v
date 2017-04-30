@@ -158,7 +158,7 @@ module module_lpf (
     // <= -2.0, higher bits will not be equal
 
     wire signed [47:0] p;
-    assign { p } = dsp_outs_flat;
+    assign p = dsp_outs_flat;
 
     // TODO: Write errors into OneToClear-registers
     assign err_overflow = (&p[47:34]) ^ (|p[47:34]); // 0000 or 0010; 1111 or 1101

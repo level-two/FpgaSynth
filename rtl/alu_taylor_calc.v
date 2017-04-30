@@ -192,7 +192,7 @@ module alu_taylor_calc (
     wire signed [17:0] vj  = val[j_reg];
 
     always @(*) begin
-        opmode = `DSP_XIN_ZERO | `DSP_ZIN_POUT;
+        opmode = `DSP_NOP;
         a      = 18'h00000;
         b      = 18'h00000;
 
@@ -298,6 +298,6 @@ module alu_taylor_calc (
 
     // Gather local DSP signals 
     assign dsp_ins_flat[91:0] = {opmode, a, b, c};
-    assign { p }              = dsp_outs_flat;
+    assign p = dsp_outs_flat;
 endmodule
 

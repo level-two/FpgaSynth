@@ -179,10 +179,12 @@ module module_lpf_coefs_calc (
         b      = 18'h00000;
         c      = 48'h00000;
         if (tasks & MUL_R1_INV2Q_C1) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = r_reg[1];
             b      = inv_2q_reg;
         end
         else if (tasks & MUL_CI_R0_CI) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = r_reg[0];
             b      = ci;
         end
@@ -383,7 +385,7 @@ module module_lpf_coefs_calc (
 
     // Gather local DSP signals 
     assign dsp_ins_flat_local[91:0] = {opmode, a, b, c};
-    assign { p }                    = dsp_outs_flat;
+    assign p = dsp_outs_flat;
 
     // DSP signals interconnection
     wire [91:0] dsp_ins_flat_local;
