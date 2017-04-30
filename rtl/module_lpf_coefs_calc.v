@@ -19,7 +19,7 @@ module module_lpf_coefs_calc (
     output reg [18*5-1:0]    coefs_flat,
     output reg               calc_done,
 
-    input  [83:0]            dsp_outs_flat,
+    input  [47:0]            dsp_outs_flat,
     output [91:0]            dsp_ins_flat
 );
 
@@ -74,22 +74,24 @@ module module_lpf_coefs_calc (
             5'h5   : tasks = MUL_R1_INV2Q_C1   ;
             5'h6   : tasks = NOP               ;
             5'h7   : tasks = NOP               ;
-            5'h8   : tasks = CAL_INV_1_PLUS_C1 ; 
-            5'h9   : tasks = WAIT_CAL_DONE     |
+            5'h8   : tasks = NOP               ;
+            5'h9   : tasks = CAL_INV_1_PLUS_C1 ; 
+            5'ha   : tasks = WAIT_CAL_DONE     |
                              MOV_R0_RES        ;
-            5'ha   : tasks = SUB_1_R2_C3       ;
-            5'hb   : tasks = SUB_C1_1_C1       ;
-            5'hc   : tasks = SHLS_R2_C0        ;
-            5'hd   : tasks = NOP               ;
-            5'he   : tasks = SHRS_C3_C2        |
+            5'hb   : tasks = SUB_1_R2_C3       ;
+            5'hc   : tasks = SUB_C1_1_C1       ;
+            5'hd   : tasks = SHLS_R2_C0        ;
+            5'he   : tasks = NOP               ;
+            5'hf   : tasks = SHRS_C3_C2        |
                              SHRS_C3_C4        |
                              MOV_I_0           ;
-            5'hf   : tasks = REPEAT_5          |
+            5'h10  : tasks = REPEAT_5          |
                              MUL_CI_R0_CI      |
                              INC_I             ;
-            5'h10  : tasks = NOP               ;
             5'h11  : tasks = NOP               ;
-            5'h12  : tasks = MOV_RES_C         |
+            5'h12  : tasks = NOP               ;
+            5'h13  : tasks = NOP               ;
+            5'h14  : tasks = MOV_RES_C         |
                              JP_0              ;
             default: tasks = JP_0              ;
         endcase
@@ -200,34 +202,36 @@ module module_lpf_coefs_calc (
         
 
     // Array of the intermediate values
-    reg [1:0] mov_c_trig[0:2];
+    reg       mov_c_trig[0:2];
     reg [3:0] mov_c_idx[0:2];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            mov_c_trig[0] <= 2'b00;
-            mov_c_trig[1] <= 2'b00;
+            mov_c_trig[0] <= 1'b0;
+            mov_c_trig[1] <= 1'b0;
+            mov_c_trig[2] <= 1'b0;
             mov_c_idx [0] <= 4'h0;
             mov_c_idx [1] <= 4'h0;
+            mov_c_idx [2] <= 4'h0;
         end 
         else begin
             if (tasks & MUL_CI_R0_CI) begin
-                mov_c_trig[0] <= 2'b01;
+                mov_c_trig[0] <= 1'b1;
                 mov_c_idx [0] <= i_reg;
             end
             else if (tasks & MUL_R1_INV2Q_C1) begin
-                mov_c_trig[0] <= 2'b01;
+                mov_c_trig[0] <= 1'b1;
                 mov_c_idx [0] <= 4'h1;
             end
             else if (tasks & SUB_C1_1_C1) begin
-                mov_c_trig[0] <= 2'b10;
+                mov_c_trig[0] <= 1'b1;
                 mov_c_idx [0] <= 4'h1;
             end
             else if (tasks & SUB_1_R2_C3) begin
-                mov_c_trig[0] <= 2'b10;
+                mov_c_trig[0] <= 1'b1;
                 mov_c_idx [0] <= 4'h3;
             end
             else begin
-                mov_c_trig[0] <= 2'b00;
+                mov_c_trig[0] <= 1'b0;
             end
 
             mov_c_idx [1] <= mov_c_idx [0];
@@ -244,8 +248,6 @@ module module_lpf_coefs_calc (
             c_reg[0] <= 18'h00000;
         else if (tasks & SHLS_R2_C0)
             c_reg[0] <= r_reg[2] <<< 1;
-        else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h0)
-            c_reg[0] <= m[33:16];
         else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h0)
             c_reg[0] <= p[33:16];
     end
@@ -253,8 +255,6 @@ module module_lpf_coefs_calc (
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[1] <= 18'h00000;
-        else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h1)
-            c_reg[1] <= m[33:16];
         else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h1)
             c_reg[1] <= p[33:16];
     end
@@ -264,8 +264,6 @@ module module_lpf_coefs_calc (
             c_reg[2] <= 18'h00000;
         else if (tasks & SHRS_C3_C2)
             c_reg[2] <= c_reg[3] >>> 1;
-        else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h2)
-            c_reg[2] <= m[33:16];
         else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h2)
             c_reg[2] <= p[33:16];
     end
@@ -273,8 +271,6 @@ module module_lpf_coefs_calc (
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[3] <= 18'h00000;
-        else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h3)
-            c_reg[3] <= m[33:16];
         else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h3)
             c_reg[3] <= p[33:16];
     end
@@ -284,8 +280,6 @@ module module_lpf_coefs_calc (
             c_reg[4] <= 18'h00000;
         else if (tasks & SHRS_C3_C4)
             c_reg[4] <= c_reg[3] >>> 1;
-        else if (mov_c_trig[1] == 2'b01 && mov_c_idx[1] == 4'h4)
-            c_reg[4] <= m[33:16];
         else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h4)
             c_reg[4] <= p[33:16];
     end
@@ -386,11 +380,10 @@ module module_lpf_coefs_calc (
     reg  signed [17:0] b;
     reg  signed [47:0] c;
     wire signed [47:0] p;
-    wire signed [35:0] m;
 
     // Gather local DSP signals 
     assign dsp_ins_flat_local[91:0] = {opmode, a, b, c};
-    assign {m, p}                   = dsp_outs_flat;
+    assign { p }                    = dsp_outs_flat;
 
     // DSP signals interconnection
     wire [91:0] dsp_ins_flat_local;
