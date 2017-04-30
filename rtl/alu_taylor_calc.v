@@ -58,7 +58,7 @@ module alu_taylor_calc (
     localparam [15:0] MUL_X_FJ_VJ      = 16'h0001;
     localparam [15:0] MUL_VI_VJ_VJ     = 16'h0002;
     localparam [15:0] MUL_AC_VJ_VJ     = 16'h0004;
-    localparam [15:0] MUL_VI_CI_AC     = 16'h0008;
+    localparam [15:0] MADD_VI_CI_AC    = 16'h0008;
     localparam [15:0] MOV_V0_1         = 16'h0010;
     localparam [15:0] MOV_I_0          = 16'h0020;
     localparam [15:0] MOV_J_1          = 16'h0040;
@@ -68,7 +68,8 @@ module alu_taylor_calc (
     localparam [15:0] REPEAT_10        = 16'h0400;
     localparam [15:0] MOV_RES_AC       = 16'h0800;
     localparam [15:0] JP_1             = 16'h1000;
-    localparam [15:0] WAIT_IN          = 16'h2000;
+    localparam [15:0] JP_4             = 16'h2000;
+    localparam [15:0] WAIT_IN          = 16'h4000;
 
     reg [15:0] tasks;
     always @(pc) begin
@@ -292,11 +293,11 @@ module alu_taylor_calc (
     reg         [7:0]  opmode;
     reg  signed [17:0] a;
     reg  signed [17:0] b;
-    reg  signed [47:0] c_nc = 48'b0;
+    reg  signed [47:0] c;
     wire signed [47:0] p;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
+    assign dsp_ins_flat[91:0] = {opmode, a, b, c};
     assign { p }              = dsp_outs_flat;
 endmodule
 
