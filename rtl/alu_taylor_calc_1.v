@@ -88,7 +88,8 @@ module alu_taylor_calc_1 (
             4'h5   : tasks = ((i_reg == 4'h0) ? MUL_SI_1    : MADD_SI_MR_AC)   |
                              INC_I                                             ;
             4'h6   : tasks = ((i_reg != 4'ha) ? JP_4        : NOP)             ;
-            4'h7   : tasks = MOV_RES_AC                                        |
+            4'h7   : tasks = NOP                                               ;
+            4'h8   : tasks = MOV_RES_AC                                        |
                              JP_0                                              ;
             default: tasks = JP_0                                              ;
         endcase
