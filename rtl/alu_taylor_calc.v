@@ -64,12 +64,11 @@ module alu_taylor_calc (
     localparam [15:0] MOV_J_1          = 16'h0040;
     localparam [15:0] INC_I            = 16'h0080;
     localparam [15:0] INC_J            = 16'h0100;
-    localparam [15:0] REPEAT_3         = 16'h0200;
-    localparam [15:0] REPEAT_10        = 16'h0400;
-    localparam [15:0] MOV_RES_AC       = 16'h0800;
-    localparam [15:0] JP_1             = 16'h1000;
-    localparam [15:0] JP_4             = 16'h2000;
-    localparam [15:0] WAIT_IN          = 16'h4000;
+    localparam [15:0] REPEAT_10        = 16'h0200;
+    localparam [15:0] MOV_RES_AC       = 16'h0400;
+    localparam [15:0] JP_1             = 16'h0800;
+    localparam [15:0] JP_5             = 16'h1000;
+    localparam [15:0] WAIT_IN          = 16'h2000;
 
     reg [15:0] tasks;
     always @(pc) begin
@@ -80,19 +79,19 @@ module alu_taylor_calc (
             4'h2   : tasks = REPEAT_10       |
                              MUL_X_FJ_VJ     |
                              INC_J           ;
-            4'h3   : tasks = MOV_I_0         |
+            4'h3   : tasks = NOP             ;
+            4'h4   : tasks = MOV_I_0         |
                              MOV_J_1         ;
-            4'h4   : tasks = ((i_reg == 0) ? MUL_VI_VJ_VJ : MUL_AC_VJ_VJ);
-            4'h5   : tasks = MADD_VI_CI_AC   |
+            4'h5   : tasks = ((i_reg == 0) ? MUL_VI_VJ_VJ : MUL_AC_VJ_VJ);
+            4'h6   : tasks = MADD_VI_CI_AC   |
                              INC_I           |
                              INC_J           ;
-            4'h6   : tasks = ((j_reg != 4'ha) ? JP_4 : NOP);
-            4'h7   : tasks = NOP             ;
+            4'h7   : tasks = ((j_reg != 4'ha) ? JP_5 : NOP);
             4'h8   : tasks = NOP             ;
             4'h9   : tasks = MADD_VI_CI_AC   ;
-            4'ha   : tasks = REPEAT_3        |
-                             NOP             ;
-            4'hb   : tasks = MOV_RES_AC      |
+            4'ha   : tasks = NOP             ;
+            4'hb   : tasks = NOP             ;
+            4'hc   : tasks = MOV_RES_AC      |
                              JP_1            ;
             default: tasks = JP_1            ;
         endcase
@@ -106,10 +105,9 @@ module alu_taylor_calc (
             pc <= 4'h0;
         else if (tasks & JP_1)
             pc <= 4'h1;
-        else if (tasks & JP_4)
-            pc <= 4'h4;
+        else if (tasks & JP_5)
+            pc <= 4'h5;
         else if ((tasks & WAIT_IN   && !do_calc ) ||      
-                 (tasks & REPEAT_3  && repeat_st) ||
                  (tasks & REPEAT_10 && repeat_st))
             pc <= pc;
         else
@@ -119,8 +117,7 @@ module alu_taylor_calc (
 
     // REPEAT
     reg  [3:0] repeat_cnt;
-    wire [3:0] repeat_cnt_max = (tasks & REPEAT_3 ) ? 4'h2 :
-                                (tasks & REPEAT_10) ? 4'h9 : 4'h0;
+    wire [3:0] repeat_cnt_max = (tasks & REPEAT_10) ? 4'h9 : 4'h0;
     wire       repeat_st      = (repeat_cnt != repeat_cnt_max);
     always @(posedge reset or posedge clk) begin
         if (reset)
@@ -195,13 +192,9 @@ module alu_taylor_calc (
         opmode = `DSP_NOP;
         a      = 18'h00000;
         b      = 18'h00000;
+        c      = 48'h00000;
 
-        if (tasks & WAIT_IN) begin
-            opmode = `DSP_NOP;
-            a      = 18'h00000;
-            b      = 18'h00000;
-        end
-        else if (tasks & MUL_X_FJ_VJ) begin
+        if (tasks & MUL_X_FJ_VJ) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
             a      = x_reg;
             b      = fj;

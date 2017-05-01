@@ -90,8 +90,7 @@ module module_lpf_coefs_calc (
                              INC_I             ;
             5'h11  : tasks = NOP               ;
             5'h12  : tasks = NOP               ;
-            5'h13  : tasks = NOP               ;
-            5'h14  : tasks = MOV_RES_C         |
+            5'h13  : tasks = MOV_RES_C         |
                              JP_0              ;
             default: tasks = JP_0              ;
         endcase
@@ -250,14 +249,14 @@ module module_lpf_coefs_calc (
             c_reg[0] <= 18'h00000;
         else if (tasks & SHLS_R2_C0)
             c_reg[0] <= r_reg[2] <<< 1;
-        else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h0)
+        else if (mov_c_trig[2] == 1'b1 && mov_c_idx[2] == 4'h0)
             c_reg[0] <= p[33:16];
     end
 
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[1] <= 18'h00000;
-        else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h1)
+        else if (mov_c_trig[2] == 1'b1 && mov_c_idx[2] == 4'h1)
             c_reg[1] <= p[33:16];
     end
 
@@ -266,14 +265,14 @@ module module_lpf_coefs_calc (
             c_reg[2] <= 18'h00000;
         else if (tasks & SHRS_C3_C2)
             c_reg[2] <= c_reg[3] >>> 1;
-        else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h2)
+        else if (mov_c_trig[2] == 1'b1 && mov_c_idx[2] == 4'h2)
             c_reg[2] <= p[33:16];
     end
 
     always @(posedge reset or posedge clk) begin
         if (reset)
             c_reg[3] <= 18'h00000;
-        else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h3)
+        else if (mov_c_trig[2] == 1'b1 && mov_c_idx[2] == 4'h3)
             c_reg[3] <= p[33:16];
     end
 
@@ -282,7 +281,7 @@ module module_lpf_coefs_calc (
             c_reg[4] <= 18'h00000;
         else if (tasks & SHRS_C3_C4)
             c_reg[4] <= c_reg[3] >>> 1;
-        else if (mov_c_trig[2] == 2'b10 && mov_c_idx[2] == 4'h4)
+        else if (mov_c_trig[2] == 1'b1 && mov_c_idx[2] == 4'h4)
             c_reg[4] <= p[33:16];
     end
 
