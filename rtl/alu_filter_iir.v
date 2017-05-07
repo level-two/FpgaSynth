@@ -149,12 +149,20 @@ module alu_filter_iir (
 
     // Coefficients
     wire signed [17:0] coefs[0:4];
+    assign coefs[0] = 18'h0009b;
+    assign coefs[1] = 18'h00137;
+    assign coefs[2] = 18'h0009b;
+    assign coefs[3] = 18'h1e538;
+    assign coefs[4] = 18'h31858;
+
+    /*
     genvar i;
     generate
         for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
             assign coefs[i] = coefs_flat[18*i +: 18];
         end
     endgenerate
+    */
 
 
     // MUL TASKS
@@ -205,7 +213,7 @@ module alu_filter_iir (
     reg         [7:0]  opmode;
     reg  signed [17:0] a;
     reg  signed [17:0] b;
-    reg  signed [47:0] c_nc = 48'b0;
+    wire signed [47:0] c_nc = 48'b0;
     wire signed [47:0] p;
 
     // Gather local DSP signals 
