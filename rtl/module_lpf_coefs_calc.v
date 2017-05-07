@@ -90,7 +90,8 @@ module module_lpf_coefs_calc (
                              INC_I             ;
             5'h11  : tasks = NOP               ;
             5'h12  : tasks = NOP               ;
-            5'h13  : tasks = MOV_RES_C         |
+            5'h13  : tasks = NOP               ;
+            5'h14  : tasks = MOV_RES_C         |
                              JP_0              ;
             default: tasks = JP_0              ;
         endcase
@@ -401,7 +402,8 @@ module module_lpf_coefs_calc (
         end
         else if (tasks & MOV_RES_C) begin
             calc_done  <= 1'b1;
-            coefs_flat <= {c_reg[0], c_reg[1], c_reg[2], c_reg[3], c_reg[4]};
+            // lpf expects coefs in the order {a2,a1,b2,b1,b0}
+            coefs_flat <= {c_reg[1], c_reg[0], c_reg[4], c_reg[3], c_reg[2]};
         end
         else begin
             calc_done <= 1'b0;

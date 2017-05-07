@@ -149,20 +149,18 @@ module alu_filter_iir (
 
     // Coefficients
     wire signed [17:0] coefs[0:4];
-    assign coefs[0] = 18'h0009b;
-    assign coefs[1] = 18'h00137;
-    assign coefs[2] = 18'h0009b;
-    assign coefs[3] = 18'h1e538;
-    assign coefs[4] = 18'h31858;
+    //assign coefs[0] = 18'h0009b; // b0
+    //assign coefs[1] = 18'h00137; // b1
+    //assign coefs[2] = 18'h0009b; // b2
+    //assign coefs[3] = 18'h1e538; // a1
+    //assign coefs[4] = 18'h31858; // a2
 
-    /*
     genvar i;
     generate
         for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
             assign coefs[i] = coefs_flat[18*i +: 18];
         end
     endgenerate
-    */
 
 
     // MUL TASKS
