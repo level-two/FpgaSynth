@@ -141,11 +141,12 @@ module alu_filter_iir (
             xy_dly_line[2] <= xy_dly_line[1];
         end
         else if (tasks & PUSH_Y_AC) begin
-            xy_dly_line[3] <= p[33:16];
+            xy_dly_line[3] <= p[36:34] == 3'h0 ? p[33:16] :
+                              p[36:34] == 3'h7 ? p[33:16] :
+                              xy_dly_line[3];
             xy_dly_line[4] <= xy_dly_line[3];
         end
     end
-
 
     // Coefficients
     wire signed [17:0] coefs[0:4];
@@ -198,7 +199,9 @@ module alu_filter_iir (
         end
         else if (tasks & MOV_RES_AC) begin
             sample_out_rdy <= 1'b1;
-            sample_out     <= p[33:16];
+            sample_out     <= p[36:34] == 3'h0 ? p[33:16] :
+                              p[36:34] == 3'h7 ? p[33:16] :
+                              xy_dly_line[3];
         end
         else begin
             sample_out_rdy <= 1'b0;
