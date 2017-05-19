@@ -14,7 +14,7 @@
 `include "../rtl/globals.vh"
 
 
-module tb_sigma_delta_dac;
+module tb_sigma_delta_2order_dac;
     localparam TIMESTEP = 1e-9;
     localparam CLK_FREQ = 100_000_000;
     real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
@@ -26,7 +26,7 @@ module tb_sigma_delta_dac;
     reg signed [17:0] din;
     wire              dout;
 
-    sigma_delta_dac #(.NBITS(2), .MBITS(16)) dut
+    sigma_delta_2order_dac #(.NBITS(2), .MBITS(16)) dut
     (
         .clk(clk),
         .reset(reset),
