@@ -178,18 +178,22 @@ module module_lpf (
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            // TODO: revert to right default value
             lpf_params_changed <= 1'b1;
             lpf_params_omega0  <= 18'h01999;
             lpf_params_inv_2Q  <= 18'h08000;
         end
         else if (cc_event && midi_data0 == OMEGA0_CC_NUM) begin
             lpf_params_changed <= 1'b1;
-            lpf_params_omega0  <= { 3'h0, midi_data1[6:0], 8'h0 };
+            lpf_params_omega0  <= { 3'h0, midi_data1[6:0], 8'hff };
         end
         else if (cc_event && midi_data0 == INV_2Q_CC_NUM) begin
             lpf_params_changed <= 1'b1;
-            lpf_params_inv_2Q  <= { 2'h0, midi_data1[6:0], 9'h0 };
+            lpf_params_inv_2Q  <= { 2'h0, midi_data1[6:0], 9'h1ff };
+                /*
+            lpf_params_inv_2Q  <= (midi_data1[6:5] == 2'h0) ?
+                { 2'h0, 7'h1f          , 9'h1ff } :
+                { 2'h0, midi_data1[6:0], 9'h1ff };
+                */
         end
         else if (state == ST_CALC_COEFS) begin
             lpf_params_changed <= 1'b0;
