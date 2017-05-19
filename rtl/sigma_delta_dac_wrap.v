@@ -29,7 +29,10 @@ module sigma_delta_dac_wrap
         end
         else begin
             if (smpl_rdy) begin
-                next_smpl <= smpl;
+                // prevent overflow
+                next_smpl <= smpl[17:16] == 2'b01 ? 18'h10000 :
+                             smpl[17:16] == 2'b10 ? 18'h30000 : 
+                             smpl;
             end
 
             if (smpl_rate_trig) begin
