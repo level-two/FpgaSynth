@@ -52,9 +52,9 @@ module tb_sigma_delta_2order_dac;
         reset <= 0;
 
         din <= 18'h30000; // Q2.16
-        repeat (8) begin
-            repeat (10000) @(posedge clk);
-            din <= din + 18'h04000; // Q2.16
+        repeat ('h200) begin
+            repeat (1000) @(posedge clk);
+            din <= din + 18'h00100; // Q2.16
         end
         
         repeat (10000) @(posedge clk);
