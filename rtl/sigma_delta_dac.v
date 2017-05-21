@@ -21,7 +21,7 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
     localparam signed [TOT_BITS-1:0] MINUS1 = -PLUS1;
 
     reg signed [TOT_BITS-1:0] integr;
-    wire sign = integr[TOT_BITS-1];
+    wire cmp_pos = ~integr[TOT_BITS-1];
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
@@ -29,8 +29,8 @@ module sigma_delta_dac #(parameter NBITS = 2, parameter MBITS = 16)
             dout   <= 1'b0;
         end
         else begin
-            integr <= din + (integr - (sign ? MINUS1 : PLUS1));
-            dout   <= (sign ? 1'b0 : 1'b1);
+            integr <= din + (integr + (cmp_pos ? MINUS1 : PLUS1));
+            dout   <= cmp_pos;
         end
     end
 endmodule
