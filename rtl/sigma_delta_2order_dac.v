@@ -8,32 +8,34 @@
 // Description: First order sigma-delta dac for audio output
 // -----------------------------------------------------------------------------
 
-module sigma_delta_2order_dac #(parameter NBITS = 2, parameter MBITS = 16)
+module sigma_delta_2order_dac
 (
-    input              clk,
-    input              reset,
-    input signed [TOT_BITS-1:0] din,
-    output reg         dout
+    input               clk,
+    input               reset,
+    input signed [17:0] din,
+    output reg          dout
 );
  
-    localparam TOT_BITS = NBITS + MBITS; 
-    localparam signed [TOT_BITS-1:0] PLUS1  = { {NBITS-1{1'b0}}, 1'b1, {MBITS{1'b0}} };
-    localparam signed [TOT_BITS-1:0] MINUS1 = -PLUS1;
+    localparam signed [18:0] PLUS1  = 19'h10000;
+    localparam signed [18:0] MINUS1 = 19'h70000;
 
-    reg signed [TOT_BITS-1:0] integr1;
-    reg signed [TOT_BITS-1:0] integr2;
-    wire sign = integr2[TOT_BITS-1];
+    reg signed [18:0] integr1;
+    reg signed [18:0] integr2;
+
+    wire signed [18:0] d_in = { din[17], din[17:0] };
+
+    wire cmp_pos = ~integr2[18];
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            integr1 <= {TOT_BITS{1'b0}};
-            integr2 <= {TOT_BITS{1'b0}};
+            integr1 <= {19{1'b0}};
+            integr2 <= {19{1'b0}};
             dout    <= 1'b0;
         end
         else begin
-            integr1 <= din     + (integr1 - (sign ? MINUS1 : PLUS1));
-            integr2 <= integr1 + (integr2 - (sign ? MINUS1 : PLUS1));
-            dout    <= (sign ? 1'b0 : 1'b1);
+            integr1 <= d_in    + (integr1 + (cmp_pos ? MINUS1 : PLUS1));
+            integr2 <= integr1 + (integr2 + (cmp_pos ? MINUS1 : PLUS1));
+            dout    <= cmp_pos;
         end
     end
 endmodule
