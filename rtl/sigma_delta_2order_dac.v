@@ -64,9 +64,9 @@ module sigma_delta_2order_dac
                              MOV_INTEG2_ACC     |
                              MOV_DELTA_ACCSGN   |
                              MOV_OUT_ACCSGN     ;
-            4'h1   : tasks = ADD_ACC_DELTA      ;
-            4'h2   : tasks = ADD_ACC_INTEG2     |
+            4'h1   : tasks = ADD_ACC_DELTA      |
                              MOV_INTEG1_ACC     ;
+            4'h2   : tasks = ADD_ACC_INTEG2     ;
             4'h3   : tasks = ADD_ACC_DELTA      |
                              JP_0               ;
             default: tasks = JP_0               ;
@@ -100,22 +100,22 @@ module sigma_delta_2order_dac
             opmode <= `DSP_XIN_DAB  | 
                       `DSP_ZIN_CIN  |
                       `DSP_POSTADD_ADD;
-            dab    <= { {30{cur_sample_reg[17]}}, cur_sample_reg[17:0] };
-            c      <= integ1;
+            dab    <= integ1;
+            c      <= { {30{cur_sample_reg[17]}}, cur_sample_reg[17:0] };
         end
         else if (tasks & ADD_ACC_DELTA) begin
-            opmode <= `DSP_XIN_POUT |
-                      `DSP_ZIN_CIN  |
+            opmode <= `DSP_XIN_DAB  |
+                      `DSP_ZIN_POUT |
                       (delta_add ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    <= 48'h00000;
-            c      <= DELTA;
+            dab    <= DELTA;
+//            c      <= 48'h00000;
         end
         else if (tasks & ADD_ACC_INTEG2) begin
-            opmode <= `DSP_XIN_POUT |
-                      `DSP_ZIN_CIN  |
+            opmode <= `DSP_XIN_DAB  |
+                      `DSP_ZIN_POUT |
                       `DSP_POSTADD_ADD;
-            dab    <= 48'h00000;
-            c      <= integ2;
+            dab    <= integ2;
+//            c      <= 48'h00000;
         end
         else begin
             opmode <= `DSP_NOP;
@@ -162,7 +162,7 @@ module sigma_delta_2order_dac
         if (reset) begin
             dout <= 1'h0;
         end
-        else if (tasks & MOV_DELTA_ACCSGN) begin
+        else if (tasks & MOV_OUT_ACCSGN) begin
             dout <= ~p[47];
         end
     end
