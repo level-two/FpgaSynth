@@ -41,7 +41,7 @@ module sigma_delta_dac_wrap
         end
     end
 
-    sigma_delta_dac right_sigma_delta_dac
+    sigma_delta_2order_dac right_sigma_delta_dac
     (
         .clk  (clk      ),
         .reset(reset    ),
