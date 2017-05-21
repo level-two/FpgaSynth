@@ -8,36 +8,178 @@
 // Description: First order sigma-delta dac for audio output
 // -----------------------------------------------------------------------------
 
+`include "globals.vh"
+
 module sigma_delta_2order_dac
 (
     input               clk,
     input               reset,
-    input signed [17:0] din,
+    input signed [17:0] sample_in,
+    input               sample_in_rdy,
+    input               sample_rate_trig,
     output reg          dout
 );
  
-    localparam signed [23:0] PLUS1  = 24'h10000;
-    localparam signed [23:0] MINUS1 = -PLUS1;
+    localparam signed [47:0] DELTA = 48'h10000;
 
-    reg signed [23:0] integr1;
-    reg signed [23:0] integr2;
 
-    wire signed [23:0] d_in = { {6{din[17]}}, din[17:0] };
+    // STORE SAMPLE_IN
+    reg signed [17:0] sample_in_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            sample_in_reg <= 18'h00000;
+        end
+        else if (sample_in_rdy) begin
+            sample_in_reg <= sample_in;
+        end
+    end
 
-    wire cmp_pos = ~integr2[23];
+
+    reg signed [17:0] cur_sample_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            cur_sample_reg <= 18'h00000;
+        end
+        else if (sample_rate_trig) begin
+            cur_sample_reg <= sample_in_reg;
+        end
+    end
+
+
+    // TASKS
+    localparam [7:0] NOP              = 8'h00;
+    localparam [7:0] JP_0             = 8'h01;
+    localparam [7:0] ADD_SMPL_INTEG1  = 8'h02;
+    localparam [7:0] ADD_ACC_DELTA    = 8'h04;
+    localparam [7:0] ADD_ACC_INTEG2   = 8'h08;
+    localparam [7:0] MOV_INTEG1_ACC   = 8'h10;
+    localparam [7:0] MOV_INTEG2_ACC   = 8'h20;
+    localparam [7:0] MOV_DELTA_ACCSGN = 8'h40;
+    localparam [7:0] MOV_OUT_ACCSGN   = 8'h80;
+              
+    reg [7:0] tasks;
+    always @(pc) begin
+        case (pc)
+            4'h0   : tasks = ADD_SMPL_INTEG1    |
+                             MOV_INTEG2_ACC     |
+                             MOV_DELTA_ACCSGN   |
+                             MOV_OUT_ACCSGN     ;
+            4'h1   : tasks = ADD_ACC_DELTA      ;
+            4'h2   : tasks = ADD_ACC_INTEG2     |
+                             MOV_INTEG1_ACC     ;
+            4'h3   : tasks = ADD_ACC_DELTA      |
+                             JP_0               ;
+            default: tasks = JP_0               ;
+        endcase
+    end
+
+
+    // PC
+    reg [1:0] pc;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            pc <= 2'h0;
+        end
+        else if (tasks & JP_0) begin
+            pc <= 2'h0;
+        end
+        else begin
+            pc <= pc + 2'h1;
+        end
+    end
+
+
+    // ADDER TASKS
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            opmode <= `DSP_NOP;
+            dab    <= 48'h00000;
+            c      <= 48'h00000;
+        end
+        else if (tasks & ADD_SMPL_INTEG1) begin
+            opmode <= `DSP_XIN_DAB  | 
+                      `DSP_ZIN_CIN  |
+                      `DSP_POSTADD_ADD;
+            dab    <= { {30{cur_sample_reg[17]}}, cur_sample_reg[17:0] };
+            c      <= integ1;
+        end
+        else if (tasks & ADD_ACC_DELTA) begin
+            opmode <= `DSP_XIN_POUT |
+                      `DSP_ZIN_CIN  |
+                      (delta_add ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
+            dab    <= 48'h00000;
+            c      <= DELTA;
+        end
+        else if (tasks & ADD_ACC_INTEG2) begin
+            opmode <= `DSP_XIN_POUT |
+                      `DSP_ZIN_CIN  |
+                      `DSP_POSTADD_ADD;
+            dab    <= 48'h00000;
+            c      <= integ2;
+        end
+        else begin
+            opmode <= `DSP_NOP;
+            dab    <= 48'h00000;
+            c      <= 48'h00000;
+        end
+    end
+
+
+    reg signed [47:0] integ1;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            integ1 <= 48'h0;
+        end
+        else if (tasks & MOV_INTEG1_ACC) begin
+            integ1 <= p;
+        end
+    end
+
+
+    reg signed [47:0] integ2;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            integ2 <= 48'h0;
+        end
+        else if (tasks & MOV_INTEG2_ACC) begin
+            integ2 <= p;
+        end
+    end
+
+
+    reg delta_add;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            delta_add <= 1'h0;
+        end
+        else if (tasks & MOV_DELTA_ACCSGN) begin
+            delta_add <= p[47];
+        end
+    end
+
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            integr1 <= {24{1'b0}};
-            integr2 <= {24{1'b0}};
-            dout    <= 1'b0;
+            dout <= 1'h0;
         end
-        else begin : dsp
-            reg signed [23:0] v1;
-            v1 = d_in + (integr1 + (cmp_pos ? MINUS1 : PLUS1));
-            integr1 <= v1;
-            integr2 <= v1 + (integr2 + (cmp_pos ? MINUS1 : PLUS1));
-            dout    <= cmp_pos;
+        else if (tasks & MOV_DELTA_ACCSGN) begin
+            dout <= ~p[47];
         end
     end
+
+
+    reg         [7:0]  opmode;
+    reg  signed [47:0] dab;
+    reg  signed [47:0] c;
+    wire signed [47:0] p;
+    dsp48a1_adder dsp48a1_adder
+    (
+        .clk        (clk        ),
+        .reset      (reset      ),
+        .opmode     (opmode     ),
+        .dabin      (dab        ),
+        .cin        (c          ),
+        .pout       (p          )
+    );
+
 endmodule
