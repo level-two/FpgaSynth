@@ -103,10 +103,14 @@ module top (
         .midi_data1      (midi_data1        ),
         .smpl_rate_trig_l(smpl_rate_trig_l  ),
         .smpl_rate_trig_r(smpl_rate_trig_r  ),
-        .smpl_out_rdy_l  (lpf_smpl_in_rdy_l ),
-        .smpl_out_l      (lpf_smpl_in_l     ),
-        .smpl_out_rdy_r  (lpf_smpl_in_rdy_r ),
-        .smpl_out_r      (lpf_smpl_in_r     )
+        .smpl_out_rdy_l  (lpf_smpl_out_rdy_l ),
+        .smpl_out_l      (lpf_smpl_out_l     ),
+        .smpl_out_rdy_r  (lpf_smpl_out_rdy_r ),
+        .smpl_out_r      (lpf_smpl_out_r     )
+//        .smpl_out_rdy_l  (lpf_smpl_in_rdy_l ),
+//        .smpl_out_l      (lpf_smpl_in_l     ),
+//        .smpl_out_rdy_r  (lpf_smpl_in_rdy_r ),
+//        .smpl_out_r      (lpf_smpl_in_r     )
     );
 
 
@@ -120,8 +124,8 @@ module top (
         .midi_data1     (midi_data1               ),
         .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
         .sample_in      (lpf_smpl_in_l            ),
-        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
-        .sample_out     (lpf_smpl_out_l           ),
+//        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
+//        .sample_out     (lpf_smpl_out_l           ),
         .err_overflow   (err_overflow_l_nc        )
     );
 
@@ -135,29 +139,29 @@ module top (
         .midi_data1     (midi_data1               ),
         .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
         .sample_in      (lpf_smpl_in_r            ),
-        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
-        .sample_out     (lpf_smpl_out_r           ),
+//        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
+//        .sample_out     (lpf_smpl_out_r           ),
         .err_overflow   (err_overflow_r_nc        )
     );
 
 
-    sigma_delta_dac_wrap sigma_delta_dac_wrap_l
+    sigma_delta_2order_dac  sigma_delta_2order_dac_l
     (
-        .clk            (clk                  ),
-        .reset          (reset                ),
-        .smpl_rdy       (lpf_smpl_out_rdy_l   ),
-        .smpl           (lpf_smpl_out_l       ),
-        .smpl_rate_trig (smpl_rate_trig_l     ),
-        .dout           (dac_out_l            )
+        .clk              (clk                  ),
+        .reset            (reset                ),
+        .sample_in        (lpf_smpl_out_l       ),
+        .sample_in_rdy    (lpf_smpl_out_rdy_l   ),
+        .sample_rate_trig (smpl_rate_trig_l     ),
+        .dout             (dac_out_l            )
     );
 
-    sigma_delta_dac_wrap sigma_delta_dac_wrap_r
+    sigma_delta_2order_dac  sigma_delta_2order_dac_r
     (
-        .clk            (clk                  ),
-        .reset          (reset                ),
-        .smpl_rdy       (lpf_smpl_out_rdy_r   ),
-        .smpl           (lpf_smpl_out_r       ),
-        .smpl_rate_trig (smpl_rate_trig_r     ),
-        .dout           (dac_out_r            )
+        .clk              (clk                  ),
+        .reset            (reset                ),
+        .sample_in        (lpf_smpl_out_r       ),
+        .sample_in_rdy    (lpf_smpl_out_rdy_r   ),
+        .sample_rate_trig (smpl_rate_trig_r     ),
+        .dout             (dac_out_r            )
     );
 endmodule

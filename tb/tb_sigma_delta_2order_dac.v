@@ -17,21 +17,24 @@
 module tb_sigma_delta_2order_dac;
     localparam TIMESTEP = 1e-9;
     localparam CLK_FREQ = 100_000_000;
-    real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
+    real CLK_PERIOD     = (1 / (TIMESTEP * CLK_FREQ));
 
     // Inputs
-    reg             clk;
-    reg             reset;   // SPDIF out
-
-    reg signed [17:0] din;
+    reg               clk;
+    reg               reset;
+    reg signed [17:0] sample_in;
+    reg               sample_in_rdy;
+    reg               sample_rate_trig;
     wire              dout;
 
-    sigma_delta_2order_dac #(.NBITS(2), .MBITS(16)) dut
+    sigma_delta_2order_dac  dut
     (
-        .clk(clk),
-        .reset(reset),
-        .din(din),
-        .dout(dout)
+        .clk              (clk                  ),
+        .reset            (reset                ),
+        .sample_in        (sample_in            ),
+        .sample_in_rdy    (sample_in_rdy        ),
+        .sample_rate_trig (sample_rate_trig     ),
+        .dout             (dout                 )
     );
 
     
@@ -46,15 +49,26 @@ module tb_sigma_delta_2order_dac;
     end
 
     initial begin
-        reset <= 1;
-        din   <= 0;
-        #100;
-        reset <= 0;
+        reset            <= 1'b1;
+        sample_in        <= 18'h00000;
+        sample_in_rdy    <= 1'b0;
+        sample_rate_trig <= 1'b0;
 
-        din <= 18'h30000; // Q2.16
+        #100;
+        reset     <= 1'b0;
+        sample_in <= 18'h30000; // Q2.16
+
         repeat ('h200) begin
             repeat (1000) @(posedge clk);
-            din <= din + 18'h00100; // Q2.16
+            sample_in        <= sample_in + 18'h00100; // Q2.16
+            sample_in_rdy    <= 1'b1;
+
+            @(posedge clk);
+            sample_in_rdy    <= 1'b0;
+            sample_rate_trig <= 1'b1;
+
+            @(posedge clk);
+            sample_rate_trig <= 1'b0;
         end
         
         repeat (10000) @(posedge clk);

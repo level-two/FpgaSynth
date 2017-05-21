@@ -4,8 +4,9 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: module_lpf.v
-// Description: LPF implementation based on IIR scheme and Xilinx DSP48A1
+// File: dsp48a1_inst.v
+// Description: Instance of the DSP48A1 in the pipelined multiplier-postadder
+//              mode
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
