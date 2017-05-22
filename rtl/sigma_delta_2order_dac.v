@@ -64,9 +64,9 @@ module sigma_delta_2order_dac
                              MOV_INTEG2_ACC     |
                              MOV_DELTA_ACCSGN   |
                              MOV_OUT_ACCSGN     ;
-            4'h1   : tasks = ADD_ACC_DELTA      |
+            4'h1   : tasks = ADD_ACC_DELTA      ;
+            4'h2   : tasks = ADD_ACC_INTEG2     |
                              MOV_INTEG1_ACC     ;
-            4'h2   : tasks = ADD_ACC_INTEG2     ;
             4'h3   : tasks = ADD_ACC_DELTA      |
                              JP_0               ;
             default: tasks = JP_0               ;
@@ -90,37 +90,30 @@ module sigma_delta_2order_dac
 
 
     // ADDER TASKS
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            opmode <= `DSP_NOP;
-            dab    <= 48'h00000;
-            c      <= 48'h00000;
-        end
-        else if (tasks & ADD_SMPL_INTEG1) begin
-            opmode <= `DSP_XIN_DAB  | 
-                      `DSP_ZIN_CIN  |
-                      `DSP_POSTADD_ADD;
-            dab    <= integ1;
-            c      <= { {30{cur_sample_reg[17]}}, cur_sample_reg[17:0] };
+    always @(*) begin
+        opmode = `DSP_NOP;
+        dab    = 48'h00000;
+        c      = 48'h00000;
+        if (tasks & ADD_SMPL_INTEG1) begin
+            opmode = `DSP_XIN_DAB  | 
+                     `DSP_ZIN_CIN  |
+                     `DSP_POSTADD_ADD;
+            dab    = integ1;
+            c      = { {30{cur_sample_reg[17]}}, cur_sample_reg[17:0] };
         end
         else if (tasks & ADD_ACC_DELTA) begin
-            opmode <= `DSP_XIN_DAB  |
-                      `DSP_ZIN_POUT |
-                      (delta_add ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    <= DELTA;
-//            c      <= 48'h00000;
+            opmode = `DSP_XIN_DAB  |
+                     `DSP_ZIN_POUT |
+                     (delta_add ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
+            dab    = DELTA;
+            c      = 48'h00000;
         end
         else if (tasks & ADD_ACC_INTEG2) begin
-            opmode <= `DSP_XIN_DAB  |
-                      `DSP_ZIN_POUT |
-                      `DSP_POSTADD_ADD;
-            dab    <= integ2;
-//            c      <= 48'h00000;
-        end
-        else begin
-            opmode <= `DSP_NOP;
-            dab    <= 48'h00000;
-            c      <= 48'h00000;
+            opmode = `DSP_XIN_DAB  |
+                     `DSP_ZIN_POUT |
+                     `DSP_POSTADD_ADD;
+            dab    = integ2;
+            c      = 48'h00000;
         end
     end
 
@@ -172,6 +165,7 @@ module sigma_delta_2order_dac
     reg  signed [47:0] dab;
     reg  signed [47:0] c;
     wire signed [47:0] p;
+
     dsp48a1_adder dsp48a1_adder
     (
         .clk        (clk        ),
@@ -183,3 +177,4 @@ module sigma_delta_2order_dac
     );
 
 endmodule
+
