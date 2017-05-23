@@ -48,7 +48,7 @@ module tb_top;
     end
 
 
-    wire [7:0]midi_data[0:2] = {8'h90, 8'h45, 8'h77};
+    wire [7:0]midi_data[0:2] = {8'h90, 8'h7f, 8'h7f};
     integer msg_cnt = 0;
     integer bit_cnt = 0;
 

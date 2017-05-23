@@ -58,9 +58,9 @@ module tb_sigma_delta_2order_dac;
         reset     <= 1'b0;
         sample_in <= 18'h30000; // Q2.16
 
-        repeat ('h200) begin
-            repeat (1000) @(posedge clk);
-            sample_in        <= sample_in + 18'h00100; // Q2.16
+        repeat ('h20) begin
+            repeat (1000000) @(posedge clk);
+            sample_in        <= -sample_in;// + 18'h00100; // Q2.16
             sample_in_rdy    <= 1'b1;
 
             @(posedge clk);
