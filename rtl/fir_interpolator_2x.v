@@ -47,38 +47,42 @@ module interpolator_2x (
 
     // TASKS
     localparam [15:0] NOP             = 16'h0;
-    localparam [15:0] WAIT_IN         = 16'h0;
-    localparam [15:0] WAIT_NEXT_READY = 16'h0;
-    localparam [15:0] MUL_CI_IN_AS    = 16'h0;
-    localparam [15:0] MUL_CI_XYI_AC   = 16'h0;
-    localparam [15:0] MOV_I_0         = 16'h0;
-    localparam [15:0] INC_I           = 16'h0;
-    localparam [15:0] MOV_RES_AC      = 16'h0;
-    localparam [15:0] PUSH_X_IN       = 16'h0;
-    localparam [15:0] PUSH_Y_AC       = 16'h0;
-    localparam [15:0] REPEAT_3        = 16'h0;
-    localparam [15:0] CAL_COEFS       = 16'h0;
-    localparam [15:0] CAL_COEFS_WAIT  = 16'h0;
-    localparam [15:0] JP_0            = 16'h0;
-              
+    localparam [15:0] WAIT_IN         = 16'h1;
+    localparam [15:0] WAIT_NEXT_READY = 16'h2;
+    localparam [15:0] SET_BUSY        = 16'h4;
+    localparam [15:0] RESET_BUSY      = 16'h8;
+    localparam [15:0] PUSH_X          = 16'h10;
+    localparam [15:0] MOV_I_0         = 16'h20;
+    localparam [15:0] INC_I           = 16'h40;
+    localparam [15:0] MOV_J_XHEAD     = 16'h80;
+    localparam [15:0] INC_J_CIRC      = 16'h100;
+    localparam [15:0] MAC_CI_XJ       = 16'h200;
+    localparam [15:0] MOV_RES_AC      = 16'h400;
+    localparam [15:0] MOV_RES_05_XMID = 16'h800;
+    localparam [15:0] REPEAT_3        = 16'h1000;
+    localparam [15:0] REPEAT_32       = 16'h2000;
+    localparam [15:0] JP_0            = 16'h4000;
+
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            4'h0   : tasks = WAIT_IN       ;
-            4'h1   : tasks = PUSH_X_IN     |
-                             MUL_CI_IN_AS  |
-                             INC_I         ;
-            4'h2   : tasks = REPEAT_3      |
-                             MUL_CI_XYI_AC |
-                             INC_I         ;
-            4'h3   : tasks = MUL_CI_XYI_AC |
-                             MOV_I_0       ;
-            4'h4   : tasks = REPEAT_3      |
-                             NOP           ;
-            4'h5   : tasks = MOV_RES_AC    |
-                             PUSH_Y_AC     |
-                             JP_0          ;
-            default: tasks = JP_0          ;
+            4'h0   : tasks = WAIT_IN         ;
+            4'h1   : tasks = SET_BUSY        ;
+                             PUSH_X          ;
+            4'h2   : tasks = MOV_I_0         |
+                             MOV_J_XHEAD     ;
+            4'h3   : tasks = REPEAT_32       |
+                             MAC_CI_XJ       |
+                             INC_I           |
+                             INC_J_CIRC      ;
+            4'h4   : tasks = REPEAT_3        |
+                             NOP             ;
+            4'h5   : tasks = MOV_RES_AC      ;
+            4'h6   : tasks = WAIT_NEXT_READY ;
+            4'h7   : tasks = MOV_RES_05_XMID ;
+            4'h8   : tasks = WAIT_NEXT_READY ;
+            4'h9   : tasks = JP_0            ;
+            default: tasks = JP_0            ;
         endcase
     end
 
@@ -92,8 +96,9 @@ module interpolator_2x (
         else if (tasks & JP_0) begin
             pc <= 4'h0;
         end
-        else if ((tasks & WAIT_IN  && !sample_in_rdy) ||      
-                 (tasks & REPEAT_3 && repeat_st     ))
+        else if ((tasks & WAIT_IN   && !sample_in_rdy) ||
+                 (tasks & REPEAT_3  && repeat_st     ))
+                 (tasks & REPEAT_32 && repeat_st     ))
         begin
             pc <= pc;
         end
@@ -104,74 +109,72 @@ module interpolator_2x (
 
 
     // REPEAT
-    reg  [3:0] repeat_cnt;
-    wire [3:0] repeat_cnt_max = (tasks & REPEAT_3) ? 4'h2 : 4'h0;
+    reg  [4:0] repeat_cnt;
+    wire [4:0] repeat_cnt_max = (tasks & REPEAT_3 ) ? 5'h2  :
+                                (tasks & REPEAT_32) ? 5'h1f : 5'h0;
     wire       repeat_st      = (repeat_cnt != repeat_cnt_max);
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            repeat_cnt <= 4'h0;
+            repeat_cnt <= 5'h0;
         end
         else if (repeat_cnt == repeat_cnt_max) begin
-            repeat_cnt <= 4'h0;
+            repeat_cnt <= 5'h0;
         end
         else begin
-            repeat_cnt <= repeat_cnt + 4'h1;
+            repeat_cnt <= repeat_cnt + 5'h1;
         end
     end
 
 
     // INDEX REGISTER I
-    reg  [3:0] i_reg;
+    reg  [4:0] i_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            i_reg <= 4'h0;
+            i_reg <= 5'h0;
         end
         else if (tasks & MOV_I_0) begin
-            i_reg <= 4'h0;
+            i_reg <= 5'h0;
         end
         else if (tasks & INC_I) begin
-            i_reg <= i_reg + 4'h1;
+            i_reg <= i_reg + 5'h1;
         end
     end
+
+    reg  [4:0] j_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            j_reg <= 5'h0;
+        end
+        else if (tasks & MOV_J_XHEAD) begin
+            j_reg <= x_buf_head_cnt;
+        end
+        else if (tasks & INC_I) begin
+            j_reg <= j_reg + 5'h1;
+        end
+    end
+
 
 
     // XY DELAY LINE
-    reg  signed [17:0] xy_dly_line[0:4];
+    reg signed [17:0] x_buf[0:31];
+    reg        [4:0]  x_buf_head_cnt;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            xy_dly_line[0] <= 18'h00000;
-            xy_dly_line[1] <= 18'h00000;
-            xy_dly_line[2] <= 18'h00000;
-            xy_dly_line[3] <= 18'h00000;
-            xy_dly_line[4] <= 18'h00000;
+            x_buf_head_cnt <= 5'h00
         end
-        else if (tasks & PUSH_X_IN) begin
-            xy_dly_line[0] <= sample_in_reg;
-            xy_dly_line[1] <= xy_dly_line[0];
-            xy_dly_line[2] <= xy_dly_line[1];
-        end
-        else if (tasks & PUSH_Y_AC) begin
-            xy_dly_line[3] <= p[36:34] == 3'h0 ? p[33:16] :
-                              p[36:34] == 3'h7 ? p[33:16] :
-                              xy_dly_line[3];
-            xy_dly_line[4] <= xy_dly_line[3];
+        else if (tasks & PUSH_X) begin
+            x_buf_head_cnt <= x_buf_head_cnt + 5'h1
+            xbuf[x_buf_head_cnt] <= ;
+            // TODO With parametrization!!!!
         end
     end
 
-    // Coefficients
-    wire signed [17:0] coefs[0:4];
-    //assign coefs[0] = 18'h0009b; // b0
-    //assign coefs[1] = 18'h00137; // b1
-    //assign coefs[2] = 18'h0009b; // b2
-    //assign coefs[3] = 18'h1e538; // a1
-    //assign coefs[4] = 18'h31858; // a2
 
-    genvar i;
-    generate
-        for (i = 0; i < 5; i=i+1) begin : COEFS_BLK
-            assign coefs[i] = coefs_flat[18*i +: 18];
-        end
-    endgenerate
+    // Coefficients
+    wire signed [17:0] coefs[0:31];
+
+    // TODO
+
 
 
     // MUL TASKS
@@ -222,13 +225,17 @@ module interpolator_2x (
 
     // DSP signals
     reg         [7:0]  opmode;
-    reg  signed [17:0] a;
-    reg  signed [17:0] b;
+    reg  signed [17:0] al;
+    reg  signed [17:0] ar;
+    reg  signed [17:0] bl;
+    reg  signed [17:0] br;
     wire signed [47:0] c_nc = 48'b0;
-    wire signed [47:0] p;
+    wire signed [47:0] pl;
+    wire signed [47:0] pr;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
-    assign p = dsp_outs_flat;
-
+    assign dsp_ins_flat_l[91:0] = {opmode, al, bl, c_nc};
+    assign dsp_ins_flat_r[91:0] = {opmode, ar, br, c_nc};
+    assign pl = dsp_outs_flat_l;
+    assign pr = dsp_outs_flat_r;
 endmodule
