@@ -50,42 +50,36 @@ module interpolator_2x (
 
 
     // TASKS
-    localparam [15:0] NOP              = 16'h0;
-    localparam [15:0] WAIT_IN          = 16'h1;
-    localparam [15:0] WAIT_NEXT_READY  = 16'h2;
-    localparam [15:0] SET_BUSY         = 16'h4;
-    localparam [15:0] RESET_BUSY       = 16'h8;
-    localparam [15:0] PUSH_X           = 16'h10;
-    localparam [15:0] MOV_I_0          = 16'h20;
-    localparam [15:0] INC_I            = 16'h40;
-    localparam [15:0] MOV_J_XHEAD      = 16'h80;
-    localparam [15:0] INC_J_CIRC       = 16'h100;
-    localparam [15:0] MAC_CI_XJ        = 16'h200;
-    localparam [15:0] MOV_RES_AC       = 16'h400;
-    localparam [15:0] MOV_RES_05_XMID  = 16'h800;
-    localparam [15:0] REPEAT_3         = 16'h1000;
-    localparam [15:0] REPEAT_COEFS_NUM = 16'h2000;
-    localparam [15:0] JP_0             = 16'h4000;
+    localparam [15:0] NOP              = 16'h0000;
+    localparam [15:0] WAIT_IN          = 16'h0001;
+    localparam [15:0] PUSH_X           = 16'h0002;
+    localparam [15:0] MOV_I_0          = 16'h0004;
+    localparam [15:0] INC_I            = 16'h0008;
+    localparam [15:0] MOV_J_XHEAD      = 16'h0010;
+    localparam [15:0] INC_J_CIRC       = 16'h0020;
+    localparam [15:0] MAC_CI_XJ        = 16'h0040;
+    localparam [15:0] MOV_RES_AC       = 16'h0080;
+    localparam [15:0] MOV_RES_05_XMID  = 16'h0100;
+    localparam [15:0] REPEAT_3         = 16'h0200;
+    localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
+    localparam [15:0] JP_0             = 16'h0800;
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
             4'h0   : tasks = WAIT_IN                ;
-            4'h1   : tasks = SET_BUSY               ;
-                             PUSH_X                 ;
-            4'h2   : tasks = MOV_I_0                |
+            4'h1   : tasks = PUSH_X                 ;
+                             MOV_I_0                |
                              MOV_J_XHEAD            ;
-            4'h3   : tasks = REPEAT_COEFS_NUM       |
+            4'h2   : tasks = REPEAT_COEFS_NUM       |
                              MAC_CI_XJ              |
                              INC_I                  |
                              INC_J_CIRC             ;
-            4'h4   : tasks = REPEAT_3               |
+            4'h3   : tasks = REPEAT_3               |
                              NOP                    ;
-            4'h5   : tasks = MOV_RES_AC             ;
-            4'h6   : tasks = WAIT_NEXT_READY        ;
-            4'h7   : tasks = MOV_RES_05_XMID        ;
-            4'h8   : tasks = WAIT_NEXT_READY        ;
-            4'h9   : tasks = JP_0                   ;
+            4'h4   : tasks = MOV_RES_AC             ;
+            4'h5   : tasks = MOV_RES_05_XMID        ;
+            4'h6   : tasks = JP_0                   ;
             default: tasks = JP_0                   ;
         endcase
     end
@@ -160,8 +154,7 @@ module interpolator_2x (
     end
 
 
-
-    // XY DELAY LINE
+    // Delay Line
     wire push_x    = (tasks & PUSH_X   ) ? 1'b1 ? 1'b0;
     wire read_xj   = (tasks & MAC_CI_XJ) ? 1'b1 ? 1'b0;
 
@@ -171,17 +164,19 @@ module interpolator_2x (
             x_buf_head_cnt <= 'h0
         end
         else if (push_x) begin
-            x_buf_head_cnt <= (x_buf_head_cnt == CCNT-1) ?
-                x_buf_head_cnt + 'h1 : 'h0;
+            x_buf_head_cnt <= (x_buf_head_cnt == 0) ?
+                (x_buf_head_cnt - 'h1) : (CCNT-1);
         end
     end
 
-    wire              xbuf_wr      =  push_x;
-    wire [CCNT_W-1:0] xbuf_wr_addr =  x_buf_head_cnt;
-    wire [35:0]       xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
-    wire              xbuf_rd      =  read_xj;
-    wire [CCNT_W-1:0] xbuf_rd_addr =  j_reg;
-    wire [35:0]       xbuf_rd_data;
+    wire               xbuf_wr      =  push_x;
+    wire [CCNT_W-1:0]  xbuf_wr_addr =  x_buf_head_cnt;
+    wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
+    wire               xbuf_rd      =  read_xj;
+    wire [CCNT_W-1:0]  xbuf_rd_addr =  j_reg;
+    wire [35:0]        xbuf_rd_data ;
+    wire signed [17:0] xjl          = xbuf_rd_data[35:18];
+    wire signed [17:0] xjr          = xbuf_rd_data[17:0];
 
     // TODO: Change to the B_RAM
     dp_ram #(.DATA_W(36), .ADDR_W(CCNT_W), .RAM_DEPTH(CCNT)) x_buf_ram
@@ -194,11 +189,6 @@ module interpolator_2x (
         .rd_data   (xbuf_rd_data ),
         .rd        (xbuf_rd      )
     );     
-
-
-
-
-    wire [35:0] xj = xbuf_rd_data;
 
 
     // Coefficients
@@ -242,31 +232,28 @@ module interpolator_2x (
     end
 
 
-
-
     // MUL TASKS
-    wire signed [17:0] ci  = coefs[i_reg];
-    wire signed [17:0] xyi = xy_dly_line[i_reg];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             opmode <= `DSP_NOP;
-            a      <= 18'h00000;
-            b      <= 18'h00000;
+            al     <= 18'h00000;
+            ar     <= 18'h00000;
+            bl     <= 18'h00000;
+            br     <= 18'h00000;
         end
-        else if (tasks & MUL_CI_IN_AS) begin
-            opmode <= `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            a      <= ci;
-            b      <= sample_in_reg;
-        end
-        else if (tasks & MUL_CI_XYI_AC) begin
+        else if (tasks & MAC_CI_XJ) begin
             opmode <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            a      <= ci;
-            b      <= xyi;
+            al     <= ci;
+            ar     <= ci;
+            bl     <= xjl;
+            br     <= xjr;
         end
         else begin
             opmode <= `DSP_NOP;
-            a      <= 18'h00000;
-            b      <= 18'h00000;
+            al     <= 18'h00000;
+            ar     <= 18'h00000;
+            bl     <= 18'h00000;
+            br     <= 18'h00000;
         end
     end
 
@@ -275,17 +262,18 @@ module interpolator_2x (
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
+            sample_out_l   <= 18'h00000;
+            sample_out_r   <= 18'h00000;
         end
         else if (tasks & MOV_RES_AC) begin
             sample_out_rdy <= 1'b1;
-            sample_out     <= p[36:34] == 3'h0 ? p[33:16] :
-                              p[36:34] == 3'h7 ? p[33:16] :
-                              xy_dly_line[3];
+            sample_out_l   <= pl[33:16];
+            sample_out_r   <= pr[33:16];
         end
         else begin
             sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
+            sample_out_l   <= 18'h00000;
+            sample_out_r   <= 18'h00000;
         end
     end
 
