@@ -13,7 +13,7 @@
 module interpolator_2x (
     input                    clk,
     input                    reset,
-    input                    is_next_busy,
+
     input                    sample_in_rdy,
     input  signed [17:0]     sample_in_l,
     input  signed [17:0]     sample_in_r,
@@ -31,7 +31,7 @@ module interpolator_2x (
 
     localparam CCNT_W = 6;
     localparam RCNT_W = CCNT_W;
-    localparam [CCNT_W-1:0] CCNT = 32;
+    localparam [CCNT_W-1:0] CCNT = 34;
 
 
     // STORE SAMPLE_IN
@@ -195,38 +195,42 @@ module interpolator_2x (
     wire signed [17:0] ci;
     always @(i_reg) begin
         case (i_reg)
-            'h0    : begin ci <= 18'h00000; end
-            'h1    : begin ci <= 18'h00000; end
-            'h2    : begin ci <= 18'h00000; end
-            'h3    : begin ci <= 18'h00000; end
-            'h4    : begin ci <= 18'h00000; end
-            'h5    : begin ci <= 18'h00000; end
-            'h6    : begin ci <= 18'h00000; end
-            'h7    : begin ci <= 18'h00000; end
-            'h8    : begin ci <= 18'h00000; end
-            'h9    : begin ci <= 18'h00000; end
-            'ha    : begin ci <= 18'h00000; end
-            'hb    : begin ci <= 18'h00000; end
-            'hc    : begin ci <= 18'h00000; end
-            'hd    : begin ci <= 18'h00000; end
-            'he    : begin ci <= 18'h00000; end
-            'hf    : begin ci <= 18'h00000; end
-            'h10   : begin ci <= 18'h00000; end
-            'h11   : begin ci <= 18'h00000; end
-            'h12   : begin ci <= 18'h00000; end
-            'h13   : begin ci <= 18'h00000; end
-            'h14   : begin ci <= 18'h00000; end
-            'h15   : begin ci <= 18'h00000; end
-            'h16   : begin ci <= 18'h00000; end
-            'h17   : begin ci <= 18'h00000; end
-            'h18   : begin ci <= 18'h00000; end
-            'h19   : begin ci <= 18'h00000; end
-            'h1a   : begin ci <= 18'h00000; end
-            'h1b   : begin ci <= 18'h00000; end
-            'h1c   : begin ci <= 18'h00000; end
-            'h1d   : begin ci <= 18'h00000; end
-            'h1e   : begin ci <= 18'h00000; end
-            'h1f   : begin ci <= 18'h00000; end
+            'h0    : begin ci <= 18'h00001; end
+            'h1    : begin ci <= 18'h3FFFB; end
+            'h2    : begin ci <= 18'h0000D; end
+            'h3    : begin ci <= 18'h3FFE2; end
+            'h4    : begin ci <= 18'h00038; end
+            'h5    : begin ci <= 18'h3FF9B; end
+            'h6    : begin ci <= 18'h000A7; end
+            'h7    : begin ci <= 18'h3FEF7; end
+            'h8    : begin ci <= 18'h00191; end
+            'h9    : begin ci <= 18'h3FDB1; end
+            'ha    : begin ci <= 18'h00352; end
+            'hb    : begin ci <= 18'h3FB45; end
+            'hc    : begin ci <= 18'h006B8; end
+            'hd    : begin ci <= 18'h3F644; end
+            'he    : begin ci <= 18'h00EE1; end
+            'hf    : begin ci <= 18'h3E5B5; end
+            'h10   : begin ci <= 18'h05131; end
+
+            'h11   : begin ci <= 18'h05131; end
+            'h12   : begin ci <= 18'h3E5B5; end
+            'h13   : begin ci <= 18'h00EE1; end
+            'h14   : begin ci <= 18'h3F644; end
+            'h15   : begin ci <= 18'h006B8; end
+            'h16   : begin ci <= 18'h3FB45; end
+            'h17   : begin ci <= 18'h00352; end
+            'h18   : begin ci <= 18'h3FDB1; end
+            'h19   : begin ci <= 18'h00191; end
+            'h1a   : begin ci <= 18'h3FEF7; end
+            'h1b   : begin ci <= 18'h000A7; end
+            'h1c   : begin ci <= 18'h3FF9B; end
+            'h1d   : begin ci <= 18'h00038; end
+            'h1e   : begin ci <= 18'h3FFE2; end
+            'h1f   : begin ci <= 18'h0000D; end
+            'h20   : begin ci <= 18'h3FFFB; end
+            'h21   : begin ci <= 18'h00001; end
+
             default: begin ci <= 18'h00000; end
         endcase
     end
