@@ -82,7 +82,7 @@ module tb_fir_interpolator_2x();
 
         repeat (100) @(posedge clk);
 
-        repeat (10) begin : SAMPLES
+        repeat (100) begin : SAMPLES
             reg [15:0] val;
 
             sample_in_rdy   <= 1;
