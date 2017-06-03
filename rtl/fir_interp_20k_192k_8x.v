@@ -25,6 +25,7 @@ module fir_interp_20k_192k_8x (
     output reg               sample_out_rdy,
     output reg signed [17:0] sample_out_l,
     output reg signed [17:0] sample_out_r,
+    output reg               done,
 
     input  [47:0]            dsp_outs_flat_l,
     input  [47:0]            dsp_outs_flat_r,
@@ -63,6 +64,7 @@ module fir_interp_20k_192k_8x (
     localparam [15:0] REPEAT_8         = 16'h0800;
     localparam [15:0] JP_1             = 16'h1000;
     localparam [15:0] JP_3             = 16'h2000;
+    localparam [15:0] DONE             = 16'h4000;
 
     reg [15:0] tasks;
     always @(*) begin
@@ -83,7 +85,8 @@ module fir_interp_20k_192k_8x (
                           INC_J                       ;
             4'h5: tasks = NOP                         ;
             4'h6: tasks = MOV_RES_AC                  |
-                          (j_reg == 0 ? JP_1 : JP_3)  ;
+                          (j_reg == 0 ? DONE : NOP )  ;
+                          (j_reg == 0 ? JP_1 : JP_3)  |
             default: tasks = JP_1                     ;
         endcase
     end
@@ -315,6 +318,20 @@ module fir_interp_20k_192k_8x (
             sample_out_rdy <= 1'b0;
             sample_out_l   <= 18'h00000;
             sample_out_r   <= 18'h00000;
+        end
+    end
+
+
+    // SET DONE
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            done <= 1'b0;
+        end
+        else if (tasks & DONE) begin
+            done <= 1'b1;
+        end
+        else begin
+            done <= 1'b0;
         end
     end
 
