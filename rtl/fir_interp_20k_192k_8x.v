@@ -33,8 +33,7 @@ module fir_interp_20k_192k_8x (
 );
 
     localparam CCNT_W = 6;
-    localparam RCNT_W = CCNT_W;
-    localparam [CCNT_W-1:0] CCNT = 34;
+    localparam [CCNT_W-1:0] CCNT = 56;
 
 
     // STORE SAMPLE_IN
@@ -62,9 +61,7 @@ module fir_interp_20k_192k_8x (
     localparam [15:0] INC_J_CIRC       = 16'h0020;
     localparam [15:0] MAC_CI_XJ        = 16'h0040;
     localparam [15:0] MOV_RES_AC       = 16'h0080;
-    localparam [15:0] MOV_RES_05_XMID  = 16'h0100;
-    localparam [15:0] REPEAT_3         = 16'h0200;
-    localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
+    localparam [15:0] REPEAT_8         = 16'h0400;
     localparam [15:0] JP_2             = 16'h0800;
 
     reg [15:0] tasks;
@@ -100,9 +97,8 @@ module fir_interp_20k_192k_8x (
         else if (tasks & JP_2) begin
             pc <= 4'h2;
         end
-        else if ((tasks & WAIT_IN          && !sample_in_rdy) ||
-                 (tasks & REPEAT_3         && repeat_st     ) ||
-                 (tasks & REPEAT_COEFS_NUM && repeat_st     ))
+        else if ((tasks & WAIT_IN  && !sample_in_rdy) ||
+                 (tasks & REPEAT_8 && repeat_st     ))
         begin
             pc <= pc;
         end
@@ -114,9 +110,7 @@ module fir_interp_20k_192k_8x (
 
     // REPEAT
     reg  [RCNT_W-1:0] repeat_cnt;
-    wire [RCNT_W-1:0] repeat_cnt_max = (tasks & REPEAT_3        ) ? 'h2    :
-                                       (tasks & REPEAT_COEFS_NUM) ? CCNT-1 :
-                                       'h0;
+    wire [RCNT_W-1:0] repeat_cnt_max = (tasks & REPEAT_8) ? 'h7 : 'h0;
     wire repeat_st = (repeat_cnt != repeat_cnt_max);
 
     always @(posedge reset or posedge clk) begin
@@ -132,8 +126,8 @@ module fir_interp_20k_192k_8x (
     end
 
 
-    // INDEX REGISTER I
-    reg  [CCNT_W-1:0] i_reg;
+    // INDEX REGISTER I (0-6)
+    reg  [2:0] i_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             i_reg <= 'h0;
@@ -146,40 +140,55 @@ module fir_interp_20k_192k_8x (
         end
     end
 
-    reg  [CCNT_W-1:0] j_reg;
+    // INDEX REGISTER J (0-7)
+    reg  [2:0] j_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             j_reg <= 'h0;
         end
-        else if (tasks & MOV_J_XHEAD) begin
-            j_reg <= x_buf_head_cnt;
+        else if (tasks & MOV_J_0) begin
+            j_reg <= 'h0;
         end
-        else if (tasks & INC_J_CIRC) begin
-            j_reg <= (j_reg == CCNT-1) ? 'h0 : j_reg + 'h1;
+        else if (tasks & INC_J) begin
+            j_reg <= j_reg + 'h1;
+        end
+    end
+
+
+    // CRICULAR X INDEX REGISTER (0-7)
+    reg  [2:0] ix_reg;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            ix_reg <= 'h0;
+        end
+        else if (tasks & MOV_IX_XHEAD) begin
+            ix_reg <= x_buf_head_cnt;
+        end
+        else if (tasks & INC_IX_CIRC) begin
+            ix_reg <= ix_reg + 'h1;
         end
     end
 
 
     // Delay Line
-    wire push_x    = (tasks & PUSH_X) ? 1'b1 : 1'b0;
-    wire read_xj   = ((tasks & MAC_CI_XJ) || (tasks & MOV_RES_05_XMID));
+    wire push_x = (tasks & PUSH_X   ) ? 1'b1 : 1'b0;
+    wire read_x = (tasks & MAC_CI_XJ) ? 1'b1 : 1'b0;
 
-    reg [CCNT_W-1:0] x_buf_head_cnt;
+    reg [2:0] x_buf_head_cnt;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             x_buf_head_cnt <= 'h0;
         end
         else if (push_x) begin
-            x_buf_head_cnt <= (x_buf_head_cnt == 0) ?
-                (CCNT-1) : (x_buf_head_cnt - 'h1);
+            x_buf_head_cnt <= (x_buf_head_cnt == 0) ? 'h7 : (x_buf_head_cnt-'h1);
         end
     end
 
     wire               xbuf_wr      = push_x;
     wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
-    wire               xbuf_rd      = read_xj;
-    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_05_XMID) ? (CCNT/2-1) : j_reg;
+    wire               xbuf_rd      = read_x;
+    wire [CCNT_W-1:0]  xbuf_rd_addr = ix_reg;
     wire [35:0]        xbuf_rd_data;
     wire signed [17:0] xjl          = xbuf_rd_data[35:18];
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
@@ -198,10 +207,11 @@ module fir_interp_20k_192k_8x (
 
 
     // Coefficients
+    wire       [5:0]  c_idx = {i_reg, j_reg};
     reg signed [17:0] ci;
-    always @(i_reg) begin
-        case (i_reg)
 
+    always @(c_idx) begin
+        case (c_idx)
             'h0    : begin ci <= 18'h3FFFE; end
             'h1    : begin ci <= 18'h3FFFE; end
             'h2    : begin ci <= 18'h3FFFF; end
@@ -231,34 +241,34 @@ module fir_interp_20k_192k_8x (
             'h1a   : begin ci <= 18'h01C54; end
             'h1b   : begin ci <= 18'h01DF5; end
 
-            'h1c   : begin ci <= 18'h01C54; end
-            'h1d   : begin ci <= 18'h01942; end
-            'h1e   : begin ci <= 18'h0151B; end
-            'h1f   : begin ci <= 18'h01054; end
-            'h20   : begin ci <= 18'h00B6A; end
-            'h21   : begin ci <= 18'h006D5; end
-            'h22   : begin ci <= 18'h002F0; end
-            'h23   : begin ci <= 18'h3FFFB; end
-            'h24   : begin ci <= 18'h3FEFF; end
-            'h25   : begin ci <= 18'h3FCF9; end
-            'h26   : begin ci <= 18'h3FCBE; end
-            'h27   : begin ci <= 18'h3FD13; end
-            'h28   : begin ci <= 18'h3FDBC; end
-            'h29   : begin ci <= 18'h3FE82; end
-            'h2a   : begin ci <= 18'h3FF3B; end
-            'h2b   : begin ci <= 18'h3FFCC; end
-            'h2c   : begin ci <= 18'h0002B; end
-            'h2d   : begin ci <= 18'h0005B; end
-            'h2e   : begin ci <= 18'h00065; end
-            'h2f   : begin ci <= 18'h00058; end
-            'h30   : begin ci <= 18'h00040; end
-            'h31   : begin ci <= 18'h00027; end
-            'h32   : begin ci <= 18'h00013; end
-            'h33   : begin ci <= 18'h00006; end
-            'h34   : begin ci <= 18'h3FFFF; end
-            'h35   : begin ci <= 18'h3FFFE; end
+            'h1c   : begin ci <= 18'h01DF5; end
+            'h1d   : begin ci <= 18'h01C54; end
+            'h1e   : begin ci <= 18'h01942; end
+            'h1f   : begin ci <= 18'h0151B; end
+            'h20   : begin ci <= 18'h01054; end
+            'h21   : begin ci <= 18'h00B6A; end
+            'h22   : begin ci <= 18'h006D5; end
+            'h23   : begin ci <= 18'h002F0; end
+            'h24   : begin ci <= 18'h3FFFB; end
+            'h25   : begin ci <= 18'h3FEFF; end
+            'h26   : begin ci <= 18'h3FCF9; end
+            'h27   : begin ci <= 18'h3FCBE; end
+            'h28   : begin ci <= 18'h3FD13; end
+            'h29   : begin ci <= 18'h3FDBC; end
+            'h2a   : begin ci <= 18'h3FE82; end
+            'h2b   : begin ci <= 18'h3FF3B; end
+            'h2c   : begin ci <= 18'h3FFCC; end
+            'h2d   : begin ci <= 18'h0002B; end
+            'h2e   : begin ci <= 18'h0005B; end
+            'h2f   : begin ci <= 18'h00065; end
+            'h30   : begin ci <= 18'h00058; end
+            'h31   : begin ci <= 18'h00040; end
+            'h32   : begin ci <= 18'h00027; end
+            'h33   : begin ci <= 18'h00013; end
+            'h34   : begin ci <= 18'h00006; end
+            'h35   : begin ci <= 18'h3FFFF; end
             'h36   : begin ci <= 18'h3FFFE; end
-
+            'h37   : begin ci <= 18'h3FFFE; end
             default: begin ci <= 18'h00000; end
         endcase
     end
