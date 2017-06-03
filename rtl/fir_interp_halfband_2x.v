@@ -21,6 +21,7 @@ module fir_interp_halfband_2x (
     output reg               sample_out_rdy,
     output reg signed [17:0] sample_out_l,
     output reg signed [17:0] sample_out_r,
+    output reg               done,
 
     input  [47:0]            dsp_outs_flat_l,
     input  [47:0]            dsp_outs_flat_r,
@@ -62,6 +63,7 @@ module fir_interp_halfband_2x (
     localparam [15:0] REPEAT_3         = 16'h0200;
     localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
     localparam [15:0] JP_2             = 16'h0800;
+    localparam [15:0] DONE             = 16'h1000;
 
     reg [15:0] tasks;
     always @(pc) begin
@@ -80,7 +82,8 @@ module fir_interp_halfband_2x (
             4'h5   : tasks = NOP                    ;
             4'h6   : tasks = NOP                    ;
             4'h7   : tasks = MOV_RES_AC             ;
-            4'h8   : tasks = MOV_RES_05_XMID        ;
+            4'h8   : tasks = MOV_RES_05_XMID        |
+                             DONE                   ;
             4'h9   : tasks = JP_2                   ;
             default: tasks = JP_2                   ;
         endcase
@@ -279,6 +282,21 @@ module fir_interp_halfband_2x (
             sample_out_r   <= 18'h00000;
         end
     end
+
+
+    // SET DONE
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            done <= 1'b0;
+        end
+        else if (tasks & DONE) begin
+            done <= 1'b1;
+        end
+        else begin
+            done <= 1'b0;
+        end
+    end
+
 
 
     // DSP signals
