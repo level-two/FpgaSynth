@@ -18,7 +18,6 @@ module tb_fir_interpolator_2x();
     reg  signed [17:0] sample_in_l;
     reg  signed [17:0] sample_in_r;
 
-    wire               busy;
     wire               sample_out_rdy;
     wire signed [17:0] sample_out_l;
     wire signed [17:0] sample_out_r;
@@ -37,7 +36,6 @@ module tb_fir_interpolator_2x();
         .sample_in_l      (sample_in_l     ),
         .sample_in_r      (sample_in_r     ),
 
-        .busy             (busy            ),
         .sample_out_rdy   (sample_out_rdy  ),
         .sample_out_l     (sample_out_l    ),
         .sample_out_r     (sample_out_r    ),
@@ -48,6 +46,22 @@ module tb_fir_interpolator_2x();
         .dsp_ins_flat_r   (dsp_ins_flat_r  )
     );
 
+    // DSP instances
+    dsp48a1_inst dsp48a1_inst_l (
+        .clk            (clk            ),
+        .reset          (reset          ),
+        .dsp_ins_flat   (dsp_ins_flat_l ),
+        .dsp_outs_flat  (dsp_outs_flat_l)
+    );
+    dsp48a1_inst dsp48a1_inst_r (
+        .clk            (clk            ),
+        .reset          (reset          ),
+        .dsp_ins_flat   (dsp_ins_flat_r ),
+        .dsp_outs_flat  (dsp_outs_flat_r)
+    );
+
+
+    initial $timeformat(-9, 0, " ns", 0);
 
     always begin
         #0.5;
@@ -68,10 +82,14 @@ module tb_fir_interpolator_2x();
 
         repeat (100) @(posedge clk);
 
-        repeat (10) begin
+        repeat (10) begin : SAMPLES
+            reg [15:0] val;
+
             sample_in_rdy   <= 1;
-            sample_in_l     <= $random();
-            sample_in_r     <= $random();
+            val = $random();
+            sample_in_l     <= {2'b0, val};
+            val = $random();
+            sample_in_r     <= {2'b0, val};
 
             @(posedge clk);
             sample_in_rdy <= 0;
@@ -79,6 +97,8 @@ module tb_fir_interpolator_2x();
         end
 
         #100;
+
+        $finish;
     end
 
 endmodule
