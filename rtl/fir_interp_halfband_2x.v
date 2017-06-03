@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: fir_interpolator_2x.v
-// Description: IIR implementation based on Xilinx DSP48A1
+// File: fir_interp_halfband_2x.v
+// Description: Halfband 2x-interpolating FIR implementation
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module fir_interpolator_2x (
+module fir_interp_halfband_2x (
     input                    clk,
     input                    reset,
 

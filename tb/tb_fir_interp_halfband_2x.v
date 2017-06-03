@@ -10,7 +10,7 @@
 
 `include "../rtl/globals.vh"
 
-module tb_fir_interpolator_2x();
+module tb_fir_interp_halfband_2x();
     reg                clk;
     reg                reset;
 
@@ -28,7 +28,7 @@ module tb_fir_interpolator_2x();
     wire [91:0]        dsp_ins_flat_r;
 
     // dut
-    fir_interpolator_2x dut (
+    fir_interp_halfband_2x dut (
         .clk              (clk             ),
         .reset            (reset           ),
 
