@@ -72,21 +72,121 @@ module module_lpf (
     end
 
 
-    // FIFOS
+    // FIFO 1->2
+    wire        fifo_1_2_wr;
+    wire [35:0] fifo_1_2_data_in;
+    wire        fifo_1_2_rd;
+    wire [35:0] fifo_1_2_data_out;
+    wire        fifo_1_2_empty;
+    wire        fifo_1_2_full;
+
     syn_fifo #(36, 1, 2) fifo_1_2 (
-        .clk        (clk            ),
-        .rst        (reset          ),
-        .wr         (fifo_buf_push  ),
-        .rd         (fifo_buf_pop   ),
-        .data_in    (fifo_buf_in    ),
-        .data_out   (fifo_buf_out   ),
-        .empty      (fifo_empty     ),
-        .full       (               )      
+        .clk        (clk                ),
+        .rst        (reset              ),
+        .wr         (fifo_1_2_wr        ),
+        .rd         (fifo_1_2_rd        ),
+        .data_in    (fifo_1_2_data_in   ),
+        .data_out   (fifo_1_2_data_out  ),
+        .empty      (fifo_1_2_empty     ),
+        .full       (fifo_1_2_full      )      
     );
 
+    assign fifo_1_2_wr      = i1_sample_out_rdy;
+    assign fifo_1_2_data_in = {i1_sample_out_l, i1_sample_out_r};
+    assign fifo_1_2_rd      = (tasks & SEND_1_2) ? 1'b1 : 1'b0;
+    assign i2_sample_in_l   = fifo_1_2_data_out[35:18];
+    assign i2_sample_in_r   = fifo_1_2_data_out[17:0];
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            i2_sample_in_rdy <= 1'b0;
+        end
+        else if (fifo_1_2_rd) begin
+            i2_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            i2_sample_in_rdy <= 1'b0;
+        end
+    end
 
 
+    // FIFO 2->3
+    wire        fifo_2_3_wr;
+    wire [35:0] fifo_2_3_data_in;
+    wire        fifo_2_3_rd;
+    wire [35:0] fifo_2_3_data_out;
+    wire        fifo_2_3_empty;
+    wire        fifo_2_3_full;
 
+    syn_fifo #(36, 2, 4) fifo_2_3 (
+        .clk        (clk                ),
+        .rst        (reset              ),
+        .wr         (fifo_2_3_wr        ),
+        .rd         (fifo_2_3_rd        ),
+        .data_in    (fifo_2_3_data_in   ),
+        .data_out   (fifo_2_3_data_out  ),
+        .empty      (fifo_2_3_empty     ),
+        .full       (fifo_2_3_full      )      
+    );
+
+    assign fifo_2_3_wr      = i2_sample_out_rdy;
+    assign fifo_2_3_data_in = {i2_sample_out_l, i2_sample_out_r};
+    assign fifo_2_3_rd      = (tasks & SEND_2_3) ? 1'b1 : 1'b0;
+    assign i3_sample_in_l   = fifo_2_3_data_out[35:18];
+    assign i3_sample_in_r   = fifo_2_3_data_out[17:0];
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            i3_sample_in_rdy <= 1'b0;
+        end
+        else if (fifo_2_3_rd) begin
+            i3_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            i3_sample_in_rdy <= 1'b0;
+        end
+    end
+
+
+    // FIFO 3 to DAC
+    wire        fifo_3_dac_wr;
+    wire [35:0] fifo_3_dac_data_in;
+    wire        fifo_3_dac_rd;
+    wire [35:0] fifo_3_dac_data_out;
+    wire        fifo_3_dac_empty;
+    wire        fifo_3_dac_full;
+
+    syn_fifo #(36, 5, 40) fifo_3_4 (
+        .clk        (clk                  ),
+        .rst        (reset                ),
+        .wr         (fifo_3_dac_wr        ),
+        .rd         (fifo_3_dac_rd        ),
+        .data_in    (fifo_3_dac_data_in   ),
+        .data_out   (fifo_3_dac_data_out  ),
+        .empty      (fifo_3_dac_empty     ),
+        .full       (fifo_3_dac_full      )      
+    );
+
+    assign fifo_3_dac_wr      = i3_sample_out_rdy;
+    assign fifo_3_dac_data_in = {i3_sample_out_l, i3_sample_out_r};
+    assign fifo_3_dac_rd      = (tasks & SEND_3_4) ? 1'b1 : 1'b0;
+    assign dac_sample_in_l    = fifo_3_dac_data_out[35:18];
+    assign dac_sample_in_r    = fifo_3_dac_data_out[17:0];
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            dac_sample_in_rdy <= 1'b0;
+        end
+        else if (fifo_3_dac_rd) begin
+            dac_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            dac_sample_in_rdy <= 1'b0;
+        end
+    end
+
+
+    // INTERPOLATING FILTERS
     wire               i1_sample_in_rdy;
     wire signed [17:0] i1_sample_in_l;
     wire signed [17:0] i1_sample_in_r;
@@ -194,5 +294,8 @@ module module_lpf (
         .dsp_outs_flat  (dsp_outs_flat_r )
     );
 
+
+    // DONE signals gathering
+    wire done = i1_done | i2_done | i3_done;
 
 endmodule
