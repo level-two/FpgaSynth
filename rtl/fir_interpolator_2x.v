@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: interpolator_2x.v
+// File: fir_interpolator_2x.v
 // Description: IIR implementation based on Xilinx DSP48A1
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module interpolator_2x (
+module fir_interpolator_2x (
     input                    clk,
     input                    reset,
 
@@ -18,7 +18,6 @@ module interpolator_2x (
     input  signed [17:0]     sample_in_l,
     input  signed [17:0]     sample_in_r,
 
-    output reg               busy,
     output reg               sample_out_rdy,
     output reg signed [17:0] sample_out_l,
     output reg signed [17:0] sample_out_r,
@@ -62,25 +61,28 @@ module interpolator_2x (
     localparam [15:0] MOV_RES_05_XMID  = 16'h0100;
     localparam [15:0] REPEAT_3         = 16'h0200;
     localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
-    localparam [15:0] JP_0             = 16'h0800;
+    localparam [15:0] JP_2             = 16'h0800;
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            4'h0   : tasks = WAIT_IN                ;
-            4'h1   : tasks = PUSH_X                 ;
+            4'h0   : tasks = MOV_I_0                ;
+            4'h1   : tasks = REPEAT_COEFS_NUM       | // init stack
+                             PUSH_X                 ;
+            4'h2   : tasks = WAIT_IN                ;
+            4'h3   : tasks = PUSH_X                 |
                              MOV_I_0                |
                              MOV_J_XHEAD            ;
-            4'h2   : tasks = REPEAT_COEFS_NUM       |
+            4'h4   : tasks = REPEAT_COEFS_NUM       |
                              MAC_CI_XJ              |
                              INC_I                  |
                              INC_J_CIRC             ;
-            4'h3   : tasks = REPEAT_3               |
+            4'h5   : tasks = REPEAT_3               |
                              NOP                    ;
-            4'h4   : tasks = MOV_RES_AC             ;
-            4'h5   : tasks = MOV_RES_05_XMID        ;
-            4'h6   : tasks = JP_0                   ;
-            default: tasks = JP_0                   ;
+            4'h6   : tasks = MOV_RES_AC             ;
+            4'h7   : tasks = MOV_RES_05_XMID        ;
+            4'h8   : tasks = JP_2                   ;
+            default: tasks = JP_2                   ;
         endcase
     end
 
@@ -91,11 +93,11 @@ module interpolator_2x (
         if (reset) begin
             pc <= 4'h0;
         end
-        else if (tasks & JP_0) begin
-            pc <= 4'h0;
+        else if (tasks & JP_2) begin
+            pc <= 4'h2;
         end
         else if ((tasks & WAIT_IN          && !sample_in_rdy) ||
-                 (tasks & REPEAT_3         && repeat_st     ))
+                 (tasks & REPEAT_3         && repeat_st     ) ||
                  (tasks & REPEAT_COEFS_NUM && repeat_st     ))
         begin
             pc <= pc;
@@ -155,26 +157,26 @@ module interpolator_2x (
 
 
     // Delay Line
-    wire push_x    = (tasks & PUSH_X   ) ? 1'b1 ? 1'b0;
-    wire read_xj   = (tasks & MAC_CI_XJ) ? 1'b1 ? 1'b0;
+    wire push_x    = (tasks & PUSH_X) ? 1'b1 : 1'b0;
+    wire read_xj   = ((tasks & MAC_CI_XJ) || (tasks & MOV_RES_05_XMID));
 
     reg [CCNT_W-1:0] x_buf_head_cnt;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            x_buf_head_cnt <= 'h0
+            x_buf_head_cnt <= 'h0;
         end
         else if (push_x) begin
             x_buf_head_cnt <= (x_buf_head_cnt == 0) ?
-                (x_buf_head_cnt - 'h1) : (CCNT-1);
+                (CCNT-1) : (x_buf_head_cnt - 'h1);
         end
     end
 
-    wire               xbuf_wr      =  push_x;
-    wire [CCNT_W-1:0]  xbuf_wr_addr =  x_buf_head_cnt;
+    wire               xbuf_wr      = push_x;
+    wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
-    wire               xbuf_rd      =  read_xj;
-    wire [CCNT_W-1:0]  xbuf_rd_addr =  j_reg;
-    wire [35:0]        xbuf_rd_data ;
+    wire               xbuf_rd      = read_xj;
+    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_05_XMID) ? (CCNT>>1-1) : j_reg;
+    wire [35:0]        xbuf_rd_data;
     wire signed [17:0] xjl          = xbuf_rd_data[35:18];
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
 
@@ -192,7 +194,7 @@ module interpolator_2x (
 
 
     // Coefficients
-    wire signed [17:0] ci;
+    reg signed [17:0] ci;
     always @(i_reg) begin
         case (i_reg)
             'h0    : begin ci <= 18'h00001; end
@@ -273,6 +275,11 @@ module interpolator_2x (
             sample_out_rdy <= 1'b1;
             sample_out_l   <= pl[33:16];
             sample_out_r   <= pr[33:16];
+        end
+        else if (tasks & MOV_RES_05_XMID) begin
+            sample_out_rdy <= 1'b1;
+            sample_out_l   <= xbuf_rd_data[35:18] >>> 1;
+            sample_out_r   <= xbuf_rd_data[17:0] >>> 1;
         end
         else begin
             sample_out_rdy <= 1'b0;
