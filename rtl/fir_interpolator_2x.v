@@ -77,11 +77,11 @@ module fir_interpolator_2x (
                              MAC_CI_XJ              |
                              INC_I                  |
                              INC_J_CIRC             ;
-            4'h5   : tasks = REPEAT_3               |
-                             NOP                    ;
-            4'h6   : tasks = MOV_RES_AC             ;
-            4'h7   : tasks = MOV_RES_05_XMID        ;
-            4'h8   : tasks = JP_2                   ;
+            4'h5   : tasks = NOP                    ;
+            4'h6   : tasks = NOP                    ;
+            4'h7   : tasks = MOV_RES_AC             ;
+            4'h8   : tasks = MOV_RES_05_XMID        ;
+            4'h9   : tasks = JP_2                   ;
             default: tasks = JP_2                   ;
         endcase
     end
@@ -150,8 +150,8 @@ module fir_interpolator_2x (
         else if (tasks & MOV_J_XHEAD) begin
             j_reg <= x_buf_head_cnt;
         end
-        else if (tasks & INC_I) begin
-            j_reg <= j_reg + 'h1;
+        else if (tasks & INC_J_CIRC) begin
+            j_reg <= (j_reg == CCNT-1) ? 'h0 : j_reg + 'h1;
         end
     end
 
@@ -175,7 +175,7 @@ module fir_interpolator_2x (
     wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
     wire               xbuf_rd      = read_xj;
-    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_05_XMID) ? (CCNT>>1-1) : j_reg;
+    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_05_XMID) ? (CCNT/2-1) : j_reg;
     wire [35:0]        xbuf_rd_data;
     wire signed [17:0] xjl          = xbuf_rd_data[35:18];
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
@@ -239,27 +239,19 @@ module fir_interpolator_2x (
 
 
     // MUL TASKS
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            opmode <= `DSP_NOP;
-            al     <= 18'h00000;
-            ar     <= 18'h00000;
-            bl     <= 18'h00000;
-            br     <= 18'h00000;
-        end
-        else if (tasks & MAC_CI_XJ) begin
-            opmode <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            al     <= ci;
-            ar     <= ci;
-            bl     <= xjl;
-            br     <= xjr;
-        end
-        else begin
-            opmode <= `DSP_NOP;
-            al     <= 18'h00000;
-            ar     <= 18'h00000;
-            bl     <= 18'h00000;
-            br     <= 18'h00000;
+    always @(*) begin
+        opmode = `DSP_NOP;
+        al     = 18'h00000;
+        ar     = 18'h00000;
+        bl     = 18'h00000;
+        br     = 18'h00000;
+
+        if (tasks & MAC_CI_XJ) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            al     = ci;
+            ar     = ci;
+            bl     = xjl;
+            br     = xjr;
         end
     end
 
