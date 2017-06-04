@@ -59,7 +59,7 @@ module fir_interp_halfband_2x (
     localparam [15:0] INC_J_CIRC       = 16'h0020;
     localparam [15:0] MAC_CI_XJ        = 16'h0040;
     localparam [15:0] MOV_RES_AC       = 16'h0080;
-    localparam [15:0] MOV_RES_05_XMID  = 16'h0100;
+    localparam [15:0] MOV_RES_XMID     = 16'h0100;
     localparam [15:0] REPEAT_3         = 16'h0200;
     localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
     localparam [15:0] JP_2             = 16'h0800;
@@ -82,7 +82,7 @@ module fir_interp_halfband_2x (
             4'h5   : tasks = NOP                    ;
             4'h6   : tasks = NOP                    ;
             4'h7   : tasks = MOV_RES_AC             ;
-            4'h8   : tasks = MOV_RES_05_XMID        |
+            4'h8   : tasks = MOV_RES_XMID           |
                              DONE                   ;
             4'h9   : tasks = JP_2                   ;
             default: tasks = JP_2                   ;
@@ -161,7 +161,7 @@ module fir_interp_halfband_2x (
 
     // Delay Line
     wire push_x    = (tasks & PUSH_X) ? 1'b1 : 1'b0;
-    wire read_xj   = ((tasks & MAC_CI_XJ) || (tasks & MOV_RES_05_XMID));
+    wire read_xj   = ((tasks & MAC_CI_XJ) || (tasks & MOV_RES_XMID));
 
     reg [CCNT_W-1:0] x_buf_head_cnt;
     always @(posedge reset or posedge clk) begin
@@ -178,7 +178,7 @@ module fir_interp_halfband_2x (
     wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
     wire               xbuf_rd      = read_xj;
-    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_05_XMID) ? (CCNT/2-1) : j_reg;
+    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_XMID) ? (CCNT/2-1) : j_reg;
     wire [35:0]        xbuf_rd_data;
     wire signed [17:0] xjl          = xbuf_rd_data[35:18];
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
@@ -200,42 +200,40 @@ module fir_interp_halfband_2x (
     reg signed [17:0] ci;
     always @(i_reg) begin
         case (i_reg)
-            'h0    : begin ci <= 18'h00001; end
-            'h1    : begin ci <= 18'h3FFFB; end
-            'h2    : begin ci <= 18'h0000D; end
-            'h3    : begin ci <= 18'h3FFE2; end
-            'h4    : begin ci <= 18'h00038; end
-            'h5    : begin ci <= 18'h3FF9B; end
-            'h6    : begin ci <= 18'h000A7; end
-            'h7    : begin ci <= 18'h3FEF7; end
-            'h8    : begin ci <= 18'h00191; end
-            'h9    : begin ci <= 18'h3FDB1; end
-            'ha    : begin ci <= 18'h00352; end
-            'hb    : begin ci <= 18'h3FB45; end
-            'hc    : begin ci <= 18'h006B8; end
-            'hd    : begin ci <= 18'h3F644; end
-            'he    : begin ci <= 18'h00EE1; end
-            'hf    : begin ci <= 18'h3E5B5; end
-            'h10   : begin ci <= 18'h05131; end
-
-            'h11   : begin ci <= 18'h05131; end
-            'h12   : begin ci <= 18'h3E5B5; end
-            'h13   : begin ci <= 18'h00EE1; end
-            'h14   : begin ci <= 18'h3F644; end
-            'h15   : begin ci <= 18'h006B8; end
-            'h16   : begin ci <= 18'h3FB45; end
-            'h17   : begin ci <= 18'h00352; end
-            'h18   : begin ci <= 18'h3FDB1; end
-            'h19   : begin ci <= 18'h00191; end
-            'h1a   : begin ci <= 18'h3FEF7; end
-            'h1b   : begin ci <= 18'h000A7; end
-            'h1c   : begin ci <= 18'h3FF9B; end
-            'h1d   : begin ci <= 18'h00038; end
-            'h1e   : begin ci <= 18'h3FFE2; end
-            'h1f   : begin ci <= 18'h0000D; end
-            'h20   : begin ci <= 18'h3FFFB; end
-            'h21   : begin ci <= 18'h00001; end
-
+            'h0    : begin ci <= 18'h00002; end
+            'h1    : begin ci <= 18'h3FFF6; end
+            'h2    : begin ci <= 18'h0001A; end
+            'h3    : begin ci <= 18'h3FFC5; end
+            'h4    : begin ci <= 18'h00071; end
+            'h5    : begin ci <= 18'h3FF36; end
+            'h6    : begin ci <= 18'h0014E; end
+            'h7    : begin ci <= 18'h3FDEF; end
+            'h8    : begin ci <= 18'h00322; end
+            'h9    : begin ci <= 18'h3FB62; end
+            'ha    : begin ci <= 18'h006A5; end
+            'hb    : begin ci <= 18'h3F68B; end
+            'hc    : begin ci <= 18'h00D71; end
+            'hd    : begin ci <= 18'h3EC88; end
+            'he    : begin ci <= 18'h01DC3; end
+            'hf    : begin ci <= 18'h3CB6A; end
+            'h10   : begin ci <= 18'h0A263; end
+            'h11   : begin ci <= 18'h0A263; end
+            'h12   : begin ci <= 18'h3CB6A; end
+            'h13   : begin ci <= 18'h01DC3; end
+            'h14   : begin ci <= 18'h3EC88; end
+            'h15   : begin ci <= 18'h00D71; end
+            'h16   : begin ci <= 18'h3F68B; end
+            'h17   : begin ci <= 18'h006A5; end
+            'h18   : begin ci <= 18'h3FB62; end
+            'h19   : begin ci <= 18'h00322; end
+            'h1a   : begin ci <= 18'h3FDEF; end
+            'h1b   : begin ci <= 18'h0014E; end
+            'h1c   : begin ci <= 18'h3FF36; end
+            'h1d   : begin ci <= 18'h00071; end
+            'h1e   : begin ci <= 18'h3FFC5; end
+            'h1f   : begin ci <= 18'h0001A; end
+            'h20   : begin ci <= 18'h3FFF6; end
+            'h21   : begin ci <= 18'h00002; end
             default: begin ci <= 18'h00000; end
         endcase
     end
@@ -271,10 +269,10 @@ module fir_interp_halfband_2x (
             sample_out_l   <= pl[33:16];
             sample_out_r   <= pr[33:16];
         end
-        else if (tasks & MOV_RES_05_XMID) begin
+        else if (tasks & MOV_RES_XMID) begin
             sample_out_rdy <= 1'b1;
-            sample_out_l   <= xbuf_rd_data[35:18] >>> 1;
-            sample_out_r   <= xbuf_rd_data[17:0] >>> 1;
+            sample_out_l   <= xbuf_rd_data[35:18];
+            sample_out_r   <= xbuf_rd_data[17:0];
         end
         else begin
             sample_out_rdy <= 1'b0;
