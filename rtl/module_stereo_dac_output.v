@@ -64,8 +64,8 @@ module module_stereo_dac_output (
         else if (tasks & JP_0) begin
             pc <= 4'h0;
         end
-        else if ((tasks & WAIT_IN  && !sample_in_rdy) ||
-                 (tasks & WAIT_IN  && !done         )) begin
+        else if ((tasks & WAIT_IN   && !sample_in_rdy) ||
+                 (tasks & WAIT_DONE && !done         )) begin
             pc <= pc;
         end
         else begin
@@ -75,9 +75,9 @@ module module_stereo_dac_output (
 
 
     // FIFO 1->2
-    wire        fifo_1_2_wr;
-    wire [35:0] fifo_1_2_data_in;
-    wire        fifo_1_2_rd;
+    wire        fifo_1_2_wr      = i1_sample_out_rdy;
+    wire [35:0] fifo_1_2_data_in = {i1_sample_out_l, i1_sample_out_r}; 
+    wire        fifo_1_2_rd      = (tasks & SEND_1_2) ? 1'b1 : 1'b0;
     wire [35:0] fifo_1_2_data_out;
     wire        fifo_1_2_empty;
     wire        fifo_1_2_full;
@@ -93,29 +93,11 @@ module module_stereo_dac_output (
         .full       (fifo_1_2_full      )      
     );
 
-    assign fifo_1_2_wr      = i1_sample_out_rdy;
-    assign fifo_1_2_data_in = {i1_sample_out_l, i1_sample_out_r};
-    assign fifo_1_2_rd      = (tasks & SEND_1_2) ? 1'b1 : 1'b0;
-    assign i2_sample_in_l   = fifo_1_2_data_out[35:18];
-    assign i2_sample_in_r   = fifo_1_2_data_out[17:0];
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            i2_sample_in_rdy <= 1'b0;
-        end
-        else if (fifo_1_2_rd) begin
-            i2_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            i2_sample_in_rdy <= 1'b0;
-        end
-    end
-
 
     // FIFO 2->3
-    wire        fifo_2_3_wr;
-    wire [35:0] fifo_2_3_data_in;
-    wire        fifo_2_3_rd;
+    wire        fifo_2_3_wr      = i2_sample_out_rdy;
+    wire [35:0] fifo_2_3_data_in = {i2_sample_out_l, i2_sample_out_r};
+    wire        fifo_2_3_rd      = (tasks & SEND_2_3) ? 1'b1 : 1'b0;
     wire [35:0] fifo_2_3_data_out;
     wire        fifo_2_3_empty;
     wire        fifo_2_3_full;
@@ -131,36 +113,14 @@ module module_stereo_dac_output (
         .full       (fifo_2_3_full      )      
     );
 
-    assign fifo_2_3_wr      = i2_sample_out_rdy;
-    assign fifo_2_3_data_in = {i2_sample_out_l, i2_sample_out_r};
-    assign fifo_2_3_rd      = (tasks & SEND_2_3) ? 1'b1 : 1'b0;
-    assign i3_sample_in_l   = fifo_2_3_data_out[35:18];
-    assign i3_sample_in_r   = fifo_2_3_data_out[17:0];
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            i3_sample_in_rdy <= 1'b0;
-        end
-        else if (fifo_2_3_rd) begin
-            i3_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            i3_sample_in_rdy <= 1'b0;
-        end
-    end
-
 
     // FIFO 3 to DAC
-    wire        fifo_3_dac_wr;
-    wire [35:0] fifo_3_dac_data_in;
-    wire        fifo_3_dac_rd;
+    wire        fifo_3_dac_wr      = i3_sample_out_rdy;
+    wire [35:0] fifo_3_dac_data_in = {i3_sample_out_l, i3_sample_out_r};
+    wire        fifo_3_dac_rd      = dac_rd_next_sample;
     wire [35:0] fifo_3_dac_data_out;
     wire        fifo_3_dac_empty;
     wire        fifo_3_dac_full;
-
-    assign fifo_3_dac_wr      = i3_sample_out_rdy;
-    assign fifo_3_dac_data_in = {i3_sample_out_l, i3_sample_out_r};
-    assign fifo_3_dac_rd      = dac_rd_next_sample;
 
     syn_fifo #(36, 5, 40) fifo_3_4 (
         .clk        (clk                  ),
@@ -175,9 +135,9 @@ module module_stereo_dac_output (
 
 
     // INTERPOLATING FILTERS
-    wire               i1_sample_in_rdy;
-    wire signed [17:0] i1_sample_in_l;
-    wire signed [17:0] i1_sample_in_r;
+    wire               i1_sample_in_rdy = sample_in_rdy;
+    wire signed [17:0] i1_sample_in_l   = sample_in_l;
+    wire signed [17:0] i1_sample_in_r   = sample_in_r;
     wire               i1_sample_out_rdy;
     wire signed [17:0] i1_sample_out_l;
     wire signed [17:0] i1_sample_out_r;
@@ -203,9 +163,9 @@ module module_stereo_dac_output (
         .dsp_ins_flat_r  (i1_dsp_ins_flat_r     )
     );
 
-    wire               i2_sample_in_rdy;
-    wire signed [17:0] i2_sample_in_l;
-    wire signed [17:0] i2_sample_in_r;
+    reg                i2_sample_in_rdy;
+    wire signed [17:0] i2_sample_in_l = fifo_1_2_data_out[35:18];
+    wire signed [17:0] i2_sample_in_r = fifo_1_2_data_out[17:0];
     wire               i2_sample_out_rdy;
     wire signed [17:0] i2_sample_out_l;
     wire signed [17:0] i2_sample_out_r;
@@ -214,6 +174,18 @@ module module_stereo_dac_output (
     wire [91:0]        i2_dsp_ins_flat_r;
     wire [47:0]        i2_dsp_outs_flat_l = dsp_outs_flat_l;
     wire [47:0]        i2_dsp_outs_flat_r = dsp_outs_flat_r;
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            i2_sample_in_rdy <= 1'b0;
+        end
+        else if (fifo_1_2_rd) begin
+            i2_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            i2_sample_in_rdy <= 1'b0;
+        end
+    end
 
     fir_interp_halfband_2x  i2_96k_192k (
         .clk             (clk                   ),
@@ -231,9 +203,9 @@ module module_stereo_dac_output (
         .dsp_ins_flat_r  (i2_dsp_ins_flat_r     )
     );
 
-    wire               i3_sample_in_rdy;
-    wire signed [17:0] i3_sample_in_l;
-    wire signed [17:0] i3_sample_in_r;
+    reg                i3_sample_in_rdy;
+    wire signed [17:0] i3_sample_in_l = fifo_2_3_data_out[35:18];
+    wire signed [17:0] i3_sample_in_r = fifo_2_3_data_out[17:0];
     wire               i3_sample_out_rdy;
     wire signed [17:0] i3_sample_out_l;
     wire signed [17:0] i3_sample_out_r;
@@ -242,6 +214,19 @@ module module_stereo_dac_output (
     wire [91:0]        i3_dsp_ins_flat_r;
     wire [47:0]        i3_dsp_outs_flat_l = dsp_outs_flat_l;
     wire [47:0]        i3_dsp_outs_flat_r = dsp_outs_flat_r;
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            i3_sample_in_rdy <= 1'b0;
+        end
+        else if (fifo_2_3_rd) begin
+            i3_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            i3_sample_in_rdy <= 1'b0;
+        end
+    end
+
 
     fir_interp_20k_192k_8x  i3_192k_1536k (
         .clk             (clk                   ),
@@ -285,7 +270,6 @@ module module_stereo_dac_output (
 
     // DONE signals gathering
     wire done = i1_done | i2_done | i3_done;
-
 
 
     // SIGMA-DELTA DAC CONTROL

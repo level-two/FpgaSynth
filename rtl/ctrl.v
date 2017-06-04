@@ -9,6 +9,8 @@
 //              new sample (sample rate is taken to be 48kHz)
 // -----------------------------------------------------------------------------
 
+`include "globals.vh"
+
 module ctrl (
     input         clk,
     input         reset,
