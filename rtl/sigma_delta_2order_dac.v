@@ -25,12 +25,12 @@ module sigma_delta_2order_dac
 
 
     // STORE SAMPLE_IN
-    reg signed [17:0] sample_in_reg_l;
-    reg signed [17:0] sample_in_reg_r;
+    reg signed [17:0] sample_in_l_reg;
+    reg signed [17:0] sample_in_r_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_in_reg_l <= 18'h00000;
-            sample_in_reg_r <= 18'h00000;
+            sample_in_l_reg <= 18'h00000;
+            sample_in_r_reg <= 18'h00000;
         end
         else if (sample_in_rdy) begin
             // sample_in_reg <= 
@@ -38,8 +38,8 @@ module sigma_delta_2order_dac
             //    sample_in[17:16] == 2'b10 ? 18'h30000 : 
             //    sample_in;
 
-            sample_in_reg_l <= sample_in_l;
-            sample_in_reg_r <= sample_in_r;
+            sample_in_l_reg <= sample_in_l;
+            sample_in_r_reg <= sample_in_r;
         end
     end
 
@@ -209,7 +209,8 @@ module sigma_delta_2order_dac
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            dout <= 1'h0;
+            dout_l <= 1'h0;
+            dout_r <= 1'h0;
         end
         else if (tasks & MOV_OUTL_ACCSGN) begin
             dout_l <= ~p[47];
