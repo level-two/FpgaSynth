@@ -4,13 +4,15 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: module_lpf.v
-// Description: LPF implementation based on IIR scheme and Xilinx DSP48A1
+// File: module_stereo_dac_output.v
+// Description: Stereo sigma-delta dac with interpolation
+//              Input  sample rate:   48 kHz
+//              Output sample rate: 1536 kHz
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module module_lpf (
+module module_stereo_dac_output (
     input               clk,
     input               reset,
     input               sample_in_rdy,
@@ -156,6 +158,10 @@ module module_lpf (
     wire        fifo_3_dac_empty;
     wire        fifo_3_dac_full;
 
+    assign fifo_3_dac_wr      = i3_sample_out_rdy;
+    assign fifo_3_dac_data_in = {i3_sample_out_l, i3_sample_out_r};
+    assign fifo_3_dac_rd      = dac_rd_next_sample;
+
     syn_fifo #(36, 5, 40) fifo_3_4 (
         .clk        (clk                  ),
         .rst        (reset                ),
@@ -166,24 +172,6 @@ module module_lpf (
         .empty      (fifo_3_dac_empty     ),
         .full       (fifo_3_dac_full      )      
     );
-
-    assign fifo_3_dac_wr      = i3_sample_out_rdy;
-    assign fifo_3_dac_data_in = {i3_sample_out_l, i3_sample_out_r};
-    assign fifo_3_dac_rd      = (tasks & SEND_3_4) ? 1'b1 : 1'b0;
-    assign dac_sample_in_l    = fifo_3_dac_data_out[35:18];
-    assign dac_sample_in_r    = fifo_3_dac_data_out[17:0];
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            dac_sample_in_rdy <= 1'b0;
-        end
-        else if (fifo_3_dac_rd) begin
-            dac_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            dac_sample_in_rdy <= 1'b0;
-        end
-    end
 
 
     // INTERPOLATING FILTERS
@@ -298,4 +286,50 @@ module module_lpf (
     // DONE signals gathering
     wire done = i1_done | i2_done | i3_done;
 
+
+
+    // SIGMA-DELTA DAC CONTROL
+    reg       dac_rd_next_sample;
+    reg [6:0] dac_sample_clk_counter;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            dac_rd_next_sample     <= 1'b0;
+            dac_sample_clk_counter <= 7'h00;
+        end
+        else if (dac_sample_clk_counter == `CLK_DIV_1536K-1) begin
+            dac_rd_next_sample     <= 1'b1;
+            dac_sample_clk_counter <= 7'h00;
+        end
+        else begin
+            dac_rd_next_sample     <= 1'b0;
+            dac_sample_clk_counter <= dac_sample_clk_counter + 7'h01;
+        end
+    end
+
+    reg dac_sample_in_rdy;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            dac_sample_in_rdy <= 1'b0;
+        end
+        else if (dac_rd_next_sample) begin
+            dac_sample_in_rdy <= 1'b1;
+        end
+        else begin
+            dac_sample_in_rdy <= 1'b0;
+        end
+    end
+
+    wire signed [17:0] dac_sample_in_l = fifo_3_dac_data_out[35:18];
+    wire signed [17:0] dac_sample_in_r = fifo_3_dac_data_out[17:0];
+
+    sigma_delta_2order_dac dac
+    (
+        .clk            (clk                ),
+        .reset          (reset              ),
+        .sample_in_l    (dac_sample_in_l    ),
+        .sample_in_r    (dac_sample_in_r    ),
+        .sample_in_rdy  (dac_sample_in_rdy  ),
+        .dout_l         (dac_out_l          ),
+        .dout_r         (dac_out_r          )
+    );
 endmodule
