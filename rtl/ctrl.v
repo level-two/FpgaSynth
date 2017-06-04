@@ -21,7 +21,7 @@ module ctrl (
         if (reset) begin
             cnt  <= 0;
         end
-        else if (cnt == 12'd1042) begin
+        else if (cnt == `CLK_DIV_48K-1) begin
             cnt <= 0;
         end
         else begin
@@ -29,17 +29,14 @@ module ctrl (
         end
     end
 
-    reg chnl;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             smpl_rate_trig_l <= 0;
             smpl_rate_trig_r <= 0;
-            chnl             <= 0;
         end
         else if (cnt == 0) begin
-            smpl_rate_trig_l <= (chnl == 0) ? 1'b1 : 1'b0;
-            smpl_rate_trig_r <= (chnl == 1) ? 1'b1 : 1'b0;
-            chnl             <= ~chnl;
+            smpl_rate_trig_l <= 1'b1;
+            smpl_rate_trig_r <= 1'b1;
         end
         else begin
             smpl_rate_trig_l <= 0;
