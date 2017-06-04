@@ -257,7 +257,7 @@ module module_stereo_dac_output (
         .clk            (clk             ),
         .reset          (reset           ),
         .dsp_ins_flat   (dsp_ins_flat_l  ),
-        .dsp_outs_flat  (dsp_outs_flat_r )
+        .dsp_outs_flat  (dsp_outs_flat_l )
     );
 
     dsp48a1_inst dsp48a1_r (
@@ -281,7 +281,8 @@ module module_stereo_dac_output (
             dac_sample_clk_counter <= 7'h00;
         end
         else if (dac_sample_clk_counter == `CLK_DIV_1536K-1) begin
-            dac_rd_next_sample     <= 1'b1;
+            // Skip if there is no data for the DAC
+            dac_rd_next_sample     <= fifo_3_dac_empty ? 1'b0 : 1'b1;
             dac_sample_clk_counter <= 7'h00;
         end
         else begin
