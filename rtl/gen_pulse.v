@@ -11,23 +11,17 @@
 `include "globals.vh"
 
 module gen_pulse (
-    input             clk,
-    input             reset,
-
-    input             smpl_rate_trig_l,
-    input             smpl_rate_trig_r,
-
-    input             midi_rdy,
+    input                       clk,
+    input                       reset,
+    input                       midi_rdy,
     input  [`MIDI_CMD_SIZE-1:0] midi_cmd,
-    input  [3:0]      midi_ch_sysn,
-    input  [6:0]      midi_data0,
-    input  [6:0]      midi_data1,
-
-    output reg        smpl_out_rdy_l,
-    output reg signed [17:0] smpl_out_l,
-
-    output reg        smpl_out_rdy_r,
-    output reg signed [17:0] smpl_out_r
+    input  [3:0]                midi_ch_sysn,
+    input  [6:0]                midi_data0,
+    input  [6:0]                midi_data1,
+    input                       smpl_rate_trig,
+    output reg                  smpl_out_rdy,
+    output reg signed [17:0]    smpl_out_l,
+    output reg signed [17:0]    smpl_out_r
 );
 
     wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
@@ -228,22 +222,19 @@ module gen_pulse (
     
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            smpl_out_l     <= 0;
-            smpl_out_rdy_l <= 0;
-            smpl_out_r     <= 0;
-            smpl_out_rdy_r <= 0;
+            smpl_out_rdy   <= 1'b0;
+            smpl_out_l     <= 18'h00000;
+            smpl_out_r     <= 18'h00000;
         end
-        else if (smpl_rate_trig_l) begin
+        else if (smpl_rate_trig) begin
+            smpl_out_rdy   <= 1'b1;
             smpl_out_l     <= sample_val;
-            smpl_out_rdy_l <= 1;
-        end
-        else if (smpl_rate_trig_r) begin
             smpl_out_r     <= sample_val;
-            smpl_out_rdy_r <= 1;
         end
         else begin
-            smpl_out_rdy_l <= 0;
-            smpl_out_rdy_r <= 0;
+            smpl_out_rdy   <= 1'b0;
+            smpl_out_l     <= 18'h00000;
+            smpl_out_r     <= 18'h00000;
         end
     end
 endmodule
