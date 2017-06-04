@@ -12,6 +12,9 @@
 `define _MIDI_FPGA_SYNTH_GLOBALS_VH_
 
 `define CLK_FREQ                100_000_000
+`define CLK_DIV_1536K           65
+`define CLK_DIV_1536K_48K       32
+`define CLK_DIV_48K             (CLK_DIV_1536K * CLK_DIV_1536K_48K)
 
 `define MIDI_CMD_NONE           'h00
 `define MIDI_CMD_NOTE_ON        'h01
