@@ -24,10 +24,10 @@ module syn_fifo (
     parameter FIFO_DEPTH = (1 << ADDR_W);
 
 
-    reg  [ADDR_W-1:0] wr_pointer;
-    reg  [ADDR_W-1:0] rd_pointer;
-    reg  [ADDR_W-1:0] status_cnt;
-    wire [DATA_W-1:0] data_ram;
+    reg  [ADDR_W:0]   wr_pointer;
+    reg  [ADDR_W:0]   rd_pointer;
+    reg  [ADDR_W:0]   status_cnt;
+    wire [DATA_W-1:0] rd_data;
 
     assign full  = (status_cnt == FIFO_DEPTH);
     assign empty = (status_cnt == 0);
@@ -58,7 +58,7 @@ module syn_fifo (
         end
     end
 
-    assign data_out = data_ram;
+    assign data_out = rd_data;
 
     always @ (posedge clk or posedge rst) begin
         if (rst) begin
@@ -81,7 +81,7 @@ module syn_fifo (
         .wr_data   (data_in    ),
         .wr        (wr         ),
         .rd_addr   (rd_pointer ),
-        .rd_data   (data_ram   ),
+        .rd_data   (rd_data    ),
         .rd        (rd         )
     );     
 endmodule
