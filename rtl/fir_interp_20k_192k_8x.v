@@ -85,8 +85,8 @@ module fir_interp_20k_192k_8x (
                           INC_J                       ;
             4'h5: tasks = NOP                         ;
             4'h6: tasks = MOV_RES_AC                  |
-                          (j_reg == 0 ? DONE : NOP )  ;
-                          (j_reg == 0 ? JP_1 : JP_3)  |
+                          (j_reg == 0 ? DONE : NOP )  |
+                          (j_reg == 0 ? JP_1 : JP_3)  ;
             default: tasks = JP_1                     ;
         endcase
     end
