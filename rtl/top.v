@@ -74,98 +74,92 @@ module top (
     );
 
 
+    wire gen_pulse_smpl_rate_trig;
+
     ctrl ctrl (
-        .clk             (clk             ),
-        .reset           (reset           ),
-        .smpl_rate_trig_l(smpl_rate_trig_l),
-        .smpl_rate_trig_r(smpl_rate_trig_r)
+        .clk            (clk                      ),
+        .reset          (reset                    ),
+        .smpl_rate_trig (gen_pulse_smpl_rate_trig )
     );
 
 
-    wire                lpf_smpl_in_rdy_l;
-    wire                lpf_smpl_in_rdy_r;
-    wire                lpf_smpl_out_rdy_l;
-    wire                lpf_smpl_out_rdy_r;
-    wire signed [17:0]  lpf_smpl_in_l;
-    wire signed [17:0]  lpf_smpl_in_r;
-    wire signed [17:0]  lpf_smpl_out_l;
-    wire signed [17:0]  lpf_smpl_out_r;
-    wire                err_overflow_l_nc;
-    wire                err_overflow_r_nc;
+    wire               gen_pulse_smpl_out_rdy;
+    wire signed [17:0] gen_pulse_smpl_out_l;
+    wire signed [17:0] gen_pulse_smpl_out_r;
 
     gen_pulse gen_pulse (
-        .clk             (clk               ),
-        .reset           (reset             ),
-        .midi_rdy        (midi_rdy          ),
-        .midi_cmd        (midi_cmd          ),
-        .midi_ch_sysn    (midi_ch_sysn      ),
-        .midi_data0      (midi_data0        ),
-        .midi_data1      (midi_data1        ),
-        .smpl_rate_trig_l(smpl_rate_trig_l  ),
-        .smpl_rate_trig_r(smpl_rate_trig_r  ),
-//        .smpl_out_rdy_l  (lpf_smpl_out_rdy_l ),
-//        .smpl_out_l      (lpf_smpl_out_l     ),
-//        .smpl_out_rdy_r  (lpf_smpl_out_rdy_r ),
-//        .smpl_out_r      (lpf_smpl_out_r     )
-        .smpl_out_rdy_l  (lpf_smpl_in_rdy_l ),
-        .smpl_out_l      (lpf_smpl_in_l     ),
-        .smpl_out_rdy_r  (lpf_smpl_in_rdy_r ),
-        .smpl_out_r      (lpf_smpl_in_r     )
+        .clk             (clk                       ),
+        .reset           (reset                     ),
+        .midi_rdy        (midi_rdy                  ),
+        .midi_cmd        (midi_cmd                  ),
+        .midi_ch_sysn    (midi_ch_sysn              ),
+        .midi_data0      (midi_data0                ),
+        .midi_data1      (midi_data1                ),
+        .smpl_rate_trig  (gen_pulse_smpl_rate_trig  ),
+        .smpl_out_rdy    (gen_pulse_smpl_out_rdy    ),
+        .smpl_out_l      (gen_pulse_smpl_out_l      ),
+        .smpl_out_r      (gen_pulse_smpl_out_r      )
     );
 
+//    wire                lpf_smpl_in_rdy_l;
+//    wire                lpf_smpl_in_rdy_r;
+//    wire                lpf_smpl_out_rdy_l;
+//    wire                lpf_smpl_out_rdy_r;
+//    wire signed [17:0]  lpf_smpl_in_l;
+//    wire signed [17:0]  lpf_smpl_in_r;
+//    wire signed [17:0]  lpf_smpl_out_l;
+//    wire signed [17:0]  lpf_smpl_out_r;
+//    wire                err_overflow_l_nc;
+//    wire                err_overflow_r_nc;
 
-    module_lpf module_lpf_l (
-        .clk            (clk                      ),
-        .reset          (reset                    ),
-        .midi_rdy       (midi_rdy                 ),
-        .midi_cmd       (midi_cmd                 ),
-        .midi_ch_sysn   (midi_ch_sysn             ),
-        .midi_data0     (midi_data0               ),
-        .midi_data1     (midi_data1               ),
-        .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
-        .sample_in      (lpf_smpl_in_l            ),
+
+//    module_lpf module_lpf_l (
+//        .clk            (clk                      ),
+//        .reset          (reset                    ),
+//        .midi_rdy       (midi_rdy                 ),
+//        .midi_cmd       (midi_cmd                 ),
+//        .midi_ch_sysn   (midi_ch_sysn             ),
+//        .midi_data0     (midi_data0               ),
+//        .midi_data1     (midi_data1               ),
+//        .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
+//        .sample_in      (lpf_smpl_in_l            ),
 //
-        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
-        .sample_out     (lpf_smpl_out_l           ),
+//        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
+//        .sample_out     (lpf_smpl_out_l           ),
 //
-        .err_overflow   (err_overflow_l_nc        )
-    );
+//        .err_overflow   (err_overflow_l_nc        )
+//    );
 
-    module_lpf module_lpf_r (
-        .clk            (clk                      ),
-        .reset          (reset                    ),
-        .midi_rdy       (midi_rdy                 ),
-        .midi_cmd       (midi_cmd                 ),
-        .midi_ch_sysn   (midi_ch_sysn             ),
-        .midi_data0     (midi_data0               ),
-        .midi_data1     (midi_data1               ),
-        .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
-        .sample_in      (lpf_smpl_in_r            ),
-//
-        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
-        .sample_out     (lpf_smpl_out_r           ),
-//
-        .err_overflow   (err_overflow_r_nc        )
-    );
+//    module_lpf module_lpf_r (
+//        .clk            (clk                      ),
+//        .reset          (reset                    ),
+//        .midi_rdy       (midi_rdy                 ),
+//        .midi_cmd       (midi_cmd                 ),
+//        .midi_ch_sysn   (midi_ch_sysn             ),
+//        .midi_data0     (midi_data0               ),
+//        .midi_data1     (midi_data1               ),
+//        .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
+//        .sample_in      (lpf_smpl_in_r            ),
+
+//        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
+//        .sample_out     (lpf_smpl_out_r           ),
+
+//        .err_overflow   (err_overflow_r_nc        )
+//    );
 
 
-    sigma_delta_2order_dac  sigma_delta_2order_dac_l
-    (
-        .clk              (clk                  ),
-        .reset            (reset                ),
-        .sample_in        (lpf_smpl_out_l       ),
-        .sample_in_rdy    (lpf_smpl_out_rdy_l   ),
-        .sample_rate_trig (smpl_rate_trig_l     ),
-        .dout             (dac_out_l            )
-    );
+    // dut
+    wire               dac_sample_in_rdy = gen_pulse_smpl_out_rdy;
+    wire signed [17:0] dac_sample_in_l   = gen_pulse_smpl_out_l;
+    wire signed [17:0] dac_sample_in_r   = gen_pulse_smpl_out_r;
 
-    sigma_delta_2order_dac  sigma_delta_2order_dac_r
-    (
-        .clk              (clk                  ),
-        .reset            (reset                ),
-        .sample_in        (lpf_smpl_out_r       ),
-        .sample_in_rdy    (lpf_smpl_out_rdy_r   ),
-        .sample_rate_trig (smpl_rate_trig_r     ),
-        .dout             (dac_out_r            )
+    module_stereo_dac_output  stereo_dac_output (
+        .clk            (clk               ),
+        .reset          (reset             ),
+        .sample_in_rdy  (dac_sample_in_rdy ),
+        .sample_in_l    (dac_sample_in_l   ),
+        .sample_in_r    (dac_sample_in_r   ),
+        .dac_out_l      (dac_out_l         ),
+        .dac_out_r      (dac_out_r         )
     );
 endmodule
