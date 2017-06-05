@@ -32,6 +32,7 @@ module fir_interp_halfband_2x (
     localparam CCNT_W = 6;
     localparam RCNT_W = CCNT_W;
     localparam [CCNT_W-1:0] CCNT = 34;
+    localparam XMID_ADR = 17;
 
 
     // STORE SAMPLE_IN
@@ -161,16 +162,21 @@ module fir_interp_halfband_2x (
 
     // Delay Line
     wire push_x    = (tasks & PUSH_X) ? 1'b1 : 1'b0;
-    wire read_xj   = ((tasks & MAC_CI_XJ) || (tasks & MOV_RES_XMID));
+    wire read_xj   = (tasks & (MAC_CI_XJ | MOV_RES_XMID)) ? 1'b1 : 1'b0;
 
     reg [CCNT_W-1:0] x_buf_head_cnt;
+    reg [CCNT_W-1:0] x_buf_mid_cnt;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             x_buf_head_cnt <= 'h0;
+            x_buf_mid_cnt  <= XMID_ADR;
         end
         else if (push_x) begin
             x_buf_head_cnt <= (x_buf_head_cnt == 0) ?
                 (CCNT-1) : (x_buf_head_cnt - 'h1);
+
+            x_buf_mid_cnt  <= (x_buf_mid_cnt == 0) ?
+                (CCNT-1) : (x_buf_mid_cnt - 'h1);
         end
     end
 
@@ -178,7 +184,7 @@ module fir_interp_halfband_2x (
     wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
     wire               xbuf_rd      = read_xj;
-    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_XMID) ? (CCNT/2-1) : j_reg;
+    wire [CCNT_W-1:0]  xbuf_rd_addr = (tasks & MOV_RES_XMID) ? x_buf_mid_cnt : j_reg;
     wire [35:0]        xbuf_rd_data;
     wire signed [17:0] xjl          = xbuf_rd_data[35:18];
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
