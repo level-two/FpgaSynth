@@ -22,6 +22,8 @@ module tb_fir_interp_20k_192k_8x();
     wire signed [17:0] sample_out_l;
     wire signed [17:0] sample_out_r;
 
+    wire               done;
+
     wire [47:0]        dsp_outs_flat_l;
     wire [47:0]        dsp_outs_flat_r;
     wire [91:0]        dsp_ins_flat_l;
@@ -39,6 +41,8 @@ module tb_fir_interp_20k_192k_8x();
         .sample_out_rdy   (sample_out_rdy  ),
         .sample_out_l     (sample_out_l    ),
         .sample_out_r     (sample_out_r    ),
+
+        .done             (done            ),
 
         .dsp_outs_flat_l  (dsp_outs_flat_l ),
         .dsp_outs_flat_r  (dsp_outs_flat_r ),
@@ -70,18 +74,38 @@ module tb_fir_interp_20k_192k_8x();
 
 
     initial begin
-            clk             <= 0;
-            reset           <= 1;
+        clk             <= 0;
+        reset           <= 1;
 
-            sample_in_rdy   <= 0;
-            sample_in_l     <= 0;
-            sample_in_r     <= 0;
-
-        repeat (100) @(posedge clk);
-            reset <= 0;
+        sample_in_rdy   <= 0;
+        sample_in_l     <= 0;
+        sample_in_r     <= 0;
 
         repeat (100) @(posedge clk);
+        reset <= 0;
 
+        repeat (100) @(posedge clk);
+
+        sample_in_l     <= 18'h00000;
+        sample_in_r     <= 18'h00000;
+        repeat (100) begin
+            sample_in_rdy   <= 1;
+            @(posedge clk);
+            sample_in_rdy <= 0;
+            repeat (100) @(posedge clk);
+        end
+
+        sample_in_l     <= 18'h04000;
+        sample_in_r     <= 18'h04000;
+        repeat (100) begin
+            sample_in_rdy   <= 1;
+            @(posedge clk);
+            sample_in_rdy <= 0;
+            repeat (100) @(posedge clk);
+        end
+
+
+        /*
         repeat (100) begin : SAMPLES
             reg [15:0] val;
 
@@ -95,6 +119,7 @@ module tb_fir_interp_20k_192k_8x();
             sample_in_rdy <= 0;
             repeat (200) @(posedge clk);
         end
+        */
 
         #100;
 

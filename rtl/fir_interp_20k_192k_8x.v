@@ -61,30 +61,28 @@ module fir_interp_20k_192k_8x (
     localparam [15:0] MAC_CIJ_X        = 16'h0100;
     localparam [15:0] MOV_RES_AC       = 16'h0200;
     localparam [15:0] REPEAT_7         = 16'h0400;
-    localparam [15:0] REPEAT_8         = 16'h0800;
-    localparam [15:0] JP_1             = 16'h1000;
-    localparam [15:0] JP_3             = 16'h2000;
-    localparam [15:0] DONE             = 16'h4000;
+    localparam [15:0] JP_1             = 16'h0800;
+    localparam [15:0] JP_3             = 16'h1000;
+    localparam [15:0] DONE             = 16'h2000;
 
     reg [15:0] tasks;
     always @(*) begin
         case (pc)
-            4'h0: tasks = REPEAT_8                    | // init stack
+            3'h0: tasks = REPEAT_7                    | // init stack
                           PUSH_X                      ;
-            4'h1: tasks = WAIT_IN                     ;
-            4'h2: tasks = PUSH_X                      |
+            3'h1: tasks = WAIT_IN                     ;
+            3'h2: tasks = PUSH_X                      |
                           MOV_I_0                     |
                           MOV_J_0                     |
                           MOV_IX_XHEAD                ;
-            4'h3: tasks = REPEAT_7                    |
+            3'h3: tasks = REPEAT_7                    |
                           MAC_CIJ_X                   |
                           INC_I                       |
                           INC_IX_CIRC                 ;
-            4'h4: tasks = MOV_I_0                     |
-                          INC_IX_CIRC                 | // inc IX to point to the stack head
+            3'h4: tasks = MOV_I_0                     |
                           INC_J                       ;
-            4'h5: tasks = NOP                         ;
-            4'h6: tasks = MOV_RES_AC                  |
+            3'h5: tasks = NOP                         ;
+            3'h6: tasks = MOV_RES_AC                  |
                           (j_reg == 0 ? DONE : NOP )  |
                           (j_reg == 0 ? JP_1 : JP_3)  ;
             default: tasks = JP_1                     ;
@@ -105,8 +103,7 @@ module fir_interp_20k_192k_8x (
             pc <= 3'h3;
         end
         else if ((tasks & WAIT_IN  && !sample_in_rdy) ||
-                 (tasks & REPEAT_7 && repeat_st     ) ||
-                 (tasks & REPEAT_8 && repeat_st     ))
+                 (tasks & REPEAT_7 && repeat_st     ))
         begin
             pc <= pc;
         end
@@ -118,9 +115,7 @@ module fir_interp_20k_192k_8x (
 
     // REPEAT
     reg  [2:0] repeat_cnt;
-    wire [2:0] repeat_cnt_max = (tasks & REPEAT_8) ? 'h7 :
-                                (tasks & REPEAT_7) ? 'h6 :
-                                'h0;
+    wire [2:0] repeat_cnt_max = (tasks & REPEAT_7) ? 'h6 : 'h0;
     wire repeat_st = (repeat_cnt != repeat_cnt_max);
 
     always @(posedge reset or posedge clk) begin
@@ -175,7 +170,7 @@ module fir_interp_20k_192k_8x (
             ix_reg <= x_buf_head_cnt;
         end
         else if (tasks & INC_IX_CIRC) begin
-            ix_reg <= ix_reg + 'h1;
+            ix_reg <= (ix_reg == 'h6) ? 'h0 : (ix_reg + 'h1);
         end
     end
 
@@ -190,7 +185,7 @@ module fir_interp_20k_192k_8x (
             x_buf_head_cnt <= 'h0;
         end
         else if (push_x) begin
-            x_buf_head_cnt <= (x_buf_head_cnt == 0) ? 'h7 : (x_buf_head_cnt-'h1);
+            x_buf_head_cnt <= (x_buf_head_cnt == 0) ? 'h6 : (x_buf_head_cnt-'h1);
         end
     end
 
@@ -204,7 +199,7 @@ module fir_interp_20k_192k_8x (
     wire signed [17:0] xjr          = xbuf_rd_data[17:0];
 
     // TODO: Change to the B_RAM
-    dp_ram #(.DATA_W(36), .ADDR_W(3), .RAM_DEPTH(8)) x_buf_ram
+    dp_ram #(.DATA_W(36), .ADDR_W(3), .RAM_DEPTH(7)) x_buf_ram
     (
         .clk       (clk          ),
         .wr_addr   (xbuf_wr_addr ),
