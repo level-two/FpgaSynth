@@ -14,7 +14,7 @@ module top (
     input            CLK_50M,
     input      [0:0] PB,
     input      [0:0] PMOD3,   // UART rx
-    output     [0:0] PMOD4,   // dac out
+    output     [0:1] PMOD4,   // dac out
     output     [1:0] LED
 );
 
@@ -23,6 +23,7 @@ module top (
 
     wire   rx       = PMOD3[0];
     assign PMOD4[0] = dac_out_l;
+    assign PMOD4[1] = dac_out_r;
     assign LED[0]   = 0;
     assign LED[1]   = 0;
 
