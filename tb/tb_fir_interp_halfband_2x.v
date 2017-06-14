@@ -21,6 +21,7 @@ module tb_fir_interp_halfband_2x();
     wire               sample_out_rdy;
     wire signed [17:0] sample_out_l;
     wire signed [17:0] sample_out_r;
+    wire               done;
 
     wire [47:0]        dsp_outs_flat_l;
     wire [47:0]        dsp_outs_flat_r;
@@ -31,15 +32,13 @@ module tb_fir_interp_halfband_2x();
     fir_interp_halfband_2x dut (
         .clk              (clk             ),
         .reset            (reset           ),
-
         .sample_in_rdy    (sample_in_rdy   ),
         .sample_in_l      (sample_in_l     ),
         .sample_in_r      (sample_in_r     ),
-
         .sample_out_rdy   (sample_out_rdy  ),
         .sample_out_l     (sample_out_l    ),
         .sample_out_r     (sample_out_r    ),
-
+        .done             (done            ),
         .dsp_outs_flat_l  (dsp_outs_flat_l ),
         .dsp_outs_flat_r  (dsp_outs_flat_r ),
         .dsp_ins_flat_l   (dsp_ins_flat_l  ),
@@ -82,23 +81,37 @@ module tb_fir_interp_halfband_2x();
 
         repeat (100) @(posedge clk);
 
-        repeat (100) begin : SAMPLES
-            reg [15:0] val;
+        sample_in_l     <= 18'h00000;
+        sample_in_r     <= 18'h00000;
 
-            sample_in_rdy   <= 1;
-            val = $random();
-            sample_in_l     <= {2'b0, val};
-            val = $random();
-            sample_in_r     <= {2'b0, val};
+        repeat (100) begin
+            sample_in_rdy <= 1;
+            @(posedge clk);
+            sample_in_rdy <= 0;
+            repeat (100) @(posedge clk);
+        end
+
+        sample_in_l     <= 18'h01000;
+        sample_in_r     <= 18'h3f000;
+
+        repeat (100) begin
+            sample_in_rdy <= 1;
 
             @(posedge clk);
             sample_in_rdy <= 0;
-            repeat (200) @(posedge clk);
+
+            repeat (100) @(posedge clk);
         end
 
         #100;
 
         $finish;
+    end
+
+    always @(posedge clk) begin
+        if (sample_out_rdy) begin
+            $display("%d", sample_out_l);
+        end
     end
 
 endmodule

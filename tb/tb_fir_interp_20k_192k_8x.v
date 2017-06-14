@@ -89,19 +89,22 @@ module tb_fir_interp_20k_192k_8x();
         sample_in_l     <= 18'h00000;
         sample_in_r     <= 18'h00000;
         repeat (100) begin
-            sample_in_rdy   <= 1;
+            sample_in_rdy <= 1;
             @(posedge clk);
             sample_in_rdy <= 0;
             repeat (100) @(posedge clk);
         end
 
-        sample_in_l     <= 18'h04000;
-        sample_in_r     <= 18'h04000;
+        sample_in_l     <= 18'h01000;
+        sample_in_r     <= 18'h3f000;
+
         repeat (100) begin
-            sample_in_rdy   <= 1;
+            sample_in_rdy <= 1;
+
             @(posedge clk);
             sample_in_rdy <= 0;
-            repeat (100) @(posedge clk);
+
+            repeat (300) @(posedge clk);
         end
 
 
@@ -124,6 +127,13 @@ module tb_fir_interp_20k_192k_8x();
         #100;
 
         $finish;
+    end
+
+
+    always @(posedge clk) begin
+        if (sample_out_rdy) begin
+            $display("%d", sample_out_l);
+        end
     end
 
 endmodule
