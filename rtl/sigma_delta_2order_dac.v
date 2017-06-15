@@ -21,7 +21,7 @@ module sigma_delta_2order_dac
     output reg          dout_r
 );
  
-    localparam signed [47:0] DELTA = 48'h35555;
+    localparam signed [47:0] DELTA = 48'h1AAAA;
 
 
     // STORE SAMPLE_IN
