@@ -163,7 +163,7 @@ module module_stereo_dac_output (
         .dsp_ins_flat_r  (i1_dsp_ins_flat_r     )
     );
 
-    reg                i2_sample_in_rdy;
+    wire               i2_sample_in_rdy = fifo_1_2_rd;
     wire signed [17:0] i2_sample_in_l = fifo_1_2_data_out[35:18];
     wire signed [17:0] i2_sample_in_r = fifo_1_2_data_out[17:0];
     wire               i2_sample_out_rdy;
@@ -174,18 +174,6 @@ module module_stereo_dac_output (
     wire [91:0]        i2_dsp_ins_flat_r;
     wire [47:0]        i2_dsp_outs_flat_l = dsp_outs_flat_l;
     wire [47:0]        i2_dsp_outs_flat_r = dsp_outs_flat_r;
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            i2_sample_in_rdy <= 1'b0;
-        end
-        else if (fifo_1_2_rd) begin
-            i2_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            i2_sample_in_rdy <= 1'b0;
-        end
-    end
 
     fir_interp_halfband_2x  i2_96k_192k (
         .clk             (clk                   ),
@@ -203,7 +191,7 @@ module module_stereo_dac_output (
         .dsp_ins_flat_r  (i2_dsp_ins_flat_r     )
     );
 
-    reg                i3_sample_in_rdy;
+    wire               i3_sample_in_rdy = fifo_2_3_rd;
     wire signed [17:0] i3_sample_in_l = fifo_2_3_data_out[35:18];
     wire signed [17:0] i3_sample_in_r = fifo_2_3_data_out[17:0];
     wire               i3_sample_out_rdy;
@@ -214,19 +202,6 @@ module module_stereo_dac_output (
     wire [91:0]        i3_dsp_ins_flat_r;
     wire [47:0]        i3_dsp_outs_flat_l = dsp_outs_flat_l;
     wire [47:0]        i3_dsp_outs_flat_r = dsp_outs_flat_r;
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            i3_sample_in_rdy <= 1'b0;
-        end
-        else if (fifo_2_3_rd) begin
-            i3_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            i3_sample_in_rdy <= 1'b0;
-        end
-    end
-
 
     fir_interp_20k_192k_8x  i3_192k_1536k (
         .clk             (clk                   ),
@@ -291,19 +266,7 @@ module module_stereo_dac_output (
         end
     end
 
-    reg dac_sample_in_rdy;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            dac_sample_in_rdy <= 1'b0;
-        end
-        else if (dac_rd_next_sample) begin
-            dac_sample_in_rdy <= 1'b1;
-        end
-        else begin
-            dac_sample_in_rdy <= 1'b0;
-        end
-    end
-
+    wire               dac_sample_in_rdy = dac_rd_next_sample;
     wire signed [17:0] dac_sample_in_l = fifo_3_dac_data_out[35:18];
     wire signed [17:0] dac_sample_in_r = fifo_3_dac_data_out[17:0];
 
