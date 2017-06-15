@@ -56,19 +56,28 @@ module tb_module_stereo_dac_output();
 
         repeat (100) @(posedge clk);
 
+        sample_in_l     <= 18'h00000;
+        sample_in_r     <= 18'h01000;
+
         repeat (100) begin : SAMPLES
-            reg [15:0] val;
+            sample_in_rdy   <= 1;
+            @(posedge clk);
+            sample_in_rdy   <= 0;
+            repeat (2079) @(posedge clk);
+            sample_in_rdy   <= 1;
+            @(posedge clk);
+            sample_in_rdy   <= 0;
+            repeat (2079) @(posedge clk);
+
+            sample_in_r     <= ~sample_in_r;
 
             sample_in_rdy   <= 1;
-            //val = $random();
-            val = 16'h0000;
-            sample_in_l     <= {2'b0, val};
-            //val = $random();
-            val = 16'h8000;
-            sample_in_r     <= {2'b0, val};
-
             @(posedge clk);
-            sample_in_rdy <= 0;
+            sample_in_rdy   <= 0;
+            repeat (2079) @(posedge clk);
+            sample_in_rdy   <= 1;
+            @(posedge clk);
+            sample_in_rdy   <= 0;
             repeat (2079) @(posedge clk);
         end
 
@@ -76,5 +85,4 @@ module tb_module_stereo_dac_output();
 
         $finish;
     end
-
 endmodule
