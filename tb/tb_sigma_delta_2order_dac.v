@@ -22,19 +22,21 @@ module tb_sigma_delta_2order_dac;
     // Inputs
     reg               clk;
     reg               reset;
-    reg signed [17:0] sample_in;
+    reg signed [17:0] sample_in_l;
+    reg signed [17:0] sample_in_r;
     reg               sample_in_rdy;
-    reg               sample_rate_trig;
-    wire              dout;
+    wire              dout_l;
+    wire              dout_r;
 
     sigma_delta_2order_dac  dut
     (
         .clk              (clk                  ),
         .reset            (reset                ),
-        .sample_in        (sample_in            ),
+        .sample_in_l      (sample_in_l          ),
+        .sample_in_r      (sample_in_r          ),
         .sample_in_rdy    (sample_in_rdy        ),
-        .sample_rate_trig (sample_rate_trig     ),
-        .dout             (dout                 )
+        .dout_l           (dout_l               ),
+        .dout_r           (dout_r               )
     );
 
     
@@ -50,29 +52,35 @@ module tb_sigma_delta_2order_dac;
 
     initial begin
         reset            <= 1'b1;
-        sample_in        <= 18'h00000;
+        sample_in_l      <= 18'h00000;
+        sample_in_r      <= 18'h00000;
         sample_in_rdy    <= 1'b0;
-        sample_rate_trig <= 1'b0;
 
-        #100;
-        reset     <= 1'b0;
-        sample_in <= 18'h30000; // Q2.16
+        repeat (100) @(posedge clk);
 
-        repeat ('h20) begin
-            repeat (1000000) @(posedge clk);
-            sample_in        <= -sample_in;// + 18'h00100; // Q2.16
+        reset       <= 1'b0;
+        sample_in_l <= 18'h00000;
+        sample_in_r <= 18'h04000;
+
+        @(posedge clk);
+
+        repeat (500) begin
+            sample_in_r      <= sample_in_r + 18'h00004;
             sample_in_rdy    <= 1'b1;
-
             @(posedge clk);
             sample_in_rdy    <= 1'b0;
-            sample_rate_trig <= 1'b1;
-
-            @(posedge clk);
-            sample_rate_trig <= 1'b0;
+            repeat (100) @(posedge clk);
         end
         
-        repeat (10000) @(posedge clk);
         $finish;
     end
+
+
+    always @(posedge clk) begin
+        if (sample_in_rdy) begin
+            $display("%d", dout_r);
+        end
+    end
+
 endmodule
 
