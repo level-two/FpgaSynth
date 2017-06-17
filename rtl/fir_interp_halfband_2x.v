@@ -61,32 +61,30 @@ module fir_interp_halfband_2x (
     localparam [15:0] MAC_CI_XJ        = 16'h0040;
     localparam [15:0] MOV_RES_AC       = 16'h0080;
     localparam [15:0] MOV_RES_XMID     = 16'h0100;
-    localparam [15:0] REPEAT_3         = 16'h0200;
-    localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
-    localparam [15:0] JP_2             = 16'h0800;
-    localparam [15:0] DONE             = 16'h1000;
+    localparam [15:0] REPEAT_COEFS_NUM = 16'h0200;
+    localparam [15:0] JP_1             = 16'h0400;
+    localparam [15:0] DONE             = 16'h0800;
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            4'h0   : tasks = MOV_I_0                ;
-            4'h1   : tasks = REPEAT_COEFS_NUM       | // init stack
+            4'h0   : tasks = REPEAT_COEFS_NUM       | // init stack
                              PUSH_X                 ;
-            4'h2   : tasks = WAIT_IN                ;
-            4'h3   : tasks = PUSH_X                 |
+            4'h1   : tasks = WAIT_IN                ;
+            4'h2   : tasks = PUSH_X                 |
                              MOV_I_0                |
                              MOV_J_XHEAD            ;
-            4'h4   : tasks = REPEAT_COEFS_NUM       |
+            4'h3   : tasks = REPEAT_COEFS_NUM       |
                              MAC_CI_XJ              |
                              INC_I                  |
                              INC_J_CIRC             ;
+            4'h4   : tasks = NOP                    ;
             4'h5   : tasks = NOP                    ;
-            4'h6   : tasks = NOP                    ;
-            4'h7   : tasks = MOV_RES_AC             ;
-            4'h8   : tasks = MOV_RES_XMID           |
+            4'h6   : tasks = MOV_RES_AC             ;
+            4'h7   : tasks = MOV_RES_XMID           |
                              DONE                   ;
-            4'h9   : tasks = JP_2                   ;
-            default: tasks = JP_2                   ;
+            4'h8   : tasks = JP_1                   ;
+            default: tasks = JP_1                   ;
         endcase
     end
 
@@ -97,11 +95,10 @@ module fir_interp_halfband_2x (
         if (reset) begin
             pc <= 4'h0;
         end
-        else if (tasks & JP_2) begin
-            pc <= 4'h2;
+        else if (tasks & JP_1) begin
+            pc <= 4'h1;
         end
         else if ((tasks & WAIT_IN          && !sample_in_rdy) ||
-                 (tasks & REPEAT_3         && repeat_st     ) ||
                  (tasks & REPEAT_COEFS_NUM && repeat_st     ))
         begin
             pc <= pc;
@@ -114,8 +111,7 @@ module fir_interp_halfband_2x (
 
     // REPEAT
     reg  [RCNT_W-1:0] repeat_cnt;
-    wire [RCNT_W-1:0] repeat_cnt_max = (tasks & REPEAT_3        ) ? 'h2    :
-                                       (tasks & REPEAT_COEFS_NUM) ? CCNT-1 :
+    wire [RCNT_W-1:0] repeat_cnt_max = (tasks & REPEAT_COEFS_NUM) ? CCNT-1 :
                                        'h0;
     wire repeat_st = (repeat_cnt != repeat_cnt_max);
 
