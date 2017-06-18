@@ -75,12 +75,12 @@ module top (
     );
 
 
-    wire gen_pulse_smpl_rate_trig;
+    wire gen_pulse_smpl_rate_2x_trig;
 
     ctrl ctrl (
-        .clk            (clk                      ),
-        .reset          (reset                    ),
-        .smpl_rate_trig (gen_pulse_smpl_rate_trig )
+        .clk               (clk                         ),
+        .reset             (reset                       ),
+        .smpl_rate_2x_trig (gen_pulse_smpl_rate_2x_trig )
     );
 
 

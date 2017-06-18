@@ -18,11 +18,17 @@ module gen_pulse (
     input  [3:0]                midi_ch_sysn,
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
-    input                       smpl_rate_trig,
-    output reg                  smpl_out_rdy,
-    output reg signed [17:0]    smpl_out_l,
-    output reg signed [17:0]    smpl_out_r
+    input                       sample_rate_2x_trig,
+    output reg                  sample_out_rdy,
+    output reg signed [17:0]    sample_out_l,
+    output reg signed [17:0]    sample_out_r,
+
+    input  [47:0]               dsp_outs_flat_l,
+    input  [47:0]               dsp_outs_flat_r,
+    output [91:0]               dsp_ins_flat_l,
+    output [91:0]               dsp_ins_flat_r
 );
+
 
     wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
     wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
@@ -30,12 +36,75 @@ module gen_pulse (
     reg [6:0] note;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note <= 0;
+            note    <= 7'h0;
         end
         else if (note_on_event) begin
-            note <= midi_data0;
+            note    <= midi_data0;
         end
     end
+
+
+    reg  [31:0] divider_cnt;
+    wire        divider_cnt_evnt = (divider_cnt == (div >> 1));
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            divider_cnt <= 0;
+        end
+        else if (divider_cnt == (div >> 1) || note_on_event || note_off_event) begin
+            divider_cnt <= 0;
+        end
+        else begin
+            divider_cnt <= divider_cnt + 1;
+        end
+    end
+
+
+    reg signed [17:0] sample_val;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            sample_val <= 0;
+        end
+        else if (note_on_event) begin
+            sample_val <= {2'b00, midi_data1, 9'b0};
+        end
+        else if (note_off_event) begin
+            sample_val <= 0;
+        end
+        else if (divider_cnt_evnt) begin
+            sample_val <= -sample_val;
+        end
+    end
+
+
+    // Decimating filter
+    wire               fir_sample_in_rdy = sample_rate_2x_trig;
+    wire signed [17:0] fir_sample_in_l   = sample_val;
+    wire signed [17:0] fir_sample_in_r   = sample_val;
+
+    wire               fir_sample_out_rdy;
+    wire signed [17:0] fir_sample_out_l;
+    wire signed [17:0] fir_sample_out_r;
+
+    fir_decim_halfband_2x  fir_decim_halfband_2x (
+        .clk              (clk                 ),
+        .reset            (reset               ),
+        .sample_in_rdy    (fir_sample_in_rdy   ),
+        .sample_in_l      (fir_sample_in_l     ),
+        .sample_in_r      (fir_sample_in_r     ),
+        .sample_out_rdy   (fir_sample_out_rdy  ),
+        .sample_out_l     (fir_sample_out_l    ),
+        .sample_out_r     (fir_sample_out_r    ),
+        .dsp_outs_flat_l  (dsp_outs_flat_l     ),
+        .dsp_outs_flat_r  (dsp_outs_flat_r     ),
+        .dsp_ins_flat_l   (dsp_ins_flat_l      ),
+        .dsp_ins_flat_r   (dsp_ins_flat_r      )
+    );
+
+    // Outs
+    assign sample_out_rdy = fir_sample_out_rdy;
+    assign sample_out_l   = fir_sample_out_l;
+    assign sample_out_r   = fir_sample_out_r;
+
 
     reg [31:0] div;
     always @(note) begin
@@ -188,54 +257,4 @@ module gen_pulse (
     end
 
 
-    reg  [31:0] divider_cnt;
-    wire        divider_cnt_evnt = (divider_cnt == div);
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            divider_cnt <= 0;
-        end
-        else if (divider_cnt == div || note_on_event || note_off_event) begin
-            divider_cnt <= 0;
-        end
-        else begin
-            divider_cnt <= divider_cnt + 1;
-        end
-    end
-
-
-    reg signed [17:0] sample_val;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            sample_val <= 0;
-        end
-        else if (note_on_event) begin
-            sample_val <= {2'b00, midi_data1, 9'b0}; // Q2.16
-        end
-        else if (note_off_event) begin
-            sample_val <= 0;
-        end
-        else if (divider_cnt_evnt) begin
-            sample_val <= -sample_val;
-        end
-    end
-
-    
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            smpl_out_rdy   <= 1'b0;
-            smpl_out_l     <= 18'h00000;
-            smpl_out_r     <= 18'h00000;
-        end
-        else if (smpl_rate_trig) begin
-            smpl_out_rdy   <= 1'b1;
-            smpl_out_l     <= sample_val;
-            smpl_out_r     <= sample_val;
-        end
-        else begin
-            smpl_out_rdy   <= 1'b0;
-            smpl_out_l     <= 18'h00000;
-            smpl_out_r     <= 18'h00000;
-        end
-    end
 endmodule
-
