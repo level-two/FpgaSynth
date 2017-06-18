@@ -21,7 +21,7 @@ module sigma_delta_2order_dac
     output reg          dout_r
 );
  
-    localparam signed [47:0] DELTA = 48'h1AAAA;
+    localparam signed [47:0] DELTA = 48'h18000;
 
 
     // STORE SAMPLE_IN
@@ -79,11 +79,8 @@ module sigma_delta_2order_dac
             // Right sample calc
                              ADD_SR_I1R         ;
             4'h6   : tasks = ADD_DR             ;
-            4'h7   : tasks = MOV_I1R_ACC        |
-                             ADD_I2R            ;
-            4'h8   : tasks = ADD_DR             ;
-            4'h9   : tasks = MOV_DR_ACCSGN      |
-                             MOV_I2R_ACC        |
+            4'h7   : tasks = MOV_DR_ACCSGN      |
+                             MOV_I1R_ACC        |
                              MOV_OUTR_ACCSGN    |
                              JP_0               ;
             default: tasks = JP_0               ;
