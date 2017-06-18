@@ -14,22 +14,22 @@
 module ctrl (
     input         clk,
     input         reset,
-    output reg    smpl_rate_trig
+    output reg    smpl_rate_2x_trig
 );
 
     reg [11:0] cnt;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             cnt  <= 0;
-            smpl_rate_trig <= 0;
+            smpl_rate_2x_trig <= 0;
         end
-        else if (cnt == `CLK_DIV_48K-1) begin
+        else if (cnt == `CLK_DIV_96K-1) begin
             cnt <= 0;
-            smpl_rate_trig <= 1'b1;
+            smpl_rate_2x_trig <= 1'b1;
         end
         else begin
             cnt <= cnt + 1;
-            smpl_rate_trig <= 0;
+            smpl_rate_2x_trig <= 0;
         end
     end
 endmodule
