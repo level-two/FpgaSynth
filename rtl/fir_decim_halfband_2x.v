@@ -30,7 +30,7 @@ module fir_decim_halfband_2x (
 
     localparam CCNT   = 34;
     localparam CCNT_W = 6;
-    localparam YCNT   = 17;
+    localparam YCNT   = 18;
     localparam YCNT_W = 5;
     localparam RCNT_W = CCNT_W;
 

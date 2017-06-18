@@ -48,10 +48,8 @@ module top (
     wire [6:0]  midi_data0;
     wire [6:0]  midi_data1;
 
-    wire        smpl_rate_trig_l;
-    wire        smpl_rate_trig_r;
 
-    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx
+    uart_rx #(.CLK_FREQ(`CLK_FREQ), .BAUD_RATE(38400)) uart_rx_inst
     (
         .clk          (clk          ),
         .reset        (reset        ),
@@ -61,7 +59,7 @@ module top (
     );
 
 
-    midi_decoder midi_decoder (
+    midi_decoder midi_decoder_inst (
         .clk         (clk          ),
         .reset       (reset        ),
         .dataInReady (data_received),
@@ -75,31 +73,38 @@ module top (
     );
 
 
-    wire gen_pulse_smpl_rate_2x_trig;
-
-    ctrl ctrl (
+    wire pgen_smpl_rate_2x_trig;
+    ctrl ctrl_inst (
         .clk               (clk                         ),
         .reset             (reset                       ),
-        .smpl_rate_2x_trig (gen_pulse_smpl_rate_2x_trig )
+        .smpl_rate_2x_trig (pgen_smpl_rate_2x_trig      )
     );
 
 
-    wire               gen_pulse_smpl_out_rdy;
-    wire signed [17:0] gen_pulse_smpl_out_l;
-    wire signed [17:0] gen_pulse_smpl_out_r;
+    wire               pgen_smpl_out_rdy;
+    wire signed [17:0] pgen_smpl_out_l;
+    wire signed [17:0] pgen_smpl_out_r;
+    wire [47:0]        pgen_dsp_outs_flat_l = dsp_outs_flat_l;
+    wire [47:0]        pgen_dsp_outs_flat_r = dsp_outs_flat_r;
+    wire [91:0]        pgen_dsp_ins_flat_l;
+    wire [91:0]        pgen_dsp_ins_flat_r;
 
-    gen_pulse gen_pulse (
-        .clk             (clk                       ),
-        .reset           (reset                     ),
-        .midi_rdy        (midi_rdy                  ),
-        .midi_cmd        (midi_cmd                  ),
-        .midi_ch_sysn    (midi_ch_sysn              ),
-        .midi_data0      (midi_data0                ),
-        .midi_data1      (midi_data1                ),
-        .smpl_rate_trig  (gen_pulse_smpl_rate_trig  ),
-        .smpl_out_rdy    (gen_pulse_smpl_out_rdy    ),
-        .smpl_out_l      (gen_pulse_smpl_out_l      ),
-        .smpl_out_r      (gen_pulse_smpl_out_r      )
+    gen_pulse gen_pulse_inst (
+        .clk                  (clk                       ),
+        .reset                (reset                     ),
+        .midi_rdy             (midi_rdy                  ),
+        .midi_cmd             (midi_cmd                  ),
+        .midi_ch_sysn         (midi_ch_sysn              ),
+        .midi_data0           (midi_data0                ),
+        .midi_data1           (midi_data1                ),
+        .sample_rate_2x_trig  (pgen_smpl_rate_2x_trig    ),
+        .sample_out_rdy       (pgen_smpl_out_rdy         ),
+        .sample_out_l         (pgen_smpl_out_l           ),
+        .sample_out_r         (pgen_smpl_out_r           ),
+        .dsp_outs_flat_l      (pgen_dsp_outs_flat_l      ),
+        .dsp_outs_flat_r      (pgen_dsp_outs_flat_r      ),
+        .dsp_ins_flat_l       (pgen_dsp_ins_flat_l       ),
+        .dsp_ins_flat_r       (pgen_dsp_ins_flat_r       )
     );
 
 //    wire                lpf_smpl_in_rdy_l;
@@ -113,8 +118,7 @@ module top (
 //    wire                err_overflow_l_nc;
 //    wire                err_overflow_r_nc;
 
-
-//    module_lpf module_lpf_l (
+//    module_lpf module_lpf_l_inst (
 //        .clk            (clk                      ),
 //        .reset          (reset                    ),
 //        .midi_rdy       (midi_rdy                 ),
@@ -124,14 +128,12 @@ module top (
 //        .midi_data1     (midi_data1               ),
 //        .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
 //        .sample_in      (lpf_smpl_in_l            ),
-//
 //        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
 //        .sample_out     (lpf_smpl_out_l           ),
-//
 //        .err_overflow   (err_overflow_l_nc        )
 //    );
 
-//    module_lpf module_lpf_r (
+//    module_lpf module_lpf_r_inst (
 //        .clk            (clk                      ),
 //        .reset          (reset                    ),
 //        .midi_rdy       (midi_rdy                 ),
@@ -141,18 +143,46 @@ module top (
 //        .midi_data1     (midi_data1               ),
 //        .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
 //        .sample_in      (lpf_smpl_in_r            ),
-
 //        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
 //        .sample_out     (lpf_smpl_out_r           ),
-
 //        .err_overflow   (err_overflow_r_nc        )
 //    );
 
 
+    // DSP signals interconnection
+    wire [91:0] dsp_ins_flat_l = pgen_dsp_ins_flat_l;
+    wire [91:0] dsp_ins_flat_r = pgen_dsp_ins_flat_r;
+    wire [47:0] dsp_outs_flat_l;
+    wire [47:0] dsp_outs_flat_r;
+
+    dsp48a1_inst dsp48a1_l_inst (
+        .clk            (clk             ),
+        .reset          (reset           ),
+        .dsp_ins_flat   (dsp_ins_flat_l  ),
+        .dsp_outs_flat  (dsp_outs_flat_l )
+    );
+
+    dsp48a1_inst dsp48a1_r_inst (
+        .clk            (clk             ),
+        .reset          (reset           ),
+        .dsp_ins_flat   (dsp_ins_flat_r  ),
+        .dsp_outs_flat  (dsp_outs_flat_r )
+    );
+
+
+    /*
+    always @(posedge clk) begin
+        if (dac_sample_in_rdy) begin
+            $display("%d", dac_sample_in_l);
+        end
+    end
+    */
+
+
     // dut
-    wire               dac_sample_in_rdy = gen_pulse_smpl_out_rdy;
-    wire signed [17:0] dac_sample_in_l   = gen_pulse_smpl_out_l;
-    wire signed [17:0] dac_sample_in_r   = gen_pulse_smpl_out_r;
+    wire               dac_sample_in_rdy = pgen_smpl_out_rdy;
+    wire signed [17:0] dac_sample_in_l   = pgen_smpl_out_l;
+    wire signed [17:0] dac_sample_in_r   = pgen_smpl_out_r;
 
     module_stereo_dac_output  stereo_dac_output (
         .clk            (clk               ),
