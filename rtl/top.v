@@ -170,13 +170,11 @@ module top (
     );
 
 
-    /*
     always @(posedge clk) begin
         if (dac_sample_in_rdy) begin
             $display("%d", dac_sample_in_l);
         end
     end
-    */
 
 
     // dut

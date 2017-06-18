@@ -48,7 +48,7 @@ module tb_top;
     end
 
 
-    wire [7:0]midi_data[0:2] = {8'h90, 8'h56, 8'h20};
+    wire [7:0]midi_data[0:5] = {8'h90, 8'h56, 8'h20, 8'h80, 8'h56, 8'h20};
     integer msg_cnt = 0;
     integer bit_cnt = 0;
 
@@ -58,6 +58,26 @@ module tb_top;
         #BAUD_PERIOD;
         #BAUD_PERIOD;
         #BAUD_PERIOD;
+		
+		repeat (3) begin
+			PMOD3 <= 0;
+			bit_cnt = 0;
+            #BAUD_PERIOD;
+			
+			repeat (8) begin
+				PMOD3 <= midi_data[msg_cnt][bit_cnt];
+				bit_cnt = bit_cnt+1;
+                #BAUD_PERIOD;
+			end
+			
+			PMOD3 <= 1;
+            #BAUD_PERIOD;
+
+			msg_cnt = msg_cnt+1;
+		end
+
+        #3000000;
+
 		
 		repeat (3) begin
 			PMOD3 <= 0;
