@@ -170,14 +170,15 @@ module top (
     );
 
 
+    /*
     always @(posedge clk) begin
         if (dac_sample_in_rdy) begin
             $display("%d", dac_sample_in_l);
         end
     end
+    */
 
 
-    // dut
     wire               dac_sample_in_rdy = pgen_smpl_out_rdy;
     wire signed [17:0] dac_sample_in_l   = pgen_smpl_out_l;
     wire signed [17:0] dac_sample_in_r   = pgen_smpl_out_r;

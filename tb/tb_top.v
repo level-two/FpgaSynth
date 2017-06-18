@@ -25,7 +25,7 @@ module tb_top;
     reg            CLK_50M;
     reg      [0:0] PB;
     reg      [0:0] PMOD3;   // UART rx
-    wire     [0:0] PMOD4;   // SPDIF out
+    wire     [1:0] PMOD4;   // SPDIF out
     wire     [1:0] LED;     // LED out
 
     top dut (
