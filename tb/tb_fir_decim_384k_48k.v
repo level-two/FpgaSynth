@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: tb_fir_decim_halfband_2x.v
-// Description: Test bench for the decimating halfband filter
+// File: tb_fir_decim_384k_48k.v
+// Description: Test bench for the decimating 384k->48k filter
 // -----------------------------------------------------------------------------
 
 `include "../rtl/globals.vh"
 
-module tb_fir_decim_halfband_2x();
+module tb_fir_decim_384k_48k();
     reg                clk;
     reg                reset;
 
@@ -28,7 +28,7 @@ module tb_fir_decim_halfband_2x();
     wire [91:0]        dsp_ins_flat_r;
 
     // dut
-    fir_decim_halfband_2x dut (
+    fir_decim_384k_48k dut (
         .clk              (clk             ),
         .reset            (reset           ),
         .sample_in_rdy    (sample_in_rdy   ),

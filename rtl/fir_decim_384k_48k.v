@@ -64,33 +64,33 @@ module fir_decim_384k_48k (
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            4'h0   : tasks = REPEAT_COEFS_NUM       | // init stack
+            5'h0   : tasks = REPEAT_COEFS_NUM       | // init stack
                              PUSH_X                 ;
-            4'h1   : tasks = WAIT_IN                ;
-            4'h2   : tasks = PUSH_X                 ;
-            4'h3   : tasks = WAIT_IN                ;
-            4'h4   : tasks = PUSH_X                 ;
-            4'h5   : tasks = WAIT_IN                ;
-            4'h6   : tasks = PUSH_X                 ;
-            4'h7   : tasks = WAIT_IN                ;
-            4'h8   : tasks = PUSH_X                 ;
-            4'h9   : tasks = WAIT_IN                ;
-            4'ha   : tasks = PUSH_X                 ;
-            4'hb   : tasks = WAIT_IN                ;
-            4'hc   : tasks = PUSH_X                 ;
-            4'hd   : tasks = WAIT_IN                ;
-            4'he   : tasks = PUSH_X                 ;
-            4'hf   : tasks = WAIT_IN                ;
-            4'h10  : tasks = PUSH_X                 |
+            5'h1   : tasks = WAIT_IN                ;
+            5'h2   : tasks = PUSH_X                 ;
+            5'h3   : tasks = WAIT_IN                ;
+            5'h4   : tasks = PUSH_X                 ;
+            5'h5   : tasks = WAIT_IN                ;
+            5'h6   : tasks = PUSH_X                 ;
+            5'h7   : tasks = WAIT_IN                ;
+            5'h8   : tasks = PUSH_X                 ;
+            5'h9   : tasks = WAIT_IN                ;
+            5'ha   : tasks = PUSH_X                 ;
+            5'hb   : tasks = WAIT_IN                ;
+            5'hc   : tasks = PUSH_X                 ;
+            5'hd   : tasks = WAIT_IN                ;
+            5'he   : tasks = PUSH_X                 ;
+            5'hf   : tasks = WAIT_IN                ;
+            5'h10  : tasks = PUSH_X                 |
                              MOV_I_0                |
                              MOV_J_XHEAD            ;
-            4'h11  : tasks = REPEAT_COEFS_NUM       |
+            5'h11  : tasks = REPEAT_COEFS_NUM       |
                              MAC_CI_XJ              |
                              INC_I                  |
                              INC_J_CIRC             ;
-            4'h12  : tasks = NOP                    ;
-            4'h13  : tasks = NOP                    ;
-            4'h14  : tasks = MOV_RES_AC             |
+            5'h12  : tasks = NOP                    ;
+            5'h13  : tasks = NOP                    ;
+            5'h14  : tasks = MOV_RES_AC             |
                              JP_1                   ;
             default: tasks = JP_1                   ;
         endcase
@@ -204,40 +204,62 @@ module fir_decim_384k_48k (
     reg signed [17:0] ci;
     always @(i_reg) begin
         case (i_reg)
-            'h0    : begin ci <= 18'h00002; end
-            'h1    : begin ci <= 18'h3FFF6; end
-            'h2    : begin ci <= 18'h0001A; end
-            'h3    : begin ci <= 18'h3FFC5; end
-            'h4    : begin ci <= 18'h00071; end
-            'h5    : begin ci <= 18'h3FF36; end
-            'h6    : begin ci <= 18'h0014E; end
-            'h7    : begin ci <= 18'h3FDEF; end
-            'h8    : begin ci <= 18'h00322; end
-            'h9    : begin ci <= 18'h3FB62; end
-            'ha    : begin ci <= 18'h006A5; end
-            'hb    : begin ci <= 18'h3F68B; end
-            'hc    : begin ci <= 18'h00D71; end
-            'hd    : begin ci <= 18'h3EC88; end
-            'he    : begin ci <= 18'h01DC3; end
-            'hf    : begin ci <= 18'h3CB6A; end
-            'h10   : begin ci <= 18'h0A263; end
-            'h11   : begin ci <= 18'h0A263; end
-            'h12   : begin ci <= 18'h3CB6A; end
-            'h13   : begin ci <= 18'h01DC3; end
-            'h14   : begin ci <= 18'h3EC88; end
-            'h15   : begin ci <= 18'h00D71; end
-            'h16   : begin ci <= 18'h3F68B; end
-            'h17   : begin ci <= 18'h006A5; end
-            'h18   : begin ci <= 18'h3FB62; end
-            'h19   : begin ci <= 18'h00322; end
-            'h1a   : begin ci <= 18'h3FDEF; end
-            'h1b   : begin ci <= 18'h0014E; end
-            'h1c   : begin ci <= 18'h3FF36; end
-            'h1d   : begin ci <= 18'h00071; end
-            'h1e   : begin ci <= 18'h3FFC5; end
-            'h1f   : begin ci <= 18'h0001A; end
-            'h20   : begin ci <= 18'h3FFF6; end
-            'h21   : begin ci <= 18'h00002; end
+            'h0    : begin ci <= 18'h3FFFE; end
+            'h1    : begin ci <= 18'h3FFFE; end
+            'h2    : begin ci <= 18'h3FFFF; end
+            'h3    : begin ci <= 18'h00006; end
+            'h4    : begin ci <= 18'h00013; end
+            'h5    : begin ci <= 18'h00027; end
+            'h6    : begin ci <= 18'h00040; end
+            'h7    : begin ci <= 18'h00058; end
+            'h8    : begin ci <= 18'h00065; end
+            'h9    : begin ci <= 18'h0005B; end
+            'ha    : begin ci <= 18'h0002B; end
+            'hb    : begin ci <= 18'h3FFCC; end
+            'hc    : begin ci <= 18'h3FF3B; end
+            'hd    : begin ci <= 18'h3FE82; end
+            'he    : begin ci <= 18'h3FDBC; end
+            'hf    : begin ci <= 18'h3FD13; end
+            'h10   : begin ci <= 18'h3FCBE; end
+            'h11   : begin ci <= 18'h3FCF9; end
+            'h12   : begin ci <= 18'h3FDFF; end
+            'h13   : begin ci <= 18'h3FFF7; end
+            'h14   : begin ci <= 18'h002F0; end
+            'h15   : begin ci <= 18'h006D5; end
+            'h16   : begin ci <= 18'h00B6A; end
+            'h17   : begin ci <= 18'h01054; end
+            'h18   : begin ci <= 18'h0151B; end
+            'h19   : begin ci <= 18'h01942; end
+            'h1a   : begin ci <= 18'h01C54; end
+            'h1b   : begin ci <= 18'h01DF5; end
+            'h1c   : begin ci <= 18'h01DF5; end
+            'h1d   : begin ci <= 18'h01C54; end
+            'h1e   : begin ci <= 18'h01942; end
+            'h1f   : begin ci <= 18'h0151B; end
+            'h20   : begin ci <= 18'h01054; end
+            'h21   : begin ci <= 18'h00B6A; end
+            'h22   : begin ci <= 18'h006D5; end
+            'h23   : begin ci <= 18'h002F0; end
+            'h24   : begin ci <= 18'h3FFF7; end
+            'h25   : begin ci <= 18'h3FDFF; end
+            'h26   : begin ci <= 18'h3FCF9; end
+            'h27   : begin ci <= 18'h3FCBE; end
+            'h28   : begin ci <= 18'h3FD13; end
+            'h29   : begin ci <= 18'h3FDBC; end
+            'h2a   : begin ci <= 18'h3FE82; end
+            'h2b   : begin ci <= 18'h3FF3B; end
+            'h2c   : begin ci <= 18'h3FFCC; end
+            'h2d   : begin ci <= 18'h0002B; end
+            'h2e   : begin ci <= 18'h0005B; end
+            'h2f   : begin ci <= 18'h00065; end
+            'h30   : begin ci <= 18'h00058; end
+            'h31   : begin ci <= 18'h00040; end
+            'h32   : begin ci <= 18'h00027; end
+            'h33   : begin ci <= 18'h00013; end
+            'h34   : begin ci <= 18'h00006; end
+            'h35   : begin ci <= 18'h3FFFF; end
+            'h36   : begin ci <= 18'h3FFFE; end
+            'h37   : begin ci <= 18'h3FFFE; end
             default: begin ci <= 18'h00000; end
         endcase
     end
@@ -257,13 +279,6 @@ module fir_decim_384k_48k (
             ar     = ci;
             bl     = xjl;
             br     = xjr;
-        end
-        else if (tasks & MAC_05_Y) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            al     = 18'h08000;
-            ar     = 18'h08000;
-            bl     = yl;
-            br     = yr;
         end
     end
 
