@@ -18,7 +18,7 @@ module gen_pulse (
     input  [3:0]                midi_ch_sysn,
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
-    input                       sample_rate_2x_trig,
+    input                       sample_rate_8x_trig,
     output                      sample_out_rdy,
     output signed [17:0]        sample_out_l,
     output signed [17:0]        sample_out_r,
@@ -76,16 +76,27 @@ module gen_pulse (
     end
 
 
+    reg signed [17:0] cur_val;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            cur_val <= 18'h00000;
+        end
+        else if (sample_rate_8x_trig) begin
+            cur_val <= (sample_val + cur_val) >>> 1;
+        end
+    end
+
+
     // Decimating filter
-    wire               fir_sample_in_rdy = sample_rate_2x_trig;
-    wire signed [17:0] fir_sample_in_l   = sample_val;
-    wire signed [17:0] fir_sample_in_r   = sample_val;
+    wire               fir_sample_in_rdy = sample_rate_8x_trig;
+    wire signed [17:0] fir_sample_in_l   = cur_val;
+    wire signed [17:0] fir_sample_in_r   = cur_val;
 
     wire               fir_sample_out_rdy;
     wire signed [17:0] fir_sample_out_l;
     wire signed [17:0] fir_sample_out_r;
 
-    fir_decim_halfband_2x  fir_decim_halfband_2x (
+    fir_decim_384k_48k  fir_decim_384k_48k (
         .clk              (clk                 ),
         .reset            (reset               ),
         .sample_in_rdy    (fir_sample_in_rdy   ),

@@ -15,8 +15,10 @@
 `define CLK_DIV_1536K           65
 `define CLK_DIV_1536K_48K       32
 `define CLK_DIV_1536K_96K       16
+`define CLK_DIV_1536K_384K      4
 `define CLK_DIV_48K             (`CLK_DIV_1536K * `CLK_DIV_1536K_48K)
 `define CLK_DIV_96K             (`CLK_DIV_1536K * `CLK_DIV_1536K_96K)
+`define CLK_DIV_384K            (`CLK_DIV_1536K * `CLK_DIV_1536K_384K)
 
 `define MIDI_CMD_NONE           'h00
 `define MIDI_CMD_NOTE_ON        'h01
