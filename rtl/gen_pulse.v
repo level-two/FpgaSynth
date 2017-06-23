@@ -41,31 +41,61 @@ module gen_pulse (
     localparam [15:0] REPEAT_COEFS_NUM = 16'h0100;
     localparam [15:0] JP_1             = 16'h0200;
 
+
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
             5'h0   : tasks = MOV_I_0                |
-                             MOV_IDIR_UP            |
-                             MOV_SGN_P              ;
-            5'h0   : tasks = WAIT_48K_TRIG          ;
+                             ((note_on == 1'b0) ? JP_0 : NOP);
 
-
-            5'h0   : tasks = MREPEAT_8              |
-                             AC_AI_AMPL_SGN         |
+            // 0 => 1
+            5'h1   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'h2   : tasks = MREPEAT_8              |
+                             MAC_AI_AMPL            |
                              MOV_FIR_AC             |
                              INC_I                  ;
+            5'h3   : tasks = (i_reg[6] == 1'b0) ? JP_1 : NOP;
 
-            5'h0   : tasks = (i != 0 ? JP_2 : NOP)  ;
+            // 1
+            5'h4   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'h5   : tasks = MREPEAT_8              |
+                             MAC_1_AMPL             |
+                             MOV_FIR_AC             ;
+            5'h6   : tasks = (divider_cnt_event == 1'b0) ? JP_4 : NOP;
 
+            // 1 => 0
+            5'h7   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'h8   : tasks = MREPEAT_8              |
+                             MAC_AI_AMPL            |
+                             MOV_FIR_AC             |
+                             DEC_I                  ;
+            5'h9   : tasks = (|i_reg != 1'b0) ? JP_7 : NOP;
+            //
 
-            5'h0   : tasks = REPEAT_COEFS_NUM       |
-                             MAC_CI_XJ              |
+            // 0 => -1
+            5'ha   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'hb   : tasks = MREPEAT_8              |
+                             MAC_AI_AMPL_N          |
+                             MOV_FIR_AC             |
                              INC_I                  ;
-            5'h0   : tasks = NOP                    ;
-            5'h0   : tasks = NOP                    ;
-            5'h0   : tasks = MOV_RES_AC             |
-                             JP_1                   ;
-            default: tasks = JP_1                   ;
+            5'hc   : tasks = (i_reg[6] == 1'b0) ? JP_A : NOP;
+
+            // -1
+            5'hd   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'he   : tasks = MREPEAT_8              |
+                             MAC_1_AMPL_N           |
+                             MOV_FIR_AC             ;
+            5'hf   : tasks = (divider_cnt_event == 1'b0) ? JP_D : NOP;
+
+            // -1 => 0
+            5'h10  : tasks = WAIT_SAMPLE_TRIG       ;
+            5'h11  : tasks = MREPEAT_8              |
+                             MAC_AI_AMPL_N          |
+                             MOV_FIR_AC             |
+                             DEC_I                  ;
+            5'h12  : tasks = (|i_reg != 1'b0) ? JP_10 : JP_0;
+
+            default: tasks = JP_0                   ;
         endcase
     end
 
