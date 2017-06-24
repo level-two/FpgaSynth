@@ -41,23 +41,30 @@ module gen_pulse (
     localparam [15:0] MAC_AI_AMPL_N    = 16'h0020;
     localparam [15:0] MAC_1_AMPL_N     = 16'h0040;
     localparam [15:0] WAIT_SAMPLE_TRIG = 16'h0080;
-    localparam [15:0] CLR_DIV_EVENT    = 16'h0080;
-    localparam [15:0] MOV_RES_AC       = 16'h0100;
-    localparam [15:0] JP_UP_2          = 16'h0200;
-    localparam [15:0] JP_0             = 16'h0400;
+    localparam [15:0] WAIT_NOTE_ON     = 16'h0080;
+    localparam [15:0] CLR_DIV_EVENT    = 16'h0100;
+    localparam [15:0] MOV_RES_AC       = 16'h0200;
+    localparam [15:0] JP_UP_2          = 16'h0400;
+    localparam [15:0] JP_0             = 16'h0800;
 
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
-            5'h0   : tasks = MOV_I_0                |
-                             ((note_on == 1'b0) ? JP_0 : NOP);
+            5'h0   : tasks = WAIT_SAMPLE_TRIG       ;
+            5'h0   : tasks = (note_on == 1'b0) ? (MOV_RES_0 | JP_0) : NOP;
+            5'h0   : tasks = (note_changed == 1'b1) ? JP_123 : MOV_I_0;
+
+            5'h2   : tasks = REPEAT_4               |
+                             MAC_AI_AMPL            |
+                             MOV_SI_AC              |
+                             ((i_reg == 'h3) ? MOV_I_0 : INC_I);
 
             // 0 => 1
-            5'h1   : tasks = WAIT_SAMPLE_TRIG       ;
             5'h2   : tasks = MAC_AI_AMPL            |
                              MOV_RES_AC             |
                              INC_I                  ;
+            5'h0   : tasks = WAIT_SAMPLE_TRIG       ;
             5'h3   : tasks = (i_reg != COEFS_NUM) ? JP_UP_2 : NOP;
 
             // 1
@@ -111,7 +118,8 @@ module gen_pulse (
         else if (tasks & JP_UP_2) begin
             pc <= pc - 5'h2;
         end
-        else if (tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig) begin
+        else if ((tasks & WAIT_NOTE_ON     && !note_on         ) ||
+                 (tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig)) begin
             pc <= pc;
         end
         else begin
