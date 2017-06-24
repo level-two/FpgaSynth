@@ -18,7 +18,7 @@ module gen_pulse (
     input  [3:0]                midi_ch_sysn,
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
-    input                       sample_rate_8x_trig,
+    input                       sample_rate_trig,
     output                      sample_out_rdy,
     output signed [17:0]        sample_out_l,
     output signed [17:0]        sample_out_r,
@@ -29,6 +29,7 @@ module gen_pulse (
     output [91:0]               dsp_ins_flat_r
 );
 
+    localparam COEFS_NUM = 4;
 
     // TASKS
     localparam [15:0] NOP              = 16'h0000;
@@ -40,11 +41,10 @@ module gen_pulse (
     localparam [15:0] MAC_AI_AMPL_N    = 16'h0020;
     localparam [15:0] MAC_1_AMPL_N     = 16'h0040;
     localparam [15:0] WAIT_SAMPLE_TRIG = 16'h0080;
-    localparam [15:0] MOV_FIR_AC       = 16'h0100;
-    localparam [15:0] MAC_AI_AMPL      = 16'h0200;
-    localparam [15:0] REPEAT_8         = 16'h0400;
-    localparam [15:0] JP_UP_2          = 16'h0800;
-    localparam [15:0] JP_0             = 16'h1000;
+    localparam [15:0] CLR_DIV_EVENT    = 16'h0080;
+    localparam [15:0] MOV_RES_AC       = 16'h0100;
+    localparam [15:0] JP_UP_2          = 16'h0200;
+    localparam [15:0] JP_0             = 16'h0400;
 
 
     reg [15:0] tasks;
@@ -55,50 +55,44 @@ module gen_pulse (
 
             // 0 => 1
             5'h1   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h2   : tasks = REPEAT_8               |
-                             MAC_AI_AMPL            |
-                             MOV_FIR_AC             |
+            5'h2   : tasks = MAC_AI_AMPL            |
+                             MOV_RES_AC             |
                              INC_I                  ;
-            5'h3   : tasks = (i_reg[6] == 1'b0) ? JP_UP_2 : NOP;
+            5'h3   : tasks = (i_reg != COEFS_NUM) ? JP_UP_2 : NOP;
 
             // 1
             5'h4   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h5   : tasks = REPEAT_8               |
-                             MAC_1_AMPL             |
-                             MOV_FIR_AC             ;
-            5'h6   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : NOP;
+            5'h5   : tasks = MAC_1_AMPL             |
+                             MOV_RES_AC             ;
+            5'h6   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : CLR_DIV_EVENT;
 
             // 1 => 0
             5'h7   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h8   : tasks = REPEAT_8               |
-                             MAC_AI_AMPL            |
-                             MOV_FIR_AC             |
+            5'h8   : tasks = MAC_AI_AMPL            |
+                             MOV_RES_AC             |
                              DEC_I                  ;
-            5'h9   : tasks = (|i_reg != 1'b0) ? JP_UP_2 : NOP;
+            5'h9   : tasks = (i_reg != 'h0) ? JP_UP_2 : NOP;
             //
 
             // 0 => -1
             5'ha   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'hb   : tasks = REPEAT_8               |
-                             MAC_AI_AMPL_N          |
-                             MOV_FIR_AC             |
+            5'hb   : tasks = MAC_AI_AMPL_N          |
+                             MOV_RES_AC             |
                              INC_I                  ;
-            5'hc   : tasks = (i_reg[6] == 1'b0) ? JP_UP_2 : NOP;
+            5'hc   : tasks = (i_reg != COEFS_NUM) ? JP_UP_2 : NOP;
 
             // -1
             5'hd   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'he   : tasks = REPEAT_8               |
-                             MAC_1_AMPL_N           |
-                             MOV_FIR_AC             ;
-            5'hf   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : NOP;
+            5'he   : tasks = MAC_1_AMPL_N           |
+                             MOV_RES_AC             ;
+            5'hf   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : CLR_DIV_EVENT;
 
             // -1 => 0
             5'h10  : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h11  : tasks = REPEAT_8               |
-                             MAC_AI_AMPL_N          |
-                             MOV_FIR_AC             |
+            5'h11  : tasks = MAC_AI_AMPL_N          |
+                             MOV_RES_AC             |
                              DEC_I                  ;
-            5'h12  : tasks = (|i_reg != 1'b0) ? JP_UP_2 : JP_0;
+            5'h12  : tasks = (i_reg != 'h0) ? JP_UP_2 : JP_0;
 
             default: tasks = JP_0                   ;
         endcase
@@ -117,8 +111,7 @@ module gen_pulse (
         else if (tasks & JP_UP_2) begin
             pc <= pc - 5'h2;
         end
-        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_8x_trig) ||
-                 (tasks & REPEAT_8         && repeat_st           )) begin
+        else if (tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig) begin
             pc <= pc;
         end
         else begin
@@ -127,26 +120,8 @@ module gen_pulse (
     end
 
 
-    // REPEAT
-    reg  [2:0] repeat_cnt;
-    wire [2:0] repeat_cnt_max = (tasks & REPEAT_8) ? 'h7 : 'h0;
-    wire repeat_st = (repeat_cnt != repeat_cnt_max);
-
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            repeat_cnt <= 'h0;
-        end
-        else if (repeat_cnt == repeat_cnt_max) begin
-            repeat_cnt <= 'h0;
-        end
-        else begin
-            repeat_cnt <= repeat_cnt + 'h1;
-        end
-    end
-
-
     // INDEX REGISTER I
-    reg  [6:0] i_reg;
+    reg  [2:0] i_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             i_reg <= 'h0;
@@ -163,83 +138,55 @@ module gen_pulse (
     end
 
 
-
-    wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
-    wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
-
+    // 
     reg [6:0] note;
+    reg [6:0] velocity;
+    reg       note_on;
+    wire      note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
+    wire      note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note    <= 7'h0;
+            note_on  <= 1'b0;
+            note     <= 7'h0;
+            velocity <= 7'h0;
         end
         else if (note_on_event) begin
-            note    <= midi_data0;
+            note_on  <= 1'b1;
+            note     <= midi_data0;
+            velocity <= midi_data1;
+        end
+        else if (note_off_event) begin
+            note_on  <= 1'b0;
+            velocity <= midi_data0;
         end
     end
 
 
     reg  [23:0] divider_cnt;
-    wire        divider_cnt_evnt = (divider_cnt == div);
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            divider_cnt <= 0;
+            divider_cnt <= 24'h0;
         end
-        else if (divider_cnt == div) || note_on_event || note_off_event) begin
-            divider_cnt <= 0;
+        else if ((divider_cnt >= div) || ~note_on) begin
+            divider_cnt <= 24'h0;
         end
         else begin
-            divider_cnt <= divider_cnt + 1;
+            divider_cnt <= divider_cnt + 24'h1;
         end
     end
 
-
-    reg signed [17:0] sample_val;
+    reg divider_cnt_event;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_val <= 0;
+            divider_cnt_event <= 1'b0;
         end
-        else if (note_on_event) begin
-            sample_val <= {2'b00, midi_data1, 9'b0};
+        else if (divider_cnt == div) begin
+            divider_cnt_event <= 1'b1;
         end
-        else if (note_off_event) begin
-            sample_val <= 0;
-        end
-        else if (divider_cnt_evnt) begin
-            sample_val <= -sample_val;
+        else if (tasks & CLR_DIV_EVENT) begin
+            divider_cnt_event <= 1'b0;
         end
     end
-
-
-
-    // Decimating filter
-    wire               fir_sample_in_rdy = sample_rate_8x_trig;
-    wire signed [17:0] fir_sample_in_l   = cur_val;
-    wire signed [17:0] fir_sample_in_r   = cur_val;
-
-    wire               fir_sample_out_rdy;
-    wire signed [17:0] fir_sample_out_l;
-    wire signed [17:0] fir_sample_out_r;
-
-    fir_decim_384k_48k  fir_decim_384k_48k (
-        .clk              (clk                 ),
-        .reset            (reset               ),
-        .sample_in_rdy    (fir_sample_in_rdy   ),
-        .sample_in_l      (fir_sample_in_l     ),
-        .sample_in_r      (fir_sample_in_r     ),
-        .sample_out_rdy   (fir_sample_out_rdy  ),
-        .sample_out_l     (fir_sample_out_l    ),
-        .sample_out_r     (fir_sample_out_r    ),
-        .dsp_outs_flat_l  (dsp_outs_flat_l     ),
-        .dsp_outs_flat_r  (dsp_outs_flat_r     ),
-        .dsp_ins_flat_l   (dsp_ins_flat_l      ),
-        .dsp_ins_flat_r   (dsp_ins_flat_r      )
-    );
-
-    // Outs
-    assign sample_out_rdy = fir_sample_out_rdy;
-    assign sample_out_l   = fir_sample_out_l;
-    assign sample_out_r   = fir_sample_out_r;
-
 
     reg [23:0] div;
     always @(note) begin
@@ -393,42 +340,14 @@ module gen_pulse (
 
 
     // Coefficients
-    reg signed [17:0] ci;
+    reg signed [17:0] amp_i;
     always @(i_reg) begin
         case (i_reg)
-            'h0    : begin ci <= 18'h3FFFE; end
-            'h1    : begin ci <= 18'h3FFFE; end
-            'h2    : begin ci <= 18'h3FFFF; end
-            'h3    : begin ci <= 18'h00006; end
-            'h4    : begin ci <= 18'h00013; end
-            'h5    : begin ci <= 18'h00027; end
-            'h6    : begin ci <= 18'h00040; end
-            'h7    : begin ci <= 18'h00058; end
-            'h8    : begin ci <= 18'h00065; end
-            'h9    : begin ci <= 18'h0005B; end
-            'ha    : begin ci <= 18'h0002B; end
-            'hb    : begin ci <= 18'h3FFCC; end
-            'hc    : begin ci <= 18'h3FF3B; end
-            'hd    : begin ci <= 18'h3FE82; end
-            'he    : begin ci <= 18'h3FDBC; end
-            'hf    : begin ci <= 18'h3FD13; end
-            'h10   : begin ci <= 18'h3FCBE; end
-            'h11   : begin ci <= 18'h3FCF9; end
-            'h12   : begin ci <= 18'h3FDFF; end
-            'h13   : begin ci <= 18'h3FFF7; end
-            'h14   : begin ci <= 18'h002F0; end
-            'h15   : begin ci <= 18'h006D5; end
-            'h16   : begin ci <= 18'h00B6A; end
-            'h17   : begin ci <= 18'h01054; end
-            'h18   : begin ci <= 18'h0151B; end
-            'h19   : begin ci <= 18'h01942; end
-            'h1a   : begin ci <= 18'h01C54; end
-            'h1b   : begin ci <= 18'h01DF5; end
-            'h1c   : begin ci <= 18'h01DF5; end
-            'h1d   : begin ci <= 18'h01C54; end
-            'h1e   : begin ci <= 18'h01942; end
-            'h1f   : begin ci <= 18'h0151B; end
-            default: begin ci <= 18'h00000; end
+            'h0    : begin amp_i <= 18'h3FFFE; end
+            'h1    : begin amp_i <= 18'h3FFFE; end
+            'h2    : begin amp_i <= 18'h3FFFF; end
+            'h3    : begin amp_i <= 18'h00006; end
+            default: begin amp_i <= 18'h00000; end
         endcase
     end
 
@@ -441,7 +360,18 @@ module gen_pulse (
         bl     = 18'h00000;
         br     = 18'h00000;
 
-        if (tasks & MAC_CI_XJ) begin
+    localparam [15:0] MAC_1_AMPL       = 16'h0010;
+    localparam [15:0] MAC_AI_AMPL_N    = 16'h0020;
+    localparam [15:0] MAC_1_AMPL_N     = 16'h0040;
+
+        if (tasks & MAC_AI_AMPL) begin
+            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            al     = amp_i;
+            ar     = amp_i;
+            bl     = xjl;
+            br     = xjr;
+        end
+        else if (tasks & MAC_CI_XJ) begin
             opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
             al     = ci;
             ar     = ci;
@@ -449,6 +379,42 @@ module gen_pulse (
             br     = xjr;
         end
     end
+
+
+    reg [2:0] mov_res_ac_dly;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            mov_res_ac_dly <= 3'b0;
+        end
+        else if (tasks & MOV_RES_AC) begin
+            mov_res_ac_dly[2:0] <= {mov_res_ac_dly[1:0], 1'b1};
+        end
+        else begin
+            mov_res_ac_dly[2:0] <= {mov_res_ac_dly[1:0], 1'b0};
+        end
+    end
+
+
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            sample_out_rdy <= 1'b0;
+            sample_out_l   <= 18'h00000;
+            sample_out_r   <= 18'h00000;
+        end
+        else if (mov_res_ac_dly[2] == 1'b1) begin
+            sample_out_rdy <= 1'b1;
+            sample_out_l   <= pl[33:16];
+            sample_out_r   <= pr[33:16];
+        end
+        else begin
+            sample_out_rdy <= 1'b0;
+            sample_out_l   <= 18'h00000;
+            sample_out_r   <= 18'h00000;
+        end
+    end
+
+
+
 
 
     // DSP signals
