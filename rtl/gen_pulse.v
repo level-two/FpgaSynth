@@ -46,13 +46,15 @@ module gen_pulse (
     localparam [15:0] REPEAT_COEFS_NUM = 16'h0400;
     localparam [15:0] WAIT_SAMPLE_TRIG = 16'h0800;
     localparam [15:0] CLR_DIV_EVENT    = 16'h1000;
+    localparam [15:0] CLR_NOTE_CHANGED = 16'h2000;
+
 
 
     reg [15:0] tasks;
     always @(pc) begin
         case (pc)
             5'h0   : tasks = MOV_I_0                |
-                             (note_changed == 1'b1) ? NOP : JP_2;
+                             (note_changed == 1'b1) ? CLR_NOTE_CHANGED : JP_2;
 
             5'h1   : tasks = REPEAT_COEFS_NUM       |
                              MUL_AI_AMPL            |
@@ -159,25 +161,38 @@ module gen_pulse (
     wire        note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
     wire        note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
     reg  [6:0]  note;
-    reg  [6:0]  velocity;
     reg         note_on;
-    wire [17:0] amplitude = {2'h0, velocity[6:0], 9'h00}
+    reg  [17:0] amplitude;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note_on  <= 1'b0;
-            note     <= 7'h0;
-            velocity <= 7'h0;
+            note_on   <= 1'b0;
+            note      <= 7'h0;
+            amplitude <= 18'h00000;
         end
         else if (note_on_event) begin
-            note_on  <= 1'b1;
-            note     <= midi_data0;
-            velocity <= midi_data1;
+            note_on   <= 1'b1;
+            note      <= midi_data0;
+            amplitude <= {2'h0, midi_data1[6:0], 9'h00};
         end
         else if (note_off_event) begin
-            note_on  <= 1'b0;
-            velocity <= midi_data0;
+            note_on   <= 1'b0;
+            amplitude <= 18'h00000;
         end
     end
+
+    reg note_changed;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            note_changed <= 1'b0;
+        end
+        else if (note_on_event || note_off_event) begin
+            note_changed <= 1'b1;
+        end
+        else if (tasks & CLR_NOTE_CHANGED) begin
+            note_changed <= 1'b0;
+        end
+    end
+
 
 
     reg  [23:0] divider_cnt;
