@@ -32,14 +32,19 @@ module gen_pulse (
 
     // TASKS
     localparam [15:0] NOP              = 16'h0000;
-    localparam [15:0] WAIT_IN          = 16'h0001;
-    localparam [15:0] MOV_I_0          = 16'h0004;
-    localparam [15:0] INC_I            = 16'h0008;
-    localparam [15:0] DEC_I            = 16'h0008;
-    localparam [15:0] MAC_CI_XJ        = 16'h0040;
-    localparam [15:0] MOV_RES_AC       = 16'h0080;
-    localparam [15:0] REPEAT_COEFS_NUM = 16'h0100;
-    localparam [15:0] JP_1             = 16'h0200;
+    localparam [15:0] MOV_I_0          = 16'h0001;
+    localparam [15:0] INC_I            = 16'h0002;
+    localparam [15:0] DEC_I            = 16'h0004;
+    localparam [15:0] MAC_AI_AMPL      = 16'h0008;
+    localparam [15:0] MAC_1_AMPL       = 16'h0010;
+    localparam [15:0] MAC_AI_AMPL_N    = 16'h0020;
+    localparam [15:0] MAC_1_AMPL_N     = 16'h0040;
+    localparam [15:0] WAIT_SAMPLE_TRIG = 16'h0080;
+    localparam [15:0] MOV_FIR_AC       = 16'h0100;
+    localparam [15:0] MAC_AI_AMPL      = 16'h0200;
+    localparam [15:0] REPEAT_8         = 16'h0400;
+    localparam [15:0] JP_UP_2          = 16'h0800;
+    localparam [15:0] JP_0             = 16'h1000;
 
 
     reg [15:0] tasks;
@@ -50,50 +55,50 @@ module gen_pulse (
 
             // 0 => 1
             5'h1   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h2   : tasks = MREPEAT_8              |
+            5'h2   : tasks = REPEAT_8               |
                              MAC_AI_AMPL            |
                              MOV_FIR_AC             |
                              INC_I                  ;
-            5'h3   : tasks = (i_reg[6] == 1'b0) ? JP_1 : NOP;
+            5'h3   : tasks = (i_reg[6] == 1'b0) ? JP_UP_2 : NOP;
 
             // 1
             5'h4   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h5   : tasks = MREPEAT_8              |
+            5'h5   : tasks = REPEAT_8               |
                              MAC_1_AMPL             |
                              MOV_FIR_AC             ;
-            5'h6   : tasks = (divider_cnt_event == 1'b0) ? JP_4 : NOP;
+            5'h6   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : NOP;
 
             // 1 => 0
             5'h7   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h8   : tasks = MREPEAT_8              |
+            5'h8   : tasks = REPEAT_8               |
                              MAC_AI_AMPL            |
                              MOV_FIR_AC             |
                              DEC_I                  ;
-            5'h9   : tasks = (|i_reg != 1'b0) ? JP_7 : NOP;
+            5'h9   : tasks = (|i_reg != 1'b0) ? JP_UP_2 : NOP;
             //
 
             // 0 => -1
             5'ha   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'hb   : tasks = MREPEAT_8              |
+            5'hb   : tasks = REPEAT_8               |
                              MAC_AI_AMPL_N          |
                              MOV_FIR_AC             |
                              INC_I                  ;
-            5'hc   : tasks = (i_reg[6] == 1'b0) ? JP_A : NOP;
+            5'hc   : tasks = (i_reg[6] == 1'b0) ? JP_UP_2 : NOP;
 
             // -1
             5'hd   : tasks = WAIT_SAMPLE_TRIG       ;
-            5'he   : tasks = MREPEAT_8              |
+            5'he   : tasks = REPEAT_8               |
                              MAC_1_AMPL_N           |
                              MOV_FIR_AC             ;
-            5'hf   : tasks = (divider_cnt_event == 1'b0) ? JP_D : NOP;
+            5'hf   : tasks = (divider_cnt_event == 1'b0) ? JP_UP_2 : NOP;
 
             // -1 => 0
             5'h10  : tasks = WAIT_SAMPLE_TRIG       ;
-            5'h11  : tasks = MREPEAT_8              |
+            5'h11  : tasks = REPEAT_8               |
                              MAC_AI_AMPL_N          |
                              MOV_FIR_AC             |
                              DEC_I                  ;
-            5'h12  : tasks = (|i_reg != 1'b0) ? JP_10 : JP_0;
+            5'h12  : tasks = (|i_reg != 1'b0) ? JP_UP_2 : JP_0;
 
             default: tasks = JP_0                   ;
         endcase
@@ -106,12 +111,14 @@ module gen_pulse (
         if (reset) begin
             pc <= 5'h0;
         end
-        else if (tasks & JP_1) begin
-            pc <= 5'h1;
+        else if (tasks & JP_0) begin
+            pc <= 5'h0;
         end
-        else if ((tasks & WAIT_IN          && !sample_in_rdy) ||
-                 (tasks & REPEAT_COEFS_NUM && repeat_st     ))
-        begin
+        else if (tasks & JP_UP_2) begin
+            pc <= pc - 5'h2;
+        end
+        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_8x_trig) ||
+                 (tasks & REPEAT_8         && repeat_st           )) begin
             pc <= pc;
         end
         else begin
@@ -121,9 +128,8 @@ module gen_pulse (
 
 
     // REPEAT
-    reg  [RCNT_W-1:0] repeat_cnt;
-    wire [RCNT_W-1:0] repeat_cnt_max = (tasks & REPEAT_COEFS_NUM) ? CCNT-1 :
-                                       'h0;
+    reg  [2:0] repeat_cnt;
+    wire [2:0] repeat_cnt_max = (tasks & REPEAT_8) ? 'h7 : 'h0;
     wire repeat_st = (repeat_cnt != repeat_cnt_max);
 
     always @(posedge reset or posedge clk) begin
@@ -140,7 +146,7 @@ module gen_pulse (
 
 
     // INDEX REGISTER I
-    reg  [CCNT_W-1:0] i_reg;
+    reg  [6:0] i_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             i_reg <= 'h0;
@@ -151,9 +157,10 @@ module gen_pulse (
         else if (tasks & INC_I) begin
             i_reg <= i_reg + 'h1;
         end
+        else if (tasks & DEC_I) begin
+            i_reg <= i_reg - 'h1;
+        end
     end
-
-
 
 
 
@@ -172,12 +179,12 @@ module gen_pulse (
 
 
     reg  [23:0] divider_cnt;
-    wire        divider_cnt_evnt = (divider_cnt == (div >> 1));
+    wire        divider_cnt_evnt = (divider_cnt == div);
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             divider_cnt <= 0;
         end
-        else if (divider_cnt == (div >> 1) || note_on_event || note_off_event) begin
+        else if (divider_cnt == div) || note_on_event || note_off_event) begin
             divider_cnt <= 0;
         end
         else begin
@@ -202,16 +209,6 @@ module gen_pulse (
         end
     end
 
-
-    reg signed [17:0] cur_val;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            cur_val <= 18'h00000;
-        end
-        else if (sample_rate_8x_trig) begin
-            cur_val <= (sample_val + cur_val) >>> 1;
-        end
-    end
 
 
     // Decimating filter
