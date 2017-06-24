@@ -19,9 +19,9 @@ module gen_pulse (
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
     input                       sample_rate_trig,
-    output                      sample_out_rdy,
-    output signed [17:0]        sample_out_l,
-    output signed [17:0]        sample_out_r,
+    output reg                  sample_out_rdy,
+    output reg signed [17:0]    sample_out_l,
+    output reg signed [17:0]    sample_out_r,
 
     input  [47:0]               dsp_outs_flat_l,
     input  [47:0]               dsp_outs_flat_r,
@@ -74,7 +74,7 @@ module gen_pulse (
             // 1 => 0
             5'h8   : tasks = WAIT_SAMPLE_TRIG       ;
             5'h9   : tasks = MOV_RES_SI             ;
-            5'ha   : tasks = (i_reg != 0) ? (DEC_I | JP_UP_2) : NOP;
+            5'ha   : tasks = (i_reg != 0) ? (DEC_I | JP_UP_2) : INC_I;
 
             // 0 => -1
             5'hb   : tasks = WAIT_SAMPLE_TRIG       ;
@@ -89,7 +89,7 @@ module gen_pulse (
             // -1 => 0
             5'h11  : tasks = WAIT_SAMPLE_TRIG       ;
             5'h12  : tasks = MOV_RES_NSI            ;
-            5'h13  : tasks = (i_reg != 0) ? (DEC_I | JP_UP_2) : NOP;
+            5'h13  : tasks = (i_reg != 1) ? (DEC_I | JP_UP_2) : NOP;
 
             default: tasks = JP_0                   ;
         endcase
@@ -111,7 +111,7 @@ module gen_pulse (
         else if (tasks & JP_UP_2) begin
             pc <= pc - 5'h2;
         end
-        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig)
+        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig) ||
                  (tasks & REPEAT_COEFS_NUM && repeat_st        )) begin
             pc <= pc;
         end
@@ -377,10 +377,10 @@ module gen_pulse (
     always @(i_reg) begin
         case (i_reg)
             'h0    : begin ai <= 18'h00000; end
-            'h1    : begin ai <= 18'h00000; end
-            'h2    : begin ai <= 18'h00000; end
-            'h3    : begin ai <= 18'h00000; end
-            'h4    : begin ai <= 18'h00000; end
+            'h1    : begin ai <= 18'h08000; end
+            'h2    : begin ai <= 18'h0c000; end
+            'h3    : begin ai <= 18'h0e000; end
+            'h4    : begin ai <= 18'h0f000; end
             'h5    : begin ai <= 18'h10000; end
             default: begin ai <= 18'h00000; end
         endcase
@@ -422,7 +422,7 @@ module gen_pulse (
     end
 
 
-    reg  [17:0] smpl_arr[COEFS_NUM];
+    reg  [17:0] smpl_arr[0:COEFS_NUM];
     wire [17:0] si = smpl_arr[i_reg];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
