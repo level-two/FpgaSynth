@@ -73,11 +73,11 @@ module top (
     );
 
 
-    wire pgen_smpl_rate_2x_trig;
+    wire pgen_smpl_rate_trig;
     ctrl ctrl_inst (
         .clk               (clk                         ),
         .reset             (reset                       ),
-        .smpl_rate_2x_trig (pgen_smpl_rate_2x_trig      )
+        .smpl_rate_trig    (pgen_smpl_rate_trig         )
     );
 
 
@@ -97,7 +97,7 @@ module top (
         .midi_ch_sysn         (midi_ch_sysn              ),
         .midi_data0           (midi_data0                ),
         .midi_data1           (midi_data1                ),
-        .sample_rate_2x_trig  (pgen_smpl_rate_2x_trig    ),
+        .sample_rate_trig     (pgen_smpl_rate_trig       ),
         .sample_out_rdy       (pgen_smpl_out_rdy         ),
         .sample_out_l         (pgen_smpl_out_l           ),
         .sample_out_r         (pgen_smpl_out_r           ),
