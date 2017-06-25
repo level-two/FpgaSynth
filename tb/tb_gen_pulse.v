@@ -100,7 +100,17 @@ module tb_gen_pulse();
         @(posedge clk);
         midi_rdy        <= 0;
 
-        repeat (100) @(posedge sample_out_rdy);
+        repeat (1000) @(posedge sample_out_rdy);
+
+
+        midi_rdy        <= 1;
+        midi_cmd        <= `MIDI_CMD_NOTE_OFF;
+        midi_ch_sysn    <= 0;
+        midi_data0      <= 50;
+        midi_data1      <= 48;
+        @(posedge clk);
+        midi_rdy        <= 0;
+
 
         $finish;
     end

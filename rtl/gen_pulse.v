@@ -51,15 +51,15 @@ module gen_pulse (
 
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             5'h0   : tasks = MOV_I_0                |
-                             (note_changed == 1'b1) ? CLR_NOTE_CHANGED : JP_2;
+                             ((note_changed == 1'b1) ? CLR_NOTE_CHANGED : JP_2);
 
             5'h1   : tasks = REPEAT_COEFS_NUM       |
                              MUL_AI_AMPL            |
                              MOV_SI_AC              |
-                             ((i_reg != 'h3) ? INC_I : MOV_I_0);
+                             ((i_reg != COEFS_NUM-1) ? INC_I : MOV_I_0);
 
             // 0 => 1
             5'h2   : tasks = WAIT_SAMPLE_TRIG       ;
@@ -90,6 +90,8 @@ module gen_pulse (
             5'h11  : tasks = WAIT_SAMPLE_TRIG       ;
             5'h12  : tasks = MOV_RES_NSI            ;
             5'h13  : tasks = (i_reg != 1) ? (DEC_I | JP_UP_2) : NOP;
+
+            5'h14  : tasks = JP_0                   ;
 
             default: tasks = JP_0                   ;
         endcase
@@ -183,7 +185,7 @@ module gen_pulse (
     reg note_changed;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note_changed <= 1'b0;
+            note_changed <= 1'b1;
         end
         else if (note_on_event || note_off_event) begin
             note_changed <= 1'b1;
@@ -422,7 +424,7 @@ module gen_pulse (
     end
 
 
-    reg  [17:0] smpl_arr[0:COEFS_NUM];
+    reg  [17:0] smpl_arr[0:COEFS_NUM-1];
     wire [17:0] si = smpl_arr[i_reg];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
