@@ -29,7 +29,7 @@ module gen_pulse (
     output [91:0]               dsp_ins_flat_r
 );
 
-    localparam COEFS_NUM = 6;
+    localparam COEFS_NUM = 7;
 
     // TASKS
     localparam [15:0] NOP              = 16'h0000;
@@ -379,11 +379,12 @@ module gen_pulse (
     always @(i_reg) begin
         case (i_reg)
             'h0    : begin ai <= 18'h00000; end
-            'h1    : begin ai <= 18'h08000; end
-            'h2    : begin ai <= 18'h0c000; end
-            'h3    : begin ai <= 18'h0e000; end
-            'h4    : begin ai <= 18'h0f000; end
-            'h5    : begin ai <= 18'h10000; end
+            'h1    : begin ai <= 18'h01DD0; end
+            'h2    : begin ai <= 18'h05442; end
+            'h3    : begin ai <= 18'h085FA; end
+            'h4    : begin ai <= 18'h0B974; end
+            'h5    : begin ai <= 18'h0ED78; end
+            'h6    : begin ai <= 18'h10000; end
             default: begin ai <= 18'h00000; end
         endcase
     end
