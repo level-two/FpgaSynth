@@ -30,6 +30,7 @@ module gen_pulse (
 );
 
     localparam COEFS_NUM = 7;
+    localparam C_SIZE = 4;
 
     // TASKS
     localparam [15:0] NOP              = 16'h0000;
@@ -124,8 +125,8 @@ module gen_pulse (
 
 
     // REPEAT
-    reg  [2:0] repeat_cnt;
-    wire [2:0] repeat_cnt_max = (tasks & REPEAT_COEFS_NUM) ? COEFS_NUM-1 :
+    reg  [C_SIZE-1:0] repeat_cnt;
+    wire [C_SIZE-1:0] repeat_cnt_max = (tasks & REPEAT_COEFS_NUM) ? COEFS_NUM-1 :
                                                              'h0;
     wire repeat_st = (repeat_cnt != repeat_cnt_max);
 
@@ -143,7 +144,7 @@ module gen_pulse (
 
 
     // INDEX REGISTER I
-    reg  [2:0] i_reg;
+    reg  [C_SIZE-1:0] i_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             i_reg <= 'h0;
@@ -406,7 +407,7 @@ module gen_pulse (
 
 
     reg [2:0] mov_si_ac_dly;
-    reg [2:0] mov_si_ac_idx_dly[0:2];
+    reg [C_SIZE-1:0] mov_si_ac_idx_dly[0:2];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             mov_si_ac_dly        <= 3'b0;
