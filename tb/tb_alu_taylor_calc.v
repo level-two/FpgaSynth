@@ -20,8 +20,8 @@ module tb_alu_taylor_calc();
     wire               calc_done;
     wire signed [17:0] result;
 
-    wire [43:0] dsp_ins_flat;
-    wire [83:0] dsp_outs_flat;
+    wire [91:0]        dsp_ins_flat;
+    wire [47:0]        dsp_outs_flat;
 
     // dut
     alu_taylor_calc dut (
@@ -44,9 +44,10 @@ module tb_alu_taylor_calc();
     );
 
 
+    initial $timeformat(-9, 0, " ns", 0);
 
     always begin
-        #1;
+        #5;
         clk <= ~clk;
     end
 
@@ -54,33 +55,30 @@ module tb_alu_taylor_calc();
     initial begin
         clk          <= 0;
         reset        <= 1;
-
         do_calc      <= 0;
         func_sel     <= `ALU_TAYLOR_SIN;
-        x_in         <= 0;
-
+        x_in         <= 18'h21000;
         repeat (100) @(posedge clk);
         reset <= 0;
         repeat (100) @(posedge clk);
 
-        repeat (10) begin
+        while (x_in != 18'h1f000) begin
             do_calc      <= 1;
             func_sel     <= `ALU_TAYLOR_SIN;
-            x_in         <= 18'h0860A;
+            x_in         <= x_in + 18'h01000;
             @(posedge clk);
             do_calc      <= 0;
-
-            repeat (100) @(posedge clk);
-
-            do_calc      <= 1;
-            func_sel     <= `ALU_TAYLOR_COS;
-            x_in         <= 18'h19220;
-            @(posedge clk);
-            do_calc      <= 0;
-
             repeat (100) @(posedge clk);
         end
-
         #100;
+        $finish;
     end
+
+
+    always @(posedge clk) begin
+        if (calc_done) begin
+            $display("%d", result);
+        end
+    end
+
 endmodule
