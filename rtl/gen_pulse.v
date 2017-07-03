@@ -18,10 +18,10 @@ module gen_pulse (
     input  [3:0]                midi_ch_sysn,
     input  [6:0]                midi_data0,
     input  [6:0]                midi_data1,
-    input                       sample_rate_trig,
-    output reg                  sample_out_rdy,
-    output reg signed [17:0]    sample_out_l,
-    output reg signed [17:0]    sample_out_r,
+    input                       sample_rate_384k_trig,
+    output                      sample_out_rdy,
+    output signed [17:0]        sample_out_l,
+    output signed [17:0]        sample_out_r,
 
     input  [47:0]               dsp_outs_flat_l,
     input  [47:0]               dsp_outs_flat_r,
@@ -114,7 +114,7 @@ module gen_pulse (
         else if (tasks & JP_UP_2) begin
             pc <= pc - 5'h2;
         end
-        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_trig) ||
+        else if ((tasks & WAIT_SAMPLE_TRIG && !sample_rate_384k_trig) ||
                  (tasks & REPEAT_COEFS_NUM && repeat_st        )) begin
             pc <= pc;
         end
@@ -164,21 +164,17 @@ module gen_pulse (
     wire        note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
     wire        note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
     reg  [6:0]  note;
-    reg         note_on;
-    reg  [17:0] amplitude;
+    reg signed [17:0] amplitude;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            note_on   <= 1'b0;
             note      <= 7'h0;
             amplitude <= 18'h00000;
         end
         else if (note_on_event) begin
-            note_on   <= 1'b1;
             note      <= midi_data0;
             amplitude <= {2'h0, midi_data1[6:0], 9'h00};
         end
         else if (note_off_event) begin
-            note_on   <= 1'b0;
             amplitude <= 18'h00000;
         end
     end
@@ -203,7 +199,7 @@ module gen_pulse (
         if (reset) begin
             divider_cnt <= 24'h0;
         end
-        else if ((divider_cnt >= div) || ~note_on) begin
+        else if (divider_cnt >= div) begin
             divider_cnt <= 24'h0;
         end
         else begin
@@ -216,7 +212,7 @@ module gen_pulse (
         if (reset) begin
             divider_cnt_event <= 1'b0;
         end
-        else if (divider_cnt == div) begin
+        else if (divider_cnt >= div) begin
             divider_cnt_event <= 1'b1;
         end
         else if (tasks & CLR_DIV_EVENT) begin
@@ -438,26 +434,55 @@ module gen_pulse (
     end
 
 
+    // FIR
+    reg                    fir_sample_in_rdy;
+    reg signed [17:0]      fir_sample_in_l;
+    reg signed [17:0]      fir_sample_in_r;
+    wire                   fir_sample_out_rdy;
+    wire signed [17:0]     fir_sample_out_l;
+    wire signed [17:0]     fir_sample_out_r;
+    wire [91:0]            fir_dsp_ins_flat_l;
+    wire [91:0]            fir_dsp_ins_flat_r;
+
+    fir_decim_384k_48k  fir_decim_384k_48k (
+       .clk             (clk                ),
+       .reset           (reset              ),
+       .sample_in_rdy   (fir_sample_in_rdy  ),
+       .sample_in_l     (fir_sample_in_l    ),
+       .sample_in_r     (fir_sample_in_r    ),
+       .sample_out_rdy  (fir_sample_out_rdy ),
+       .sample_out_l    (fir_sample_out_l   ),
+       .sample_out_r    (fir_sample_out_r   ),
+       .dsp_outs_flat_l (dsp_outs_flat_l    ),
+       .dsp_outs_flat_r (dsp_outs_flat_r    ),
+       .dsp_ins_flat_l  (fir_dsp_ins_flat_l ),
+       .dsp_ins_flat_r  (fir_dsp_ins_flat_r )
+    );
+
+    assign sample_out_rdy = fir_sample_out_rdy;
+    assign sample_out_l   = fir_sample_out_l;
+    assign sample_out_r   = fir_sample_out_r;
+
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_out_rdy <= 1'b0;
-            sample_out_l   <= 18'h00000;
-            sample_out_r   <= 18'h00000;
+            fir_sample_in_rdy <= 1'b0;
+            fir_sample_in_l   <= 18'h00000;
+            fir_sample_in_r   <= 18'h00000;
         end
         else if (tasks & MOV_RES_SI) begin
-            sample_out_rdy <= 1'b1;
-            sample_out_l   <= si;
-            sample_out_r   <= si;
+            fir_sample_in_rdy <= 1'b1;
+            fir_sample_in_l   <= si;
+            fir_sample_in_r   <= si;
         end
         else if (tasks & MOV_RES_NSI) begin
-            sample_out_rdy <= 1'b1;
-            sample_out_l   <= (~si + 18'h00001);
-            sample_out_r   <= (~si + 18'h00001);
+            fir_sample_in_rdy <= 1'b1;
+            fir_sample_in_l   <= (~si + 18'h00001);
+            fir_sample_in_r   <= (~si + 18'h00001);
         end
         else begin
-            sample_out_rdy <= 1'b0;
-            sample_out_l   <= 18'h00000;
-            sample_out_r   <= 18'h00000;
+            fir_sample_in_rdy <= 1'b0;
+            fir_sample_in_l   <= 18'h00000;
+            fir_sample_in_r   <= 18'h00000;
         end
     end
 
@@ -473,8 +498,14 @@ module gen_pulse (
     wire signed [47:0] pr;
 
     // Gather local DSP signals 
-    assign dsp_ins_flat_l[91:0] = {opmode, al, bl, c_nc};
-    assign dsp_ins_flat_r[91:0] = {opmode, ar, br, c_nc};
+    wire [91:0] int_dsp_ins_flat_l;
+    wire [91:0] int_dsp_ins_flat_r;
+
+    assign int_dsp_ins_flat_l[91:0] = {opmode, al, bl, c_nc};
+    assign int_dsp_ins_flat_r[91:0] = {opmode, ar, br, c_nc};
     assign pl = dsp_outs_flat_l;
     assign pr = dsp_outs_flat_r;
+
+    assign dsp_ins_flat_l = int_dsp_ins_flat_l | fir_dsp_ins_flat_l;
+    assign dsp_ins_flat_r = int_dsp_ins_flat_r | fir_dsp_ins_flat_r;
 endmodule

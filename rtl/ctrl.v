@@ -23,7 +23,7 @@ module ctrl (
             cnt  <= 0;
             smpl_rate_trig <= 0;
         end
-        else if (cnt == `CLK_DIV_48K-1) begin
+        else if (cnt == `CLK_DIV_384K-1) begin
             cnt <= 0;
             smpl_rate_trig <= 1'b1;
         end

@@ -26,7 +26,7 @@ module tb_gen_pulse();
     reg  [3:0]                midi_ch_sysn;
     reg  [6:0]                midi_data0;
     reg  [6:0]                midi_data1;
-    reg                       sample_rate_trig;
+    reg                       sample_rate_384k_trig;
 
     gen_pulse dut(
         .clk                (clk                    ),
@@ -36,7 +36,7 @@ module tb_gen_pulse();
         .midi_ch_sysn       (midi_ch_sysn           ),
         .midi_data0         (midi_data0             ),
         .midi_data1         (midi_data1             ),
-        .sample_rate_trig   (sample_rate_trig       ),
+        .sample_rate_384k_trig(sample_rate_384k_trig),
         .sample_out_rdy     (sample_out_rdy         ),
         .sample_out_l       (sample_out_l           ),
         .sample_out_r       (sample_out_r           ),
@@ -70,10 +70,10 @@ module tb_gen_pulse();
     end
 
     always begin
-        repeat (`CLK_DIV_48K-1) @(posedge clk);
-        sample_rate_trig <= 1'b1;
+        repeat (`CLK_DIV_384K-1) @(posedge clk);
+        sample_rate_384k_trig <= 1'b1;
         @(posedge clk);
-        sample_rate_trig <= 1'b0;
+        sample_rate_384k_trig <= 1'b0;
     end
 
 
@@ -81,7 +81,7 @@ module tb_gen_pulse();
         clk             <= 0;
         reset           <= 1;
 
-        sample_rate_trig <= 0;
+        sample_rate_384k_trig <= 0;
         midi_rdy        <= 0;
         midi_cmd        <= `MIDI_CMD_NONE;
         midi_ch_sysn    <= 0;
@@ -103,6 +103,7 @@ module tb_gen_pulse();
         repeat (1000) @(posedge sample_out_rdy);
 
 
+        /*
         midi_rdy        <= 1;
         midi_cmd        <= `MIDI_CMD_NOTE_OFF;
         midi_ch_sysn    <= 0;
@@ -110,16 +111,15 @@ module tb_gen_pulse();
         midi_data1      <= 48;
         @(posedge clk);
         midi_rdy        <= 0;
+        */
 
 
         $finish;
     end
-
 
     always @(posedge clk) begin
         if (sample_out_rdy) begin
             $display("%d", sample_out_l);
         end
     end
-
 endmodule

@@ -270,14 +270,6 @@ module module_stereo_dac_output (
     wire signed [17:0] dac_sample_in_l = fifo_3_dac_data_out[35:18];
     wire signed [17:0] dac_sample_in_r = fifo_3_dac_data_out[17:0];
 
-    /*
-    always @(posedge clk) begin
-        if (dac_sample_in_rdy) begin
-            $display("%d", dac_out_r);
-        end
-    end
-    */
-
     sigma_delta_2order_dac  sigma_delta_2order_dac_inst
     (
         .clk            (clk                ),
@@ -288,4 +280,11 @@ module module_stereo_dac_output (
         .dout_l         (dac_out_l          ),
         .dout_r         (dac_out_r          )
     );
+
+
+    always @(posedge clk) begin
+        if (dac_sample_in_rdy) begin
+            $display("%d", dac_out_l);
+        end
+    end
 endmodule

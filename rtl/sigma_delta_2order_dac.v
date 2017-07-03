@@ -21,7 +21,7 @@ module sigma_delta_2order_dac
     output reg          dout_r
 );
  
-    localparam signed [47:0] DELTA = 48'h18000;
+    localparam signed [47:0] DELTA = 48'h20000;
 
 
     // STORE SAMPLE_IN
@@ -33,13 +33,17 @@ module sigma_delta_2order_dac
             sample_in_r_reg <= 18'h00000;
         end
         else if (sample_in_rdy) begin
-            // sample_in_reg <= 
-            //    sample_in[17:16] == 2'b01 ? 18'h10000 :
-            //    sample_in[17:16] == 2'b10 ? 18'h30000 : 
-            //    sample_in;
+            sample_in_l_reg <= 
+               sample_in_l[17:16] == 2'b01 ? 18'h10000 :
+               sample_in_l[17:16] == 2'b10 ? 18'h30000 : 
+               sample_in_l;
+            sample_in_r_reg <= 
+               sample_in_r[17:16] == 2'b01 ? 18'h10000 :
+               sample_in_r[17:16] == 2'b10 ? 18'h30000 : 
+               sample_in_r;
 
-            sample_in_l_reg <= sample_in_l;
-            sample_in_r_reg <= sample_in_r;
+            //sample_in_l_reg <= sample_in_l;
+            //sample_in_r_reg <= sample_in_r;
         end
     end
 
