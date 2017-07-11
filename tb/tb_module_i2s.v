@@ -10,12 +10,12 @@
 
 `include "../rtl/globals.vh"
 
-module tb_module_stereo_dac_output();
-    localparam CLK_FREQ     = 100_000_000;
-    localparam SAMPLE_WIDTH = 16;
-    localparam SAMPLE_RATE  = 48000;
-    localparam SAMPLE_FREQ  = SAMPLE_RATE * SAMPLE_WIDTH * 2;
-    localparam SAMPLE_NCLKS = CLK_FREQ / SAMPLE_FREQ;
+module tb_module_i2s();
+    localparam CLK_FREQ        = 100_000_000;
+    localparam SAMPLE_WIDTH    = 16;
+    localparam SAMPLE_RATE     = 48000;
+    localparam SAMPLE_FREQ     = SAMPLE_RATE * SAMPLE_WIDTH * 2;
+    localparam SAMPLE_NCLKS    = CLK_FREQ / SAMPLE_FREQ;
     localparam SAMPLE_NCLKS_2X = SAMPLE_NCLKS / 2;
 
     reg                      clk;
@@ -71,7 +71,6 @@ module tb_module_stereo_dac_output();
         bclk            <= 0;
         lrclk           <= 0;
         adcda           <= 0;
-        clk_num          = 0;
 
         @(posedge clk);
         while (reset) @(posedge clk);
