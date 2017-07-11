@@ -1,4 +1,4 @@
-module i2s #(parameter  SAMPLE_WIDTH = 16)
+module module_i2s #(parameter  SAMPLE_WIDTH = 16)
 (
     input clk,
     input reset,
@@ -27,8 +27,8 @@ module i2s #(parameter  SAMPLE_WIDTH = 16)
     end
 
     assign bclk_s = bclk_trg[1];
-    wire bclk_pe = ~bclk_trg[2] & bclk_s;
-    wire bclk_ne = bclk_trg[2] & ~bclk_s;
+    wire bclk_pe  = ~bclk_trg[2] & bclk_s;
+    wire bclk_ne  = bclk_trg[2] & ~bclk_s;
 
     reg [2:0] lrclk_trg;
     always @(posedge clk) begin
@@ -42,7 +42,7 @@ module i2s #(parameter  SAMPLE_WIDTH = 16)
 
     assign lrclk_s = lrclk_trg[1];
     wire lrclk_prv = lrclk_trg[2];
-    wire lrclk_ch = lrclk_prv ^ lrclk_s;
+    wire lrclk_ch  = lrclk_prv ^ lrclk_s;
 
     reg [1:0] adcda_trg;
     always @(posedge clk) begin
