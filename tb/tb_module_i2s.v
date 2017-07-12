@@ -16,7 +16,7 @@ module tb_module_i2s();
     localparam SAMPLE_RATE     = 48000;
     localparam SAMPLE_FREQ     = SAMPLE_RATE * SAMPLE_WIDTH * 2;
     localparam SAMPLE_NCLKS    = CLK_FREQ / SAMPLE_FREQ;
-    localparam SAMPLE_NCLKS_2X = SAMPLE_NCLKS / 2;
+    localparam SAMPLE_NCLKS_HALF = SAMPLE_NCLKS / 2;
 
     reg                      clk;
     reg                      reset;
@@ -82,9 +82,9 @@ module tb_module_i2s();
         forever begin
             repeat (2) begin
                 repeat (SAMPLE_WIDTH) begin
-                    repeat (SAMPLE_NCLKS_2X) @(posedge clk);
+                    repeat (SAMPLE_NCLKS_HALF) @(posedge clk);
                     bclk  <= 1'b1;
-                    repeat (SAMPLE_NCLKS_2X) @(posedge clk);
+                    repeat (SAMPLE_NCLKS_HALF) @(posedge clk);
                     bclk  <= 1'b0;
                     adcda <= $random % 2;
                 end
