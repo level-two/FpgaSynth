@@ -2,14 +2,16 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
 (
     input clk,
     input reset,
+
     input bclk,
     input lrclk,
     input adcda,
-    input [SAMPLE_WIDTH-1:0] left_in,
-    input [SAMPLE_WIDTH-1:0] right_in,
     output reg [SAMPLE_WIDTH-1:0] left_out,
     output reg [SAMPLE_WIDTH-1:0] right_out,
     output reg dataready,
+
+    input [SAMPLE_WIDTH-1:0] left_in,
+    input [SAMPLE_WIDTH-1:0] right_in,
     output bclk_s,
     output lrclk_s,
     output dacda
@@ -68,6 +70,27 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
         end
     end
 
+    always @(posedge clk) begin
+        if (reset) begin
+            left_out  <= {SAMPLE_WIDTH{1'b0}};
+            right_out <= {SAMPLE_WIDTH{1'b0}};
+            dataready <= 1'b0;
+        end
+        else if (lrclk_ch) begin
+            if (lrclk_prv) begin
+                right_out <= shift_w[31:32-SAMPLE_WIDTH];
+                dataready <= 1'b1;
+            end
+            else begin
+                left_out <= shift_w[31:32-SAMPLE_WIDTH];
+            end
+        end
+        else begin
+            dataready <= 1'b0;
+        end
+    end
+
+    /*
     reg [SAMPLE_WIDTH-1:0] lb;
     reg [SAMPLE_WIDTH-1:0] rb;
     reg [4:0] bit_cnt;
@@ -96,22 +119,5 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             end
         end
     end
-
-    always @(posedge clk) begin
-        if (reset) begin
-            left_out  <= {SAMPLE_WIDTH{1'b0}};
-            right_out <= {SAMPLE_WIDTH{1'b0}};
-            dataready <= 1'b0;
-        end
-        else if (lrclk_ch && lrclk_prv) begin
-            right_out <= shift_w[31:32-SAMPLE_WIDTH];
-            dataready <= 1'b1;
-        end
-        else if (lrclk_ch && ~lrclk_prv) begin
-            left_out  <= shift_w[31:32-SAMPLE_WIDTH];
-        end
-        else begin
-            dataready <= 1'b0;
-        end
-    end
+    */
 endmodule
