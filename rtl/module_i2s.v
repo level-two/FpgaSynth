@@ -29,8 +29,8 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
     end
 
     assign bclk_s = bclk_trg[1];
-    wire bclk_pe  = ~bclk_trg[2] & bclk_s;
-    wire bclk_ne  = bclk_trg[2] & ~bclk_s;
+    wire bclk_pe  = ~bclk_trg[2] &  bclk_trg[1];
+    wire bclk_ne  =  bclk_trg[2] & ~bclk_trg[1];
 
     reg [2:0] lrclk_trg;
     always @(posedge clk) begin
@@ -78,11 +78,11 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
         end
         else if (lrclk_ch) begin
             if (lrclk_prv) begin
-                right_out <= shift_w[31:32-SAMPLE_WIDTH];
+                right_out <= shift_w[SAMPLE_WIDTH-1:0];
                 dataready <= 1'b1;
             end
             else begin
-                left_out <= shift_w[31:32-SAMPLE_WIDTH];
+                left_out  <= shift_w[SAMPLE_WIDTH-1:0];
             end
         end
         else begin
