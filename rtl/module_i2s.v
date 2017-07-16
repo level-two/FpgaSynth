@@ -32,12 +32,12 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             bclk_dly <= 1'b0;
         end
         else begin
-            bclk_dly <= bclk;
+            bclk_dly <= bclk_s;
         end
     end
 
-    wire bclk_pe  = ~bclk_dly &  bclk;
-    wire bclk_ne  =  bclk_dly & ~bclk;
+    wire bclk_pe  = ~bclk_dly &  bclk_s;
+    wire bclk_ne  =  bclk_dly & ~bclk_s;
 
 
     //========================
@@ -54,7 +54,7 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             lrclk_dly <= 1'b0;
         end
         else if (bclk_pe) begin
-            lrclk_dly <= lrclk;
+            lrclk_dly <= lrclk_s;
         end
     end
 
