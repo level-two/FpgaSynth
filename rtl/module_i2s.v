@@ -15,7 +15,7 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
     output reg data_sampled,
     output bclk_s,
     output lrclk_s,
-    output dacda
+    output reg dacda
 );
 
     //========================
@@ -112,6 +112,7 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             data_sampled   <= 1'b0;
             shift_reg      <= {SAMPLE_WIDTH{1'b0}};
             data_right_reg <= {SAMPLE_WIDTH{1'b0}};
+            dacda          <= {SAMPLE_WIDTH{1'b0}};
         end
         else if (bclk_pe && lrclk_ch) begin
             if (lrclk_s == 1'b0) begin
@@ -125,11 +126,10 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
         end
         else if (bclk_ne) begin
             shift_reg <= { shift_reg[SAMPLE_WIDTH-2:0], 1'b0 };
+            dacda     <= shift_reg[SAMPLE_WIDTH-1];
         end
         else begin
             data_sampled <= 1'b0;
         end
     end
-
-    assign dacda = shift_reg[SAMPLE_WIDTH-1];
 endmodule
