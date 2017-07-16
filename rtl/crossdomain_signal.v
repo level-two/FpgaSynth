@@ -27,6 +27,6 @@ module crossdomain_signal (
         end
     end
 
-    assign sig_domain_b <= sig_domain_b_reg[1];
+    assign sig_domain_b = sig_domain_b_reg[1];
 
 endmodule
