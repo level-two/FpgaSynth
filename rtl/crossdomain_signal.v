@@ -11,7 +11,7 @@
 
 module crossdomain_signal (
     input         reset,
-    input         clk_a,
+//    input         clk_a,
     input         clk_b,
     input         sig_domain_a,
     output        sig_domain_b

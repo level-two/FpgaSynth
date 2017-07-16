@@ -12,51 +12,63 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
 
     input [SAMPLE_WIDTH-1:0] left_in,
     input [SAMPLE_WIDTH-1:0] right_in,
+    output reg data_sampled,
     output bclk_s,
     output lrclk_s,
     output dacda
 );
 
-    // ==============================================================
-    reg [2:0] bclk_trg;
+    //========================
+    crossdomain_signal bclk_crossdomain (
+        .reset        (reset    ),
+        .clk_b        (clk      ),
+        .sig_domain_a (bclk     ),
+        .sig_domain_b (bclk_s   )
+    );
+
+    reg bclk_dly;
     always @(posedge clk) begin
         if (reset) begin
-            bclk_trg <= 3'h0;
+            bclk_dly <= 1'b0;
         end
         else begin
-            bclk_trg <= { bclk_trg[1:0], bclk };
+            bclk_dly <= bclk;
         end
     end
 
-    assign bclk_s = bclk_trg[1];
-    wire bclk_pe  = ~bclk_trg[2] &  bclk_trg[1];
-    wire bclk_ne  =  bclk_trg[2] & ~bclk_trg[1];
+    wire bclk_pe  = ~bclk_dly &  bclk;
+    wire bclk_ne  =  bclk_dly & ~bclk;
 
-    reg [2:0] lrclk_trg;
+
+    //========================
+    crossdomain_signal lrclk_crossdomain (
+        .reset        (reset    ),
+        .clk_b        (clk      ),
+        .sig_domain_a (lrclk    ),
+        .sig_domain_b (lrclk_s  )
+    );
+
+    reg lrclk_dly;
     always @(posedge clk) begin
         if (reset) begin
-            lrclk_trg <= 3'h0;
+            lrclk_dly <= 1'b0;
         end
-        else begin
-            lrclk_trg <= { lrclk_trg[1:0], lrclk };
+        else if (bclk_pe) begin
+            lrclk_dly <= lrclk;
         end
     end
 
-    assign lrclk_s = lrclk_trg[1];
-    wire lrclk_prv = lrclk_trg[2];
-    wire lrclk_ch  = lrclk_prv ^ lrclk_s;
+    wire lrclk_ch  = lrclk_dly ^ lrclk_s;
 
-    reg [1:0] adcda_trg;
-    always @(posedge clk) begin
-        if (reset) begin
-            adcda_trg <= 2'h0;
-        end
-        else begin
-            adcda_trg <= { adcda_trg[0], adcda };
-        end
-    end
 
-    wire adcda_s = adcda_trg[1];
+    //========================
+    crossdomain_signal adcda_crossdomain (
+        .reset        (reset    ),
+        .clk_b        (clk      ),
+        .sig_domain_a (adcda    ),
+        .sig_domain_b (adcda_s  )
+    );
+
 
     // ==============================================================
     reg  [31:0] shift;
@@ -76,8 +88,8 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             right_out <= {SAMPLE_WIDTH{1'b0}};
             dataready <= 1'b0;
         end
-        else if (lrclk_ch) begin
-            if (lrclk_prv) begin
+        else if (bclk_pe && lrclk_ch) begin
+            if (lrclk_dly) begin
                 right_out <= shift_w[SAMPLE_WIDTH-1:0];
                 dataready <= 1'b1;
             end
@@ -90,34 +102,34 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
         end
     end
 
-    /*
-    reg [SAMPLE_WIDTH-1:0] lb;
-    reg [SAMPLE_WIDTH-1:0] rb;
-    reg [4:0] bit_cnt;
-    reg actuallr;
 
-    wire [4:0] bit_ptr = (~bit_cnt - (32-SAMPLE_WIDTH));
-    assign dacda = (bit_cnt < SAMPLE_WIDTH) ? actuallr ? lb[bit_ptr] : rb[bit_ptr] : 1'b0;
+    // ==============================================================
+    reg [SAMPLE_WIDTH-1:0] data_right_reg;
+    reg [SAMPLE_WIDTH-1:0] shift_reg;
 
     always @(posedge clk) begin
         if (reset) begin
-            bit_cnt  <= 5'h0;
-            actuallr <= 1'b0;
-            lb       <= {SAMPLE_WIDTH{1'b0}};
-            rb       <= {SAMPLE_WIDTH{1'b0}};
+            data_sampled   <= 1'b0;
+            shift_reg      <= {SAMPLE_WIDTH{1'b0}};
+            data_right_reg <= {SAMPLE_WIDTH{1'b0}};
         end
-        else if (lrclk_ch) begin
-            bit_cnt  <= 5'd31;
-            actuallr <= ~lrclk_s;
-        end
-        else if (bclk_ne) begin
-            bit_cnt  <= bit_cnt + 1'b1;
-            actuallr <= lrclk_s;
-            if (bit_cnt == 5'd31) begin
-                lb   <= left_in;
-                rb   <= right_in;
+        else if (bclk_pe && lrclk_ch) begin
+            if (lrclk_s == 1'b0) begin
+                data_right_reg <= right_in;
+                shift_reg      <= left_in;
+                data_sampled   <= 1'b1;
+            end
+            else begin
+                shift_reg <= data_right_reg;
             end
         end
+        else if (bclk_ne) begin
+            shift_reg <= { shift_reg[SAMPLE_WIDTH-2:0], 1'b0 };
+        end
+        else begin
+            data_sampled <= 1'b0;
+        end
     end
-    */
+
+    assign dacda = shift_reg[SAMPLE_WIDTH-1];
 endmodule
