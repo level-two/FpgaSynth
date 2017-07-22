@@ -81,7 +81,7 @@ module tb_module_i2s();
 
         forever begin
             repeat (2) begin
-                repeat (SAMPLE_WIDTH) begin
+                repeat (SAMPLE_WIDTH+5) begin
                     repeat (SAMPLE_NCLKS_HALF) @(posedge clk);
                     bclk  <= 1'b1;
                     repeat (SAMPLE_NCLKS_HALF) @(posedge clk);
