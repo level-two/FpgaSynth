@@ -71,14 +71,26 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
 
 
     // ==============================================================
-    reg  [31:0] shift;
-    wire [31:0] shift_w = { shift[30:0], adcda_s };
+    reg  [31:0] rcvd;
+    reg  [4:0]  cnt;
+    reg         done;
     always @(posedge clk) begin
         if (reset) begin
-            shift <= 32'h0;
+            done <= 1'b0;
+            rcvd <= 32'h0;
+            cnt  <= 5'h1f;
+        end
+        else if (done) begin
+            done <= 1'b0;
+            rcvd <= 32'h0;
+            cnt  <= 5'h1f;
         end
         else if (bclk_pe) begin
-            shift <= shift_w;
+            rcvd[cnt] <= adcda_s;
+            cnt       <= cnt - 5'h1;
+            if (lrclk_ch) begin
+                done <= 1'b1;
+            end
         end
     end
 
@@ -88,13 +100,13 @@ module module_i2s #(parameter  SAMPLE_WIDTH = 16)
             right_out <= {SAMPLE_WIDTH{1'b0}};
             dataready <= 1'b0;
         end
-        else if (bclk_pe && lrclk_ch) begin
+        else if (done) begin
             if (lrclk_dly) begin
-                right_out <= shift_w[SAMPLE_WIDTH-1:0];
+                right_out <= rcvd[31:32-SAMPLE_WIDTH];
                 dataready <= 1'b1;
             end
             else begin
-                left_out  <= shift_w[SAMPLE_WIDTH-1:0];
+                left_out  <= rcvd[31:32-SAMPLE_WIDTH];
             end
         end
         else begin
