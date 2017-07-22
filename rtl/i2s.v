@@ -1,4 +1,14 @@
-module module_i2s #(parameter  SAMPLE_WIDTH = 16)
+// -----------------------------------------------------------------------------
+// Copyright © 2017 Yauheni Lychkouski. All Rights Reserved
+//
+// Unauthorized copying of this file, via any medium is strictly prohibited
+// Proprietary and confidential
+// -----------------------------------------------------------------------------
+// File: i2s.v
+// Description: I2S input/output audio interface
+// -----------------------------------------------------------------------------
+
+module i2s #(parameter SAMPLE_WIDTH = 16)
 (
     input clk,
     input reset,

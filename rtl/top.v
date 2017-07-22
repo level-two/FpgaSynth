@@ -14,18 +14,22 @@ module top (
     input            CLK_50M,
     input      [0:0] PB,
     input      [0:0] PMOD3,   // UART rx
-    output     [0:1] PMOD4,   // dac out
+    output     [7:5] PMOD4,
     output     [1:0] LED
 );
 
-    wire dac_out_l;
-    wire dac_out_r;
+    wire i2s_lrclk_in;
+    wire i2s_bclk_in;
+    wire i2s_data_in;
+    wire i2s_data_out;
 
-    wire   rx       = PMOD3[0];
-    assign PMOD4[0] = dac_out_l;
-    assign PMOD4[1] = dac_out_r;
-    assign LED[0]   = 0;
-    assign LED[1]   = 0;
+    wire   uart_rx      = PMOD3[0];
+    assign PMOD4[4]     = i2s_data_out;
+    assign i2s_data_in  = PMOD4[5];
+    assign i2s_bclk_in  = PMOD4[6];
+    assign i2s_lrclk_in = PMOD4[7];
+    assign LED[0]       = 0;
+    assign LED[1]       = 0;
 
     wire clk;
     wire clk_valid;
@@ -39,8 +43,8 @@ module top (
         .CLK_VALID   (clk_valid)
     );
 
-    wire        data_received;
-    wire [7:0]  data;
+    wire        uart_data_rdy;
+    wire [7:0]  uart_data;
 
     wire        midi_rdy;
     wire [`MIDI_CMD_SIZE-1:0] midi_cmd;
@@ -53,17 +57,17 @@ module top (
     (
         .clk          (clk          ),
         .reset        (reset        ),
-        .rx           (rx           ),
-        .data_received(data_received),
-        .data         (data         )
+        .rx           (uart_rx      ),
+        .data_received(uart_data_rdy),
+        .data         (uart_data    )
     );
 
 
     midi_decoder midi_decoder_inst (
         .clk         (clk          ),
         .reset       (reset        ),
-        .dataInReady (data_received),
-        .dataIn      (data         ),
+        .dataInReady (uart_data_rdy),
+        .dataIn      (uart_data    ),
 
         .midi_rdy    (midi_rdy     ),
         .midi_cmd    (midi_cmd     ),
@@ -73,13 +77,7 @@ module top (
     );
 
 
-    wire pgen_smpl_rate_2x_trig;
-    ctrl ctrl_inst (
-        .clk               (clk                         ),
-        .reset             (reset                       ),
-        .smpl_rate_2x_trig (pgen_smpl_rate_2x_trig      )
-    );
-
+    wire               new_sample_trig;
 
     wire               pgen_smpl_out_rdy;
     wire signed [17:0] pgen_smpl_out_l;
@@ -97,7 +95,7 @@ module top (
         .midi_ch_sysn         (midi_ch_sysn              ),
         .midi_data0           (midi_data0                ),
         .midi_data1           (midi_data1                ),
-        .sample_rate_2x_trig  (pgen_smpl_rate_2x_trig    ),
+        .sample_rate_2x_trig  (new_sample_trig           ),
         .sample_out_rdy       (pgen_smpl_out_rdy         ),
         .sample_out_l         (pgen_smpl_out_l           ),
         .sample_out_r         (pgen_smpl_out_r           ),
@@ -179,17 +177,21 @@ module top (
     */
 
 
-    wire               dac_sample_in_rdy = pgen_smpl_out_rdy;
-    wire signed [17:0] dac_sample_in_l   = pgen_smpl_out_l;
-    wire signed [17:0] dac_sample_in_r   = pgen_smpl_out_r;
+    wire               i2s_sample_in_rdy = pgen_smpl_out_rdy;
+    wire signed [17:0] i2s_sample_in_l   = pgen_smpl_out_l;
+    wire signed [17:0] i2s_sample_in_r   = pgen_smpl_out_r;
 
-    module_stereo_dac_output  stereo_dac_output (
+    module module_i2s_output
+    (
         .clk            (clk               ),
         .reset          (reset             ),
-        .sample_in_rdy  (dac_sample_in_rdy ),
-        .sample_in_l    (dac_sample_in_l   ),
-        .sample_in_r    (dac_sample_in_r   ),
-        .dac_out_l      (dac_out_l         ),
-        .dac_out_r      (dac_out_r         )
+        .sample_in_rdy  (i2s_sample_in_rdy ),
+        .sample_in_l    (i2s_sample_in_l   ),
+        .sample_in_r    (i2s_sample_in_r   ),
+        .data_sampled   (new_sample_trig   ),
+        .bclk           (i2s_bclk_in       ),
+        .lrclk          (i2s_lrclk_in      ),
+        .dacda          (i2s_data_out      )
     );
+
 endmodule
