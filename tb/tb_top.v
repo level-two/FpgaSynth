@@ -22,16 +22,24 @@ module tb_top;
     localparam BAUD_RATE = 38400;
     real BAUD_PERIOD = (1 / (TIMESTEP * BAUD_RATE));
 
+    localparam SAMPLE_WIDTH    = 16;
+    localparam SAMPLE_RATE     = 48000;
+    localparam SAMPLE_FREQ     = SAMPLE_RATE * SAMPLE_WIDTH * 2;
+    localparam SAMPLE_NCLKS    = CLK_FREQ / SAMPLE_FREQ;
+    localparam SAMPLE_NCLKS_HALF = SAMPLE_NCLKS / 2;
+
+
     reg            CLK_50M;
     reg      [0:0] PB;
     reg      [0:0] PMOD3;   // UART rx
-    wire     [1:0] PMOD4;   // SPDIF out
+    reg      [7:5] PMOD4;   // SPDIF out
+    wire pmod4_out;
     wire     [1:0] LED;     // LED out
 
     top dut (
         .CLK_50M(CLK_50M),
         .PB(PB),
-        .PMOD4(PMOD4),
+        .PMOD4({PMOD4, pmod4_out}),
         .PMOD3(PMOD3),
         .LED(LED)
     );
@@ -54,6 +62,7 @@ module tb_top;
 
 	initial begin
         PMOD3 <= 1;
+        /*
         #BAUD_PERIOD;
         #BAUD_PERIOD;
         #BAUD_PERIOD;
@@ -95,6 +104,31 @@ module tb_top;
 
 			msg_cnt = msg_cnt+1;
 		end
+        */
     end
+
+
+    initial begin
+        PMOD4[7]           <= 0;
+        PMOD4[6]           <= 0;
+        PMOD4[5]           <= 0;
+
+        @(posedge CLK_50M);
+
+        forever begin
+            repeat (2) begin
+                repeat (SAMPLE_WIDTH+16) begin
+                    repeat (SAMPLE_NCLKS_HALF) @(posedge CLK_50M);
+                    PMOD4[6]  <= 1'b1;
+                    repeat (SAMPLE_NCLKS_HALF) @(posedge CLK_50M);
+                    PMOD4[6]  <= 1'b0;
+                end
+                PMOD4[7]     <= ~PMOD4[7];
+            end
+        end
+    end
+
+
+
 endmodule
 
