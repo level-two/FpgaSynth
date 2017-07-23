@@ -29,17 +29,22 @@ module tb_top;
     localparam SAMPLE_NCLKS_HALF = SAMPLE_NCLKS / 2;
 
 
-    reg            CLK_50M;
-    reg      [0:0] PB;
-    reg      [0:0] PMOD3;   // UART rx
-    reg      [7:5] PMOD4;   // SPDIF out
-    wire pmod4_out;
-    wire     [1:0] LED;     // LED out
+    reg        CLK_50M;
+    reg [0:0]  PB;
+    reg [0:0]  PMOD3;   // UART rx
+    wire       PMOD4_4;
+    reg        PMOD4_5;
+    reg        PMOD4_6;
+    reg        PMOD4_7;
+    wire [1:0] LED;     // LED out
 
     top dut (
         .CLK_50M(CLK_50M),
         .PB(PB),
-        .PMOD4({PMOD4, pmod4_out}),
+        .PMOD4_4(PMOD4_4),
+        .PMOD4_5(PMOD4_5),
+        .PMOD4_6(PMOD4_6),
+        .PMOD4_7(PMOD4_7),
         .PMOD3(PMOD3),
         .LED(LED)
     );
@@ -109,9 +114,9 @@ module tb_top;
 
 
     initial begin
-        PMOD4[7]           <= 0;
-        PMOD4[6]           <= 0;
-        PMOD4[5]           <= 0;
+        PMOD4_7 <= 0;
+        PMOD4_6 <= 0;
+        PMOD4_5 <= 0;
 
         @(posedge CLK_50M);
 
@@ -119,16 +124,14 @@ module tb_top;
             repeat (2) begin
                 repeat (SAMPLE_WIDTH+16) begin
                     repeat (SAMPLE_NCLKS_HALF) @(posedge CLK_50M);
-                    PMOD4[6]  <= 1'b1;
+                    PMOD4_6  <= 1'b1;
                     repeat (SAMPLE_NCLKS_HALF) @(posedge CLK_50M);
-                    PMOD4[6]  <= 1'b0;
+                    PMOD4_6  <= 1'b0;
                 end
-                PMOD4[7]     <= ~PMOD4[7];
+                PMOD4_7 <= ~PMOD4_7;
             end
         end
     end
-
-
 
 endmodule
 
