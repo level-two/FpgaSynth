@@ -31,7 +31,7 @@ module tb_top;
 
     reg        CLK_50M;
     reg [0:0]  PB;
-    reg [0:0]  PMOD3;   // UART rx
+    reg        SYS_TX;   // UART rx
     wire       PMOD4_4;
     reg        PMOD4_5;
     reg        PMOD4_6;
@@ -45,7 +45,7 @@ module tb_top;
         .PMOD4_5(PMOD4_5),
         .PMOD4_6(PMOD4_6),
         .PMOD4_7(PMOD4_7),
-        .PMOD3(PMOD3),
+        .SYS_TX(SYS_TX),
         .LED(LED)
     );
     
@@ -66,7 +66,7 @@ module tb_top;
     integer bit_cnt = 0;
 
 	initial begin
-        PMOD3 <= 1;
+        SYS_TX <= 1;
         /*
         #BAUD_PERIOD;
         #BAUD_PERIOD;
@@ -74,17 +74,17 @@ module tb_top;
         #BAUD_PERIOD;
 		
 		repeat (3) begin
-			PMOD3 <= 0;
+			SYS_TX <= 0;
 			bit_cnt = 0;
             #BAUD_PERIOD;
 			
 			repeat (8) begin
-				PMOD3 <= midi_data[msg_cnt][bit_cnt];
+				SYS_TX <= midi_data[msg_cnt][bit_cnt];
 				bit_cnt = bit_cnt+1;
                 #BAUD_PERIOD;
 			end
 			
-			PMOD3 <= 1;
+			SYS_TX <= 1;
             #BAUD_PERIOD;
 
 			msg_cnt = msg_cnt+1;
@@ -94,17 +94,17 @@ module tb_top;
 
 		
 		repeat (3) begin
-			PMOD3 <= 0;
+			SYS_TX <= 0;
 			bit_cnt = 0;
             #BAUD_PERIOD;
 			
 			repeat (8) begin
-				PMOD3 <= midi_data[msg_cnt][bit_cnt];
+				SYS_TX <= midi_data[msg_cnt][bit_cnt];
 				bit_cnt = bit_cnt+1;
                 #BAUD_PERIOD;
 			end
 			
-			PMOD3 <= 1;
+			SYS_TX <= 1;
             #BAUD_PERIOD;
 
 			msg_cnt = msg_cnt+1;
