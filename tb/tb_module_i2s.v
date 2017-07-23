@@ -34,7 +34,7 @@ module tb_module_i2s();
     wire                     dacda;
 
     // dut
-    module_i2s #(SAMPLE_WIDTH) dut (
+    i2s #(SAMPLE_WIDTH) dut (
         .clk        (clk            ),
         .reset      (reset          ),
         .bclk       (bclk           ),
@@ -90,6 +90,8 @@ module tb_module_i2s();
                 end
                 lrclk     <= ~lrclk;
             end
+
+            repeat (1000) @(posedge clk);
         end
     end
 

@@ -15,8 +15,8 @@ module module_i2s_output
     input               clk,
     input               reset,
     input               sample_in_rdy,
-    input signed [16:0] sample_in_l,
-    input signed [16:0] sample_in_r,
+    input signed [17:0] sample_in_l,
+    input signed [17:0] sample_in_r,
     output              data_sampled,
     input               bclk,       // I2S signals
     input               lrclk,
@@ -51,7 +51,7 @@ module module_i2s_output
     wire bclk_s_nc;
     wire lrclk_s_nc;
 
-    i2s #(.SAMPLE_WIDTH(17))
+    i2s #(.SAMPLE_WIDTH(17)) i2s_inst
     (
         .clk            (clk            ),
         .reset          (reset          ),
