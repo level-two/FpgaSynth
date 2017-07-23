@@ -119,7 +119,7 @@ NET "PB<0>"                LOC = "P102"        | IOSTANDARD = LVTTL;
 #NET "PMOD2<6>"             LOC = "P140"        | IOSTANDARD = LVTTL;
 #NET "PMOD2<7>"             LOC = "P139"        | IOSTANDARD = LVTTL;
 ##PMOD3#############################################################################
-NET "PMOD3<0>"             LOC = "P138"        | IOSTANDARD = LVCMOS33;
+#NET "PMOD3<0>"             LOC = "P138"        | IOSTANDARD = LVCMOS33;
 #NET "PMOD3<1>"             LOC = "P137"        | IOSTANDARD = LVTTL;
 #NET "PMOD3<2>"             LOC = "P124"        | IOSTANDARD = LVTTL;
 #NET "PMOD3<3>"             LOC = "P123"        | IOSTANDARD = LVTTL;
@@ -160,7 +160,7 @@ NET "PMOD4_7"               LOC = "P133"        | IOSTANDARD = LVTTL;
 #NET "SYS_SDA"              LOC = "P98"         | IOSTANDARD = LVTTL;           #Shared with Arduino SDA
 #NET "SYS_SCL"              LOC = "P97"         | IOSTANDARD = LVTTL;           #Shared with Arduino SCL
 #UART FROM RASPBERRY PI - As labeled in the Rpi schematic
-#NET "SYS_TX"               LOC= "P83"          | IOSTANDARD = LVTTL;   #Pi TX Pin      #Shared with Arduino TX
+NET "SYS_TX"               LOC= "P83"          | IOSTANDARD = LVTTL;   #Pi TX Pin      #Shared with Arduino TX
 #NET "SYS_RX"               LOC= "P82"          | IOSTANDARD = LVTTL;   #Pi RX Pin      #Shared with Arduino RX
 #NET "RP_GPIO_GCLK"         LOC = "P95"         | IOSTANDARD = LVTTL;
 #NET "RP_GPIO_GEN2"         LOC = "P81"         | IOSTANDARD = LVTTL;

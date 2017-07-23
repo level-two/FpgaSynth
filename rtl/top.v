@@ -12,13 +12,13 @@
 
 module top (
     input            CLK_50M,
-    input      [0:0] PB,
-    input      [0:0] PMOD3,
+    input [0:0]      PB,
+    input            SYS_TX,
     output           PMOD4_4,
     input            PMOD4_5,
     input            PMOD4_6,
     input            PMOD4_7,
-    output     [1:0] LED
+    output [1:0]     LED
 );
 
     wire i2s_lrclk_in;
@@ -26,8 +26,8 @@ module top (
     wire i2s_data_in;
     wire i2s_data_out;
 
-    wire   uart_rx      = PMOD3[0];
-    assign PMOD4_4     = i2s_data_out;
+    wire   uart_rx      = SYS_TX;
+    assign PMOD4_4      = i2s_data_out;
     assign i2s_data_in  = PMOD4_5;
     assign i2s_bclk_in  = PMOD4_6;
     assign i2s_lrclk_in = PMOD4_7;
