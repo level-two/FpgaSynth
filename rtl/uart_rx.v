@@ -31,15 +31,22 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
     reg  [8:0] rxBuf;
     
     
-    reg  prevRxVal, rxVal;
-    always @(posedge reset or posedge clk) begin
+
+    //========================
+    crossdomain_signal bclk_crossdomain (
+        .reset        (reset    ),
+        .clk_b        (clk      ),
+        .sig_domain_a (rx       ),
+        .sig_domain_b (rx_s     )
+    );
+
+    reg rx_s_dly;
+    always @(posedge clk) begin
         if (reset) begin
-            rxVal     <= 0;
-            prevRxVal <= 0;
+            rx_s_dly <= 1'b0;
         end
         else begin
-            rxVal     <= rx;
-            prevRxVal <= rxVal;
+            rx_s_dly <= rx_s;
         end
     end
     
@@ -66,7 +73,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
         next_state = state;
         case (state)
             ST_IDLE: begin
-                if (prevRxVal == 1'b1 && rxVal == 1'b0) begin
+                if (rx_s_dly == 1'b1 && rx_s == 1'b0) begin
                     next_state = ST_WAIT_HALF_BAUD;
                 end
             end
@@ -76,7 +83,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
                 end
             end
             ST_FIRST_BIT_RECEIVED: begin
-                next_state = (rxVal == 1'b0) ? ST_WAIT_BAUD : ST_IDLE;
+                next_state = (rx_s == 1'b0) ? ST_WAIT_BAUD : ST_IDLE;
             end
             ST_WAIT_BAUD: begin
                 if (baud_tick == 1) begin
@@ -129,7 +136,7 @@ module uart_rx #(parameter CLK_FREQ = 100_000_000, parameter BAUD_RATE = 57_600)
             rxBuf <= 0;
         end
         else if (state == ST_RECEIVED) begin
-            rxBuf <= {rxVal, rxBuf[8:1]};
+            rxBuf <= {rx_s, rxBuf[8:1]};
         end
     end
 endmodule
