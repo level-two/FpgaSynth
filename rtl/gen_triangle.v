@@ -93,21 +93,20 @@ module gen_triangle (
 
 
     // PC
-    reg [3:0] pc;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            pc <= 4'h0;
-        end
-        else if (tasks & JP_0) begin
-            pc <= 4'h0;
-        end
-        else if (tasks & WAIT_IN && !sample_in_rdy) begin
-            pc <= pc;
-        end
-        else begin
-            pc <= pc + 4'h1;
-        end
-    end
+    wire [3:0] pc;
+    task_pc #(
+        .PC_W     (4        ),
+        .TASKS_W  (16       ),
+        .TASK_JP0 (JP_0     ),
+        .JP_ADDR0 (0        ),
+        .TASK_JPS0(WAIT_IN  ),
+    ) tasks_pc_inst (
+        .clk   (clk     ),
+        .reset (reset   ),
+        .tasks (tasks   ),
+        .pc_out(pc      )
+    );
+
 
 
     // ADDER TASKS
