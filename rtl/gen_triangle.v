@@ -91,88 +91,22 @@ module gen_triangle (
         endcase
     end
 
-
     // PC
     wire [3:0] pc;
     task_pc #(
-        .PC_W     (4        ),
-        .TASKS_W  (16       ),
-        .TASK_JP0 (JP_0     ),
-        .JP_ADDR0 (0        ),
-        .TASK_JPS0(WAIT_IN  ),
+        .PC_W     (4),
+        .TASKS_W  (16),
+        .TASKS_JP ({ JP_0 , 0 ,
+                     JP_11, 11,
+                     NOP  , 0 ,
+                     NOP  , 0 }),
+        .TASK_JPS (JPS)
     ) tasks_pc_inst (
-        .clk   (clk     ),
-        .reset (reset   ),
-        .tasks (tasks   ),
-        .pc_out(pc      )
+        .clk    (clk     ),
+        .reset  (reset   ),
+        .tasks  (tasks   ),
+        .pc_out (pc      )
     );
-
-
-
-    // ADDER TASKS
-    always @(*) begin
-        opmode = `DSP_NOP;
-        dab    = 48'h00000;
-        c      = 48'h00000;
-        if (tasks & ADD_SL_I1L) begin
-            opmode = `DSP_XIN_DAB  | 
-                     `DSP_ZIN_CIN  |
-                     `DSP_POSTADD_ADD;
-            dab    = integ1_l;
-            c      = { {30{sample_in_l_reg[17]}}, sample_in_l_reg[17:0] };
-        end
-        else if (tasks & ADD_SR_I1R) begin
-            opmode = `DSP_XIN_DAB  | 
-                     `DSP_ZIN_CIN  |
-                     `DSP_POSTADD_ADD;
-            dab    = integ1_r;
-            c      = { {30{sample_in_r_reg[17]}}, sample_in_r_reg[17:0] };
-        end
-        else if (tasks & ADD_DL) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     (delta_add_l ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    = DELTA;
-            c      = 48'h00000;
-        end
-        else if (tasks & ADD_DR) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     (delta_add_r ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    = DELTA;
-            c      = 48'h00000;
-        end
-        else if (tasks & ADD_I2L) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     `DSP_POSTADD_ADD;
-            dab    = integ2_l;
-            c      = 48'h00000;
-        end
-        else if (tasks & ADD_I2R) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     `DSP_POSTADD_ADD;
-            dab    = integ2_r;
-            c      = 48'h00000;
-        end
-    end
-
-
-    reg signed [47:0] integ1_l;
-    reg signed [47:0] integ1_r;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            integ1_l <= 48'h0;
-            integ1_r <= 48'h0;
-        end
-        else if (tasks & MOV_I1L_ACC) begin
-            integ1_l <= p;
-        end
-        else if (tasks & MOV_I1R_ACC) begin
-            integ1_r <= p;
-        end
-    end
 
 
 
