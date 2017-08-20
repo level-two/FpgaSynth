@@ -99,9 +99,18 @@ module fir_decim_384k_48k_tasks (
     end
 
 
-    wire task_wait_in = (tasks & WAIT_IN         ) ? 1'b1 : 1'b0;
-    wire task_jp1     = (tasks & JP_1            ) ? 1'b1 : 1'b0;
-    wire task_repeat  = (tasks & REPEAT_COEFS_NUM) ? 1'b1 : 1'b0;
+    wire task_wait_in     = (tasks & WAIT_IN         ) ? 1'b1 : 1'b0;
+    wire task_jp1         = (tasks & JP_1            ) ? 1'b1 : 1'b0;
+    wire task_repeat      = (tasks & REPEAT_COEFS_NUM) ? 1'b1 : 1'b0;
+    wire task_push_x      = (tasks & PUSH_X          ) ? 1'b1 : 1'b0;
+    wire task_mov_i_0     = (tasks & MOV_I_0         ) ? 1'b1 : 1'b0;
+    wire task_inc_i       = (tasks & INC_I           ) ? 1'b1 : 1'b0;
+    wire task_mov_j_xhead = (tasks & MOV_J_XHEAD     ) ? 1'b1 : 1'b0;
+    wire task_inc_j_circ  = (tasks & INC_J_CIRC      ) ? 1'b1 : 1'b0;
+    wire task_mac_ci_xj   = (tasks & MAC_CI_XJ       ) ? 1'b1 : 1'b0;
+    wire task_mov_res_ac  = (tasks & MOV_RES_AC      ) ? 1'b1 : 1'b0;
+
+
 
 
     wire is_waiting_in = task_wait_in & !sample_in_rdy;
@@ -127,7 +136,7 @@ module fir_decim_384k_48k_tasks (
     wire [CCNT_W-1:0] repeat_cnt = CCNT;
     wire is_repeating;
     wire is_repeat_done;
-    task_repeat #(CCNT_W) (
+    task_repeat #(CCNT_W) task_repeat_inst (
         .clk         (clk           ),
         .reset       (reset         ),
         .repeat_stb  (repeat_stb    ),
@@ -137,61 +146,66 @@ module fir_decim_384k_48k_tasks (
     );
 
 
-    wire stb_load = task_mov_i_0;
-    wire stb_inc  = task_inc_i;
+    // INDEX REG I
+    wire i_stb_load = task_mov_i_0;
+    wire i_stb_inc  = task_inc_i;
     wire [CCNT_W-1:0] i_reg_in = 0;
     wire [CCNT_W-1:0] i_reg;
-    task_idx_reg#(CCNT_W) (
+    task_idx_reg#(CCNT_W) idx_i_reg_inst (
         .clk     (clk       ),
         .reset   (reset     ),
-        .stb_load(stb_load  ),
-        .stb_inc (stb_inc   ),
-        .reg_in  (reg_in    ),
+        .stb_load(i_stb_load),
+        .stb_inc (i_stb_inc ),
+        .reg_in  (i_reg_in  ),
         .reg_out (i_reg     )
     );
 
 
+    // INDEX REG J
+    wire j_stb_load             = task_mov_j_xhead;
+    wire j_stb_inc_circ         = task_inc_j_circ;
+    wire j_stb_dec_circ         = 1'b0;
+    wire [CCNT_W-1:0] j_max_val = CCNT-1;
+    wire [CCNT_W-1:0] j_reg_in  = x_buf_head_cnt;
+    wire [CCNT_W-1:0] j_reg;
+    task_circ_idx_reg#(CCNT_W) circ_idx_j_reg_inst (
+        .clk            (clk            ),
+        .reset          (reset          ),
+        .stb_load       (j_stb_load     ),
+        .stb_inc_circ   (j_stb_inc_circ ),
+        .stb_dec_circ   (j_stb_dec_circ ),
+        .max_val        (j_max_val      ),
+        .reg_in         (j_reg_in       ),
+        .reg_out        (j_reg          )
+    );
 
 
+    // HEAD INDEX REG
+    wire              x_head_idx_stb_load     = 1'b0;
+    wire              x_head_idx_stb_inc_circ = 1'b0;
+    wire              x_head_idx_stb_dec_circ = task_push_x;
+    wire [CCNT_W-1:0] x_head_idx_max_val      = CCNT-1;
+    wire [CCNT_W-1:0] x_head_idx_reg_in       = 0;
+    wire [CCNT_W-1:0] x_head_idx_reg;
+    task_circ_idx_reg#(CCNT_W) circ_idx_j_reg_inst (
+        .clk            (clk                     ),
+        .reset          (reset                   ),
+        .stb_load       (x_head_idx_stb_load     ),
+        .stb_inc_circ   (x_head_idx_stb_inc_circ ),
+        .stb_dec_circ   (x_head_idx_stb_dec_circ ),
+        .max_val        (x_head_idx_max_val      ),
+        .reg_in         (x_head_idx_reg_in       ),
+        .reg_out        (x_head_idx_reg          )
+    );
 
-    reg  [CCNT_W-1:0] j_reg;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            j_reg <= 'h0;
-        end
-        else if (tasks & MOV_J_XHEAD) begin
-            j_reg <= x_buf_head_cnt;
-        end
-        else if (tasks & INC_J_CIRC) begin
-            j_reg <= (j_reg == CCNT-1) ? 'h0 : j_reg + 'h1;
-        end
-    end
 
-
-    // Delay Line
-    wire push_x    = (tasks & PUSH_X) ? 1'b1 : 1'b0;
-    wire read_xj   = (tasks & MAC_CI_XJ) ? 1'b1 : 1'b0;
-
-    reg [CCNT_W-1:0] x_buf_head_cnt;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            x_buf_head_cnt <= 'h0;
-        end
-        else if (push_x) begin
-            x_buf_head_cnt <= (x_buf_head_cnt == 0) ? (CCNT-1) : (x_buf_head_cnt-1);
-        end
-    end
-
-    wire               xbuf_wr      = push_x;
-    wire [CCNT_W-1:0]  xbuf_wr_addr = x_buf_head_cnt;
+    // RAM BUFFER FOR X
+    wire               xbuf_wr      = task_push_x;
+    wire [CCNT_W-1:0]  xbuf_wr_addr = x_head_idx_reg;
     wire [35:0]        xbuf_wr_data = {sample_in_reg_l, sample_in_reg_r};
-    wire               xbuf_rd      = read_xj;
+    wire               xbuf_rd      = task_mac_ci_xj;
     wire [CCNT_W-1:0]  xbuf_rd_addr = j_reg;
     wire [35:0]        xbuf_rd_data;
-    wire signed [17:0] xjl          = xbuf_rd_data[35:18];
-    wire signed [17:0] xjr          = xbuf_rd_data[17:0];
-
-    // TODO: Change to the B_RAM
     dp_ram #(.DATA_W(36), .ADDR_W(CCNT_W), .RAM_DEPTH(CCNT)) x_buf_ram
     (
         .clk       (clk          ),
@@ -202,6 +216,8 @@ module fir_decim_384k_48k_tasks (
         .rd_data   (xbuf_rd_data ),
         .rd        (xbuf_rd      )
     );
+    wire signed [17:0] xjl          = xbuf_rd_data[35:18];
+    wire signed [17:0] xjr          = xbuf_rd_data[17:0];
 
 
     // Coefficients
