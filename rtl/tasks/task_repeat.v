@@ -10,34 +10,34 @@
 
 
 module task_repeat (
-    input                clk,
-    input                reset,
-    input  [TASKS_W-1:0] tasks,
-    output reg           done
+    input                 clk,
+    input                 reset,
+    input                 repeat_stb,
+    input [REP_CNT_W-1:0] repeat_cnt,
+    output                is_repeating,
+    output                is_done
 );
 
-    parameter  TASKS_W      = 16;
-    parameter  TASK_REPEAT  = 0;
-    parameter  REPEAT_CNT   = 1;
-    localparam CNT_W        = $clog2(REPEAT_CNT);
+    parameter REP_CNT_W = 4;
 
-    reg  [CNT_W-1:0] repeat_cnt;
-    wire [CNT_W-1:0] repeat_cnt_max =
-        (tasks & TASK_REPEAT) ? REPEAT_CNT-1 :
-                                {CNT_W{1'b0}};
+    wire [REP_CNT_W-1:0] repeat_cnt_max = repeat_stb ? repeat_cnt-1 : 0;
+    reg  [REP_CNT_W-1:0] cnt_val;
+
+    assign is_repeating = (repeat_cnt_max != 0);
+    assign is_done      = (cnt_val == repeat_cnt_max);
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            repeat_cnt <= {CNT_W{1'b0}};
-            done       <= 1'b0;
+            cnt_val <= 0;
         end
-        else if (repeat_cnt == repeat_cnt_max) begin
-            repeat_cnt <= {CNT_W{1'b0}};
-            done       <= 1'b1;
+        else if (is_done) begin
+            cnt_val <= 0;
+        end
+        else if (is_repeating) begin
+            cnt_val <= cnt_val + 1;
         end
         else begin
-            repeat_cnt <= repeat_cnt + { {CNT_W-1{1'b0}}. 1'b1};
-            done       <= 1'b0;
+            cnt_val <= 0;
         end
     end
 endmodule

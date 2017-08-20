@@ -12,24 +12,22 @@
 module task_idx_reg (
     input                    clk,
     input                    reset,
-    input      [TASKS_W-1:0] tasks,
+    input                    stb_load,
+    input                    stb_inc,
     input      [REG_W-1:0]   reg_in,
     output reg [REG_W-1:0]   reg_out
 );
 
-    parameter REG_W      = 18;
-    parameter TASKS_W    = 16;
-    parameter TASK_LOAD  = 0;
-    parameter TASK_INC   = 0;
+    parameter REG_W = 18;
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            reg_out <= {REG_W{1'b0}};
+            reg_out <= 0;
         end
-        else if (tasks & TASK_LOAD) begin
+        else if (stb_load) begin
             reg_out <= reg_in;
         end
-        else if (tasks & TASK_INC) begin
+        else if (stb_inc) begin
             reg_out <= reg_out + 'h1;
         end
     end

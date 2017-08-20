@@ -12,21 +12,19 @@
 module task_reg (
     input                    clk,
     input                    reset,
-    input      [TASKS_W-1:0] tasks,
-    input      [REG_W-1:0]   reg_in,
-    output reg [REG_W-1:0]   reg_out
+    input                    wr_stb,
+    input      [REG_W-1:0]   data_in,
+    output reg [REG_W-1:0]   data_out
 );
 
     parameter REG_W      = 18;
-    parameter TASKS_W    = 16;
-    parameter TASK_LOAD  = 0;
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            reg_out <= {REG_W{1'b0}};
+            data_out <= {REG_W{1'b0}};
         end
-        else if (tasks & TASK_LOAD) begin
-            reg_out <= reg_in;
+        else if (tasks & TASK_WR) begin
+            data_out <= data_in;
         end
     end
 endmodule

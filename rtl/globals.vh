@@ -71,6 +71,13 @@
 `define DSP_POSTADD_ADD         8'h00
 `define DSP_POSTADD_SUB         8'h80
 
+// TASK DSP constants
+`define DSP_OP_MUL              (`DSP_XIN_MULT | `DSP_ZIN_ZERO)
+`define DSP_OP_MAC              (`DSP_XIN_MULT | `DSP_ZIN_POUT)
+`define DSP_OP_MAD              (`DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_ADD)
+`define DSP_OP_MSB              (`DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB)
+`define DSP_OP_NOP              (`DSP_NOP)
+
 
 ///// ????
 `define NBUFS                   16
