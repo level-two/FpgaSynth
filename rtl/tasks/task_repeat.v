@@ -10,21 +10,21 @@
 
 
 module task_repeat (
-    input                 clk,
-    input                 reset,
-    input                 repeat_stb,
-    input [REP_CNT_W-1:0] repeat_cnt,
-    output                is_repeating,
-    output                is_done
+    input             clk,
+    input             reset,
+    input             repeat_stb,
+    input [CNT_W-1:0] repeat_cnt,
+    output            is_repeating,
+    output            is_done
 );
 
-    parameter REP_CNT_W = 4;
+    parameter CNT_W = 4;
 
-    wire [REP_CNT_W-1:0] repeat_cnt_max = repeat_stb ? repeat_cnt-1 : 0;
-    reg  [REP_CNT_W-1:0] cnt_val;
+    wire [CNT_W-1:0] repeat_cnt_max = repeat_stb ? repeat_cnt-1 : 0;
+    reg  [CNT_W-1:0] cnt_val;
 
-    assign is_repeating = (repeat_cnt_max != 0);
     assign is_done      = (cnt_val == repeat_cnt_max);
+    assign is_repeating = (repeat_cnt_max != 0) && !is_done;
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin

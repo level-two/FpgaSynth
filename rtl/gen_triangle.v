@@ -29,6 +29,7 @@ module gen_triangle (
     output [91:0]               dsp_ins_flat_r
 );
 
+    localparam PC_W = 4;
 
     wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
     wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
@@ -92,24 +93,23 @@ module gen_triangle (
     end
 
     // PC
-    wire [3:0] pc;
-    task_pc #(
-        .PC_W     (4),
-        .TASKS_W  (16),
-        .TASKS_JP ({ JP_0 , 0 ,
-                     JP_11, 11,
-                     NOP  , 0 ,
-                     NOP  , 0 }),
-        .TASK_JPS (JPS)
-    ) tasks_pc_inst (
+    wire jp_stb;
+    wire [PC_W-1:0] jp_addr;
+    wire [PC_W-1:0] pc;
+    assign jp_stb  = (tasks & JP_0)    ? 1'b1 :
+                     (tasks & WAIT_IN) ? 1'b1 :
+                     1'b0;
+    assign jp_addr = (tasks & JP_0)    ? 0    :
+                     (tasks & WAIT_IN) ? pc   :
+                     0;
+    task_pc #(PC_W) tasks_pc_inst
+    (
         .clk    (clk     ),
         .reset  (reset   ),
-        .tasks  (tasks   ),
+        .jp_stb (jp_stb  ),
+        .jp_addr(jp_addr ),
         .pc_out (pc      )
     );
-
-
-
 
 
 
