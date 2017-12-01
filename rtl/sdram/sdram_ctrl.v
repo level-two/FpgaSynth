@@ -391,9 +391,4 @@ module sdram_ctrl (
             sdram_nwe   = 1'b1;
         end
     end
-
-    assign sdram_rd_data = sdram_dq; // TODO implement this functionality
-    assign sdram_op_done = 1'b0;
-
-
 endmodule
