@@ -70,6 +70,7 @@ module sdram_ctrl (
     input [ 7:0] csr_t_rcd_val,
     input [19:0] csr_t_ref_val,
     input [ 7:0] csr_t_rfc_val,
+    input [ 9:0] csr_t_ref_min_val,
     input [ 7:0] csr_t_rp_val,
     input [ 7:0] csr_t_rrd_val,
     input [ 7:0] csr_t_wrap_val,
@@ -102,6 +103,7 @@ module sdram_ctrl (
     localparam ST_INIT_AUTOREFR1      = 'h6;
     localparam ST_INIT_AUTOREFR2      = 'h7;
     localparam ST_CMD_LMR             = 'h8;
+    localparam ST_AUTOREFRESH         = 'h9;
 
     reg [31:0] state;
     reg [31:0] next_state;
@@ -136,12 +138,17 @@ module sdram_ctrl (
             end
 
             ST_IDLE: begin
-                if (csr_ctrl_start) next_state = ST_INIT_NOP;
-                //if (csr_load_mode_reg_req) next_state = ST_CMD_LMR;
+                next_state = csr_ctrl_start   ? ST_INIT_NOP     :
+                             need_autorefresh ? ST_AUTOREFRESH  ;
+                            // csr_load_mode_reg_req) next_state = ST_CMD_LMR;
             end
             ST_CMD_LMR: begin
                 if (timer_done) next_state = ST_IDLE;
             end
+            ST_AUTOREFRESH: begin
+                if (timer_done) next_state = ST_IDLE;
+            end
+
             default: begin
                 next_state = ST_IDLE;
             end
@@ -161,6 +168,7 @@ module sdram_ctrl (
         (state == ST_INIT_PRECHG_ALL    ) ? csr_t_rp_val       :
         (state == ST_INIT_AUTOREFR1     ) ? csr_t_rfc_val      :
         (state == ST_INIT_AUTOREFR2     ) ? csr_t_rfc_val      :
+        (state == ST_AUTOREFRESH        ) ? csr_t_rfc_val      :
         (state == ST_CMD_LMR            ) ? csr_t_mrd_val      :
         32'h0;
     
@@ -175,6 +183,33 @@ module sdram_ctrl (
             timer_cnt <= timer_cnt_val;
         end
     end
+
+    reg [31:0] autorefresh_timer;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            autorefresh_timer <= 'h0;
+        end
+        else if (autorefresh_timer != 0) begin
+            autorefresh_timer <= autorefresh_timer - 'h1;
+        end
+        else begin
+            autorefresh_timer <= csr_t_ref_min_val;
+        end
+    end
+
+    reg need_autorefresh;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            need_autorefresh  <= 1'b0;
+        end
+        else if (autorefresh_timer == 0) begin
+            need_autorefresh  <= 1'b1;
+        end
+        else if (state == ST_AUTOREFRESH) begin
+            need_autorefresh  <= 1'b0;
+        end
+    end
+
 
     // SDRAM SIGNALS DRIVE
     assign sdram_clk = clk;
