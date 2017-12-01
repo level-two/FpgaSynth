@@ -23,7 +23,7 @@ module sdram_top (
     output                     wbs_csr_ack         ,
 
     // WISHBONE SLAVE INTERFACE FOR SDRAM ACCESS
-    input  [AW_SDRAM-1:0]      wbs_sdram_address   ,
+    input  [31:0]              wbs_sdram_address   ,
     input  [15:0]              wbs_sdram_writedata ,
     output [15:0]              wbs_sdram_readdata  ,
     input                      wbs_sdram_strobe    ,
@@ -46,19 +46,18 @@ module sdram_top (
     input  [15:0]              sdram_dq
 );
 
-    parameter AW_SDRAM = 32;
     parameter AW_CSR   = 16;
 
-    wire[14:0]     sdram_addr;
+    wire [31:0]    sdram_addr;
     wire           sdram_wr;
     wire           sdram_rd;
-    wire[15:0]     sdram_wr_data;
-    wire[15:0]     sdram_rd_data;
+    wire [15:0]    sdram_wr_data;
+    wire [15:0]    sdram_rd_data;
     wire           sdram_op_done;
     //wire         sdram_op_err; // TBI
     //wire         sdram_busy;   // TBI
 
-    sdram_wb#(.AW(AW_SDRAM)) sdram_wb_inst (
+    sdram_wb sdram_wb_inst (
         .clk                        (clk                        ),
         .reset                      (reset                      ),
 
@@ -90,6 +89,7 @@ module sdram_top (
     wire[ 2:0] csr_opmode_cas_latency;
     wire[ 0:0] csr_opmode_burst_type;
     wire[ 2:0] csr_opmode_burst_len;
+    wire[ 0:0] csr_config_prechg_after_rd;
     wire[19:0] csr_t_dly_rst_val;
     wire[ 7:0] csr_t_ac_val;
     wire[ 7:0] csr_t_ah_val;
@@ -157,6 +157,7 @@ module sdram_top (
         .csr_opmode_cas_latency     (csr_opmode_cas_latency     ),
         .csr_opmode_burst_type      (csr_opmode_burst_type      ),
         .csr_opmode_burst_len       (csr_opmode_burst_len       ),
+        .csr_config_prechg_after_rd (csr_config_prechg_after_rd ),
         .csr_t_dly_rst_val          (csr_t_dly_rst_val          ),
         .csr_t_ac_val               (csr_t_ac_val               ),
         .csr_t_ah_val               (csr_t_ah_val               ),
@@ -237,6 +238,7 @@ module sdram_top (
         .csr_opmode_cas_latency     (csr_opmode_cas_latency     ),
         .csr_opmode_burst_type      (csr_opmode_burst_type      ),
         .csr_opmode_burst_len       (csr_opmode_burst_len       ),
+        .csr_config_prechg_after_rd (csr_config_prechg_after_rd ),
         .csr_t_dly_rst_val          (csr_t_dly_rst_val          ),
         .csr_t_ac_val               (csr_t_ac_val               ),
         .csr_t_ah_val               (csr_t_ah_val               ),

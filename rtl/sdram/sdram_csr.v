@@ -32,6 +32,8 @@ module sdram_csr#(parameter AW = 16)
     output [0:0] csr_opmode_burst_type,
     output [2:0] csr_opmode_burst_len,
 
+    output [0:0] csr_config_prechg_after_rd,
+
     output [19:0] csr_t_dly_rst_val,
     output [ 7:0] csr_t_ac_val,
     output [ 7:0] csr_t_ah_val,
@@ -97,6 +99,7 @@ module sdram_csr#(parameter AW = 16)
     // CSR
     reg [31:0] csr_ctrl;
     reg [31:0] csr_opmode;
+    reg [31:0] csr_config;
     reg [31:0] csr_t_dly_rst;
     reg [31:0] csr_cl;
     reg [31:0] csr_t_ac;
@@ -143,15 +146,17 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_rdl;
     reg [31:0] csr_t_roh;
 
-    assign { csr_ctrl_self_refresh    [0:0]    ,
-             csr_ctrl_start           [0:0]    } = csr_ctrl;
-    assign { csr_opmode_ba_reserved   [1:0]    ,
-             csr_opmode_a_reserved    [2:0]    ,
-             csr_opmode_wr_burst_mode [0:0]    ,
-             csr_opmode_operation_mode[1:0]    ,
-             csr_opmode_cas_latency   [2:0]    ,
-             csr_opmode_burst_type    [0:0]    ,
-             csr_opmode_burst_len     [2:0]    } = csr_opmode;
+    assign { csr_ctrl_self_refresh     [0:0]    ,
+             csr_ctrl_start            [0:0]    } = csr_ctrl;
+    assign { csr_opmode_ba_reserved    [1:0]    ,
+             csr_opmode_a_reserved     [2:0]    ,
+             csr_opmode_wr_burst_mode  [0:0]    ,
+             csr_opmode_operation_mode [1:0]    ,
+             csr_opmode_cas_latency    [2:0]    ,
+             csr_opmode_burst_type     [0:0]    ,
+             csr_opmode_burst_len      [2:0]    } = csr_opmode;
+    assign { csr_config_prechg_after_rd[0:0]    } = csr_config;
+
 
     assign { csr_t_dly_rst_val[19:0] } = csr_t_dly_rst[19:0];
     assign { csr_t_ac_val     [ 7:0] } = csr_t_ac     [ 7:0];
@@ -202,6 +207,7 @@ module sdram_csr#(parameter AW = 16)
         if (reset) begin 
             csr_ctrl      <= 32'h0;
             csr_opmode    <= 32'h0;
+            csr_config    <= 32'h0;
 
             csr_t_dly_rst <= T_DLY_RST;
             csr_t_ac      <= T_AC;
@@ -252,6 +258,7 @@ module sdram_csr#(parameter AW = 16)
             case (wbs_address[7:0])
                 8'h00: csr_ctrl      <= wbs_writedata;
                 8'h04: csr_opmode    <= wbs_writedata;
+                8'h08: csr_config    <= wbs_writedata;
                 8'h20: csr_t_dly_rst <= wbs_writedata;
                 8'h24: csr_t_ac      <= wbs_writedata;
                 8'h28: csr_t_ah      <= wbs_writedata;
@@ -305,9 +312,9 @@ module sdram_csr#(parameter AW = 16)
             case (wbs_address)
                 'h00: wbs_readdata = csr_ctrl  ;
                 'h04: wbs_readdata = csr_opmode;
+                'h08: wbs_readdata = csr_config;
 
-              //'h08: wbs_readdata =           ; // Reserved
-              //'h0c: wbs_readdata =           ;
+              //'h0c: wbs_readdata =           ; // Reserved
               //'h10: wbs_readdata =           ;
               //'h14: wbs_readdata =           ;
               //'h18: wbs_readdata =           ;

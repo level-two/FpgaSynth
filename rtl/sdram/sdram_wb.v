@@ -9,22 +9,22 @@
 // -----------------------------------------------------------------------------
 
 
-module sdram_wb#(parameter AW = 16)
+module sdram_wb
 (
     input             clk           ,
     input             reset         ,
 
     // WISHBONE SLAVE INTERFACE
-    input  [AW-1:0]   wbs_address   ,
-    input  [DW-1:0]   wbs_writedata ,
-    output [DW-1:0]   wbs_readdata  ,
+    input  [31:0]     wbs_address   ,
+    input  [15:0]     wbs_writedata ,
+    output [15:0]     wbs_readdata  ,
     input             wbs_strobe    ,
     input             wbs_cycle     ,
     input             wbs_write     ,
     output            wbs_ack       ,
     //output          wbs_err       , // TBI
 
-    output [14:0]     sdram_addr    ,
+    output [31:0]     sdram_addr    ,
     output            sdram_wr      ,
     output            sdram_rd      ,
     output [15:0]     sdram_wr_data ,
@@ -32,8 +32,6 @@ module sdram_wb#(parameter AW = 16)
     input             sdram_op_done  
     //input           sdram_op_err  , // TBI
 );
-
-    localparam DW = 16; // FIXED TO 16 IN CURRENT IMPLEMENTATION!
 
     reg  wb_trans_dly;
     wire wb_trans = wbs_strobe & wbs_cycle;
