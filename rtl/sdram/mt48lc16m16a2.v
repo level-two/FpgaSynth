@@ -43,8 +43,8 @@
 // Uncomment one of the following to have the appropriate size definitions
 // for the part.
 //`define MT48LC32M16   // 64MB part
-//`define MT48LC16M16   // 32MB part
-`define MT48LC4M16    //  8MB part
+`define MT48LC16M16   // 32MB part
+//`define MT48LC4M16    //  8MB part
 
 module mt48lc16m16a2 (Dq, Addr, Ba, Clk, Cke, Cs_n, Ras_n, Cas_n, We_n, Dqm);
 
