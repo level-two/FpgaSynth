@@ -112,6 +112,11 @@ module sdram_ctrl (
     assign sdram_wr      = wb_trans & ~wb_trans_dly & wbs_write;
 
     always @(posedge clk or posedge reset) begin
+        if (reset) wb_stall <= 1'h0;
+        else       wb_stall <= (state != ST_CMD_READ && state != ST_CMD_WRITE);
+    end
+
+    always @(posedge clk or posedge reset) begin
         if (reset) wb_ack <= 1'h0;
         else       wb_ack <= (rd_data_valid[0] || state == ST_CMD_WRITE);
     end

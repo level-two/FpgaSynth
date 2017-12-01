@@ -87,8 +87,26 @@ module tb_sdram_top();
     );
 
 
-    always begin
-        #5; // 500ps
+
+    mt48lc16m16a2 sdram_model_inst (
+        .Dq         (sdram_dq               ),
+        .Addr       (sdram_a                ),
+        .Ba         (sdram_ba               ),
+        .Clk        (sdram_clk              ),
+        .Cke        (sdram_cke              ),
+        .Cs_n       (sdram_ncs              ),
+        .Ras_n      (sdram_nras             ),
+        .Cas_n      (sdram_ncas             ),
+        .We_n       (sdram_nwe              ),
+        .Dqm        ({sdram_dqmh, sdram_dqml})
+    );                                        
+                                              
+                                              
+                                              
+                                              
+                                              
+    always begin                              
+        #5; // 500ps                          
         clk <= ~clk;
     end
 
