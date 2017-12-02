@@ -10,34 +10,31 @@
 
 
 module sdram_ctrl (
-    input             clk           ,
-    input             reset         ,
-
-    // WISHBONE SLAVE INTERFACE
-    input  [31:0]     wbs_address   ,
-    input  [15:0]     wbs_writedata ,
-    output [15:0]     wbs_readdata  ,
-    input             wbs_strobe    ,
-    input             wbs_cycle     ,
-    input             wbs_write     ,
-    output            wbs_ack       ,
-    output            wbs_stall     ,
-    //output          wbs_err       , // TBI
-
-
+    input             clk                 ,
+    input             reset               ,
+                                          
+    input             sdram_access        ,
+    input             sdram_cmd_ready     ,
+    output            sdram_cmd_accepted  ,
+    output            sdram_cmd_done      ,
+    input [31:0]      sdram_addr          ,
+    input             sdram_wr_rdn        ,
+    input  [15:0]     sdram_wr_data       ,
+    output [15:0]     sdram_rd_data       ,
+    //input           sdram_op_err        , // TBI
 
     // INTERFACE TO SDRAM
-    output            sdram_clk     ,
-    output reg        sdram_cke     ,
-    output reg        sdram_ncs     ,
-    output reg        sdram_ncas    ,
-    output reg        sdram_nras    ,
-    output reg        sdram_nwe     ,
-    output reg        sdram_dqml    ,
-    output reg        sdram_dqmh    ,
-    output reg [12:0] sdram_a       ,
-    output reg [ 1:0] sdram_ba      ,
-    inout      [15:0] sdram_dq      ,
+    output            sdram_clk           ,
+    output reg        sdram_cke           ,
+    output reg        sdram_ncs           ,
+    output reg        sdram_ncas          ,
+    output reg        sdram_nras          ,
+    output reg        sdram_nwe           ,
+    output reg        sdram_dqml          ,
+    output reg        sdram_dqmh          ,
+    output reg [12:0] sdram_a             ,
+    output reg [ 1:0] sdram_ba            ,
+    inout      [15:0] sdram_dq            ,
 
     // CSR
     input [0:0] csr_ctrl_start              ,
@@ -113,7 +110,8 @@ module sdram_ctrl (
 
     always @(posedge clk or posedge reset) begin
         if (reset) wb_stall <= 1'h0;
-        else       wb_stall <= (state != ST_CMD_READ && state != ST_CMD_WRITE);
+        else       wb_stall <= (wb_trans &&
+                              !(state == ST_CMD_READ || state == ST_CMD_WRITE));
     end
 
     always @(posedge clk or posedge reset) begin
@@ -139,6 +137,8 @@ module sdram_ctrl (
     localparam ST_CMD_READ            = 'hb;
     localparam ST_CMD_WRITE           = 'hc;
     localparam ST_CMD_PRECHARGE_ALL   = 'hd;
+    // TODO Implement ST_WAIT_CMD_READ_COMPLETION
+    // TODO ST_WAIT_CMD_WRITE_COMPLETION
 
 
     reg [31:0] state;
@@ -177,8 +177,7 @@ module sdram_ctrl (
                 next_state = csr_ctrl_start        ? ST_INIT_NOP        :
                              need_autorefresh      ? ST_CMD_AUTOREFRESH :
                              csr_load_mode_reg_req ? ST_CMD_LMR         :
-                             sdram_wr              ? ST_CMD_ACTIVE      :
-                             sdram_rd              ? ST_CMD_ACTIVE      ;
+                             sdram_cmd_rdy         ? ST_CMD_ACTIVE      ;
             end
 
             ST_CMD_NOP: begin
@@ -196,17 +195,31 @@ module sdram_ctrl (
             end
             ST_CMD_ACTIVE: begin
                 if (timer_done)
-                    next_state = sdram_wr ? ST_CMD_WRITE :
-                                 sdram_rd ? ST_CMD_READ  :
-                                            ST_CMD_NOP   ;
+                    next_state = sdram_wr_rdn ? ST_CMD_WRITE :
+                                                ST_CMD_READ  ;
             end
 
             ST_CMD_READ: begin
-                next_state = sdram_wr ? ST_CMD_WRITE :
+                // TODO Issue accept to the FIFO
+                // TODO If next command is WR - switch to
+                // CMD_READ_WAIT_FOR_END state
+                // TODO after sdram_access switch to the PRECHARGE and then to
+                // IDLE. 
+                // TODO In case of AUTOPRECHARGE after RD or WR operation
+                // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
+                if (timer_done)
+                    next_state = sdram_wr ? ST_CMD_WRITE :
                              sdram_rd ? ST_CMD_READ  :
                                         ST_CMD_NOP   ;
             end
             ST_WRITE: begin
+                // TODO Issue accept to the FIFO
+                // TODO If next command is RD - switch to
+                // CMD_READ_WAIT_FOR_END state
+                // TODO after sdram_access switch to the PRECHARGE and then to
+                // IDLE. 
+                // TODO In case of AUTOPRECHARGE after RD or WR operation
+                // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 next_state = sdram_wr ? ST_CMD_WRITE :
                              sdram_rd ? ST_CMD_READ  :
                                         ST_CMD_NOP   ;
@@ -273,18 +286,30 @@ module sdram_ctrl (
         end
     end
 
+
+    assign sdram_cmd_accepted = (state == ST_CMD_READ || state == ST_CMD_WRITE);
+    assign sdram_cmd_done     = rd_data_valid[0] || wr_done[0];
+
     reg [2:0] rd_data_valid;
+    reg [2:0] wr_done;
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            rd_data_valid <= 3'b0;
+            rd_data_valid      <= 3'b0;
+            wr_done            <= 3'b0;
         end
         else if (csr_t_cl_val == 3) begin
             rd_data_valid[2]   <= (state == ST_CMD_READ);
             rd_data_valid[1:0] <= rd_data_valid[2:1];
+
+            wr_done[2]         <= (state == ST_CMD_WRITE);
+            wr_done[1:0]       <= wr_done[2:1];
         end
         else if (csr_t_cl_val == 2) begin
             rd_data_valid[1]   <= (state == ST_CMD_READ);
             rd_data_valid[0]   <= rd_data_valid[1];
+
+            wr_done[1]         <= (state == ST_CMD_WRITE);
+            wr_done[0]         <= wr_done[1];
         end
     end
 

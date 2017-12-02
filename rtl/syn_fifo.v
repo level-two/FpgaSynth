@@ -8,7 +8,11 @@
 // Description: Synchronous FIFO
 // -----------------------------------------------------------------------------
 
-module syn_fifo (
+module syn_fifo #(
+    parameter DATA_W     = 8,
+    parameter ADDR_W     = 8,
+    parameter FIFO_DEPTH = (1 << ADDR_W))
+(
     input               clk,
     input               rst,
     input               wr,
@@ -18,11 +22,6 @@ module syn_fifo (
     output              empty,
     output              full
 );    
-     
-    parameter DATA_W     = 8;
-    parameter ADDR_W     = 8;
-    parameter FIFO_DEPTH = (1 << ADDR_W);
-
 
     reg  [ADDR_W-1:0]   wr_pointer;
     reg  [ADDR_W-1:0]   rd_pointer;
