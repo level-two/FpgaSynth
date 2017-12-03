@@ -27,6 +27,7 @@ module sdram_wb
     output [31:0]     sdram_addr          , // Cur cmd adddr from CMD fifo
     output            sdram_wr_rdn        , // Cur w/r from CMD fifo
     output            sdram_cmd_rdy       , // CMD fifo is not emty
+    input             sdram_cmd_accepted  ,
     input             sdram_cmd_done      , // POP prev cmd from CMD fifo
                                           
     output [15:0]     sdram_wr_data       , // To fifo
