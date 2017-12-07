@@ -76,7 +76,6 @@ module sdram_ctrl (
     input [ 9:0] csr_t_ref_min_val,
     input [ 7:0] csr_t_rp_val,
     input [ 7:0] csr_t_rrd_val,
-    input [ 7:0] csr_t_wrap_val,
     input [ 7:0] csr_t_wrp_val,
     input [ 7:0] csr_t_xsr_val,
 
@@ -123,21 +122,24 @@ module sdram_ctrl (
 
 
     // STATE MACHINE
-    localparam ST_RESET               = 'h0;
-    localparam ST_IDLE                = 'h1;
-    localparam ST_100US_DLY_AFTER_RST = 'h2;
-    localparam ST_WAIT_INIT           = 'h3;
-    localparam ST_INIT_NOP            = 'h4;
-    localparam ST_INIT_PRECHG_ALL     = 'h5;
-    localparam ST_INIT_AUTOREFR1      = 'h6;
-    localparam ST_INIT_AUTOREFR2      = 'h7;
-    localparam ST_CMD_LMR             = 'h8;
-    localparam ST_CMD_AUTOREFRESH     = 'h9;
-    localparam ST_CMD_ACTIVE          = 'ha;
-    localparam ST_CMD_READ            = 'hb;
-    localparam ST_CMD_WRITE           = 'hc;
-    localparam ST_CMD_PRECHARGE_ALL   = 'hd;
-    localparam ST_CMD_READ_WAIT_COMPLETION = 'he;
+    localparam ST_RESET               = 'h00;
+    localparam ST_IDLE                = 'h01;
+    localparam ST_100US_DLY_AFTER_RST = 'h02;
+    localparam ST_WAIT_INIT           = 'h03;
+    localparam ST_INIT_NOP            = 'h04;
+    localparam ST_INIT_PRECHG_ALL     = 'h05;
+    localparam ST_INIT_AUTOREFR1      = 'h06;
+    localparam ST_INIT_AUTOREFR2      = 'h07;
+    localparam ST_CMD_LMR             = 'h08;
+    localparam ST_CMD_AUTOREFRESH     = 'h09;
+    localparam ST_CMD_ACTIVE          = 'h0a;
+    localparam ST_CMD_READ            = 'h0b;
+    localparam ST_CMD_WRITE           = 'h0c;
+    localparam ST_CMD_PRECHARGE_ALL   = 'h0d;
+    localparam ST_READ_TO_IDLE        = 'h0e;
+    localparam ST_READ_TO_WRITE       = 'h0f;
+    localparam ST_WRITE_TO_IDLE       = 'h10;
+    localparam ST_RW_IDLE             = 'h11;
 
     reg [31:0] state;
     reg [31:0] next_state;
@@ -175,28 +177,20 @@ module sdram_ctrl (
                 next_state = csr_ctrl_start        ? ST_INIT_NOP        :
                              need_autorefresh      ? ST_CMD_AUTOREFRESH :
                              csr_load_mode_reg_req ? ST_CMD_LMR         :
-                             sdram_cmd_rdy         ? ST_CMD_ACTIVE      ;
+                             sdram_access          ? ST_CMD_ACTIVE      :
+                                                     ST_IDLE            ;
             end
-
-            ST_CMD_NOP: begin
-                next_state = sdram_wr ? ST_CMD_WRITE :
-                             sdram_rd ? ST_CMD_READ  :
-                                        ST_CMD_NOP   ;
-            end
-
             ST_CMD_LMR: begin
                 if (timer_done) next_state = ST_IDLE;
             end
-
             ST_CMD_AUTOREFRESH: begin
                 if (timer_done) next_state = ST_IDLE;
             end
             ST_CMD_ACTIVE: begin
-                if (timer_done)
-                    next_state = sdram_wr_rdn ? ST_CMD_WRITE :
-                                                ST_CMD_READ  ;
+                next_state = !timer_done   ? ST_CMD_ACTIVE :
+                              sdram_wr_rdn ? ST_CMD_WRITE  :
+                                             ST_CMD_READ   ;
             end
-
             ST_CMD_READ: begin
                 // TODO Issue accept to the FIFO
                 // TODO If next command is WR - switch to
@@ -205,32 +199,53 @@ module sdram_ctrl (
                 // IDLE. 
                 // TODO In case of AUTOPRECHARGE after RD or WR operation
                 // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
-                next_state = (sdram_cmd_ready && !sdram_wr_rdn) ? ST_CMD_READ :
-                             (sdram_cmd_ready &&  sdram_wr_rdn) ? ST_CMD_READ_WAIT_COMPLETION :
-                             (csr_config_autoprecharge        ) ? ST_CMD_READ_WAIT_COMPLETION :
-                                                                  ST_CMD_PRECHARGE;
+                next_state = 
+                    sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                    sdram_cmd_ready &&  sdram_wr_rdn ? ST_READ_TO_WRITE :
+                                                       ST_READ_TO_IDLE  ;
             end
-            ST_CMD_READ_WAIT_COMPLETION: begin
-                if (timer_done)
-                    next_state = !sdram_cmd_ready ? ST_CMD_PRECHARGE :
-                                 sdram_wr_rdn     ? ST_CMD_WRITE     :
-                                                    ST_CMD_READ      ;
-            end
-            ST_WRITE: begin
+            ST_CMD_WRITE: begin
                 // TODO Issue accept to the FIFO
                 // TODO If next command is RD - switch to
-                // CMD_READ_WAIT_FOR_END state
+                // CMD_WRITE_WAIT_FOR_END state
                 // TODO after sdram_access switch to the PRECHARGE and then to
                 // IDLE. 
                 // TODO In case of AUTOPRECHARGE after RD or WR operation
                 // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 // TODO Time to PRECHARGE is tWR (if tCLK < 15ns => at least
                 // 1 clock)
-                next_state = sdram_wr ? ST_CMD_WRITE :
-                             sdram_rd ? ST_CMD_READ  :
-                                        ST_CMD_NOP   ;
+                next_state =
+                    sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
+                    sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                    (csr_t_wrp_val == 1)             ? ST_RW_IDLE       :
+                                                       ST_WRITE_TO_IDLE ;
             end
-
+            ST_READ_TO_IDLE: begin
+                    next_state = 
+                        sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                        sdram_cmd_ready &&  sdram_wr_rdn ? ST_READ_TO_WRITE :
+                        timer_done                       ? ST_RW_IDLE       :
+                                                           ST_READ_TO_IDLE  ;
+            end
+            ST_READ_TO_WRITE: begin
+                next_state =
+                    timer_done ? ST_CMD_WRITE     :
+                                 ST_READ_TO_WRITE ;
+            end
+            ST_WRITE_TO_IDLE: begin
+                next_state = 
+                     sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                     sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
+                     timer_done                       ? ST_RW_IDLE       :
+                                                        ST_WRITE_TO_IDLE ;
+            end
+            ST_RW_IDLE: begin
+                next_state = 
+                     sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                     sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
+                     !sdram_access                    ? ST_CMD_PRECHARGE :
+                                                        ST_RW_IDLE       ;
+            end
             default: begin
                 next_state = ST_IDLE;
             end

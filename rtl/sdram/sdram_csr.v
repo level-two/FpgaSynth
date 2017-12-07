@@ -60,7 +60,6 @@ module sdram_csr#(parameter AW = 16)
     output [ 9:0] csr_t_ref_min_val,
     output [ 7:0] csr_t_rp_val,
     output [ 7:0] csr_t_rrd_val,
-    output [ 7:0] csr_t_wrap_val,
     output [ 7:0] csr_t_wrp_val,
     output [ 7:0] csr_t_xsr_val,
                            
@@ -127,7 +126,6 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_ref_min;
     reg [31:0] csr_t_rp;
     reg [31:0] csr_t_rrd;
-    reg [31:0] csr_t_wrap;
     reg [31:0] csr_t_wrp;
     reg [31:0] csr_t_xsr;
 
@@ -184,7 +182,6 @@ module sdram_csr#(parameter AW = 16)
     assign { csr_t_ref_min_val[ 9:0] } = csr_t_ref_min[ 9:0];
     assign { csr_t_rp_val     [ 7:0] } = csr_t_rp     [ 7:0];
     assign { csr_t_rrd_val    [ 7:0] } = csr_t_rrd    [ 7:0];
-    assign { csr_t_wrap_val   [ 7:0] } = csr_t_wrap   [ 7:0];
     assign { csr_t_wrp_val    [ 7:0] } = csr_t_wrp    [ 7:0];
     assign { csr_t_xsr_val    [ 7:0] } = csr_t_xsr    [ 7:0];
 
@@ -235,7 +232,6 @@ module sdram_csr#(parameter AW = 16)
             csr_t_ref_min <= T_REF_MIN;
             csr_t_rp      <= T_RP;
             csr_t_rrd     <= T_RRD;
-            csr_t_wrap    <= T_WRAP;
             csr_t_wrp     <= T_WRP;
             csr_t_xsr     <= T_XSR;
                          
@@ -285,23 +281,22 @@ module sdram_csr#(parameter AW = 16)
                 8'h7c: csr_t_ref_min <= wbs_writedata;
                 8'h80: csr_t_rp      <= wbs_writedata;
                 8'h84: csr_t_rrd     <= wbs_writedata;
-                8'h88: csr_t_wrap    <= wbs_writedata;
-                8'h8c: csr_t_wrp     <= wbs_writedata;
-                8'h90: csr_t_xsr     <= wbs_writedata;
-                8'h94: csr_t_bdl     <= wbs_writedata;
-                8'h98: csr_t_ccd     <= wbs_writedata;
-                8'h9c: csr_t_cdl     <= wbs_writedata;
-                8'ha0: csr_t_cked    <= wbs_writedata;
-                8'ha4: csr_t_dal     <= wbs_writedata;
-                8'ha8: csr_t_dpl     <= wbs_writedata;
-                8'hac: csr_t_dqd     <= wbs_writedata;
-                8'hb0: csr_t_dqm     <= wbs_writedata;
-                8'hb4: csr_t_dqz     <= wbs_writedata;
-                8'hb8: csr_t_dwd     <= wbs_writedata;
-                8'hbc: csr_t_mrd     <= wbs_writedata;
-                8'hc0: csr_t_ped     <= wbs_writedata;
-                8'hc4: csr_t_rdl     <= wbs_writedata;
-                8'hc8: csr_t_roh     <= wbs_writedata;
+                8'h88: csr_t_wrp     <= wbs_writedata;
+                8'h8c: csr_t_xsr     <= wbs_writedata;
+                8'h90: csr_t_bdl     <= wbs_writedata;
+                8'h94: csr_t_ccd     <= wbs_writedata;
+                8'h98: csr_t_cdl     <= wbs_writedata;
+                8'h9c: csr_t_cked    <= wbs_writedata;
+                8'ha0: csr_t_dal     <= wbs_writedata;
+                8'ha4: csr_t_dpl     <= wbs_writedata;
+                8'ha8: csr_t_dqd     <= wbs_writedata;
+                8'hac: csr_t_dqm     <= wbs_writedata;
+                8'hb0: csr_t_dqz     <= wbs_writedata;
+                8'hb4: csr_t_dwd     <= wbs_writedata;
+                8'hb8: csr_t_mrd     <= wbs_writedata;
+                8'hbc: csr_t_ped     <= wbs_writedata;
+                8'hc0: csr_t_rdl     <= wbs_writedata;
+                8'hc4: csr_t_roh     <= wbs_writedata;
             endcase
         end
     end
@@ -346,23 +341,22 @@ module sdram_csr#(parameter AW = 16)
                 'h7c: wbs_readdata = csr_t_ref_min ;
                 'h80: wbs_readdata = csr_t_rp      ;
                 'h84: wbs_readdata = csr_t_rrd     ;
-                'h88: wbs_readdata = csr_t_wrap    ;
-                'h8c: wbs_readdata = csr_t_wrp     ;
-                'h90: wbs_readdata = csr_t_xsr     ;
-                'h94: wbs_readdata = csr_t_bdl     ;
-                'h98: wbs_readdata = csr_t_ccd     ;
-                'h9c: wbs_readdata = csr_t_cdl     ;
-                'ha0: wbs_readdata = csr_t_cked    ;
-                'ha4: wbs_readdata = csr_t_dal     ;
-                'ha8: wbs_readdata = csr_t_dpl     ;
-                'hac: wbs_readdata = csr_t_dqd     ;
-                'hb0: wbs_readdata = csr_t_dqm     ;
-                'hb4: wbs_readdata = csr_t_dqz     ;
-                'hb8: wbs_readdata = csr_t_dwd     ;
-                'hbc: wbs_readdata = csr_t_mrd     ;
-                'hc0: wbs_readdata = csr_t_ped     ;
-                'hc4: wbs_readdata = csr_t_rdl     ;
-                'hc8: wbs_readdata = csr_t_roh     ;
+                'h88: wbs_readdata = csr_t_wrp     ;
+                'h8c: wbs_readdata = csr_t_xsr     ;
+                'h90: wbs_readdata = csr_t_bdl     ;
+                'h94: wbs_readdata = csr_t_ccd     ;
+                'h98: wbs_readdata = csr_t_cdl     ;
+                'h9c: wbs_readdata = csr_t_cked    ;
+                'ha0: wbs_readdata = csr_t_dal     ;
+                'ha4: wbs_readdata = csr_t_dpl     ;
+                'ha8: wbs_readdata = csr_t_dqd     ;
+                'hac: wbs_readdata = csr_t_dqm     ;
+                'hb0: wbs_readdata = csr_t_dqz     ;
+                'hb4: wbs_readdata = csr_t_dwd     ;
+                'hb8: wbs_readdata = csr_t_mrd     ;
+                'hbc: wbs_readdata = csr_t_ped     ;
+                'hc0: wbs_readdata = csr_t_rdl     ;
+                'hc4: wbs_readdata = csr_t_roh     ;
             endcase
         end
     end
@@ -437,7 +431,7 @@ module sdram_csr#(parameter AW = 16)
     localparam T_RP      = ns2ck_min( 15000); // PRECHARGE command period
     localparam T_RRD     = ns2ck_min( 14000); // ACTIVE bank a to ACTIVE bank b command
   //localparam T_T       = ns2ck_min_max( 300, 1200); // Transition time
-    localparam T_WRAP    = ns2ck_min( 7000) + 1; // WRITE recovery time
+    //localparam T_WRAP    = ns2ck_min( 7000) + 1; // WRITE recovery time
     localparam T_WRP     = ns2ck_min( 14000); // WRITE recovery time
     localparam T_XSR     = ns2ck_min_bounded(67000, 2); // Exit SELF REFRESH-to-ACTIVE command 
 
