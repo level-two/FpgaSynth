@@ -60,7 +60,7 @@ module sdram_csr#(parameter AW = 16)
     output [ 9:0] csr_t_ref_min_val,
     output [ 7:0] csr_t_rp_val,
     output [ 7:0] csr_t_rrd_val,
-    output [ 7:0] csr_t_wrp_val,
+    output [ 1:0] csr_t_wrp_val,
     output [ 7:0] csr_t_xsr_val,
                            
     output [ 3:0] csr_r_t_bdl_val,
@@ -182,7 +182,7 @@ module sdram_csr#(parameter AW = 16)
     assign { csr_t_ref_min_val[ 9:0] } = csr_t_ref_min[ 9:0];
     assign { csr_t_rp_val     [ 7:0] } = csr_t_rp     [ 7:0];
     assign { csr_t_rrd_val    [ 7:0] } = csr_t_rrd    [ 7:0];
-    assign { csr_t_wrp_val    [ 7:0] } = csr_t_wrp    [ 7:0];
+    assign { csr_t_wrp_val    [ 1:0] } = csr_t_wrp    [ 1:0];
     assign { csr_t_xsr_val    [ 7:0] } = csr_t_xsr    [ 7:0];
 
     assign { csr_r_t_bdl_val  [ 3:0] } = csr_t_bdl    [ 3:0];

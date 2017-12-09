@@ -116,7 +116,7 @@ module sdram_top (
     wire[ 9:0] csr_t_ref_min_val;
     wire[ 7:0] csr_t_rp_val;
     wire[ 7:0] csr_t_rrd_val;
-    wire[ 7:0] csr_t_wrp_val;
+    wire[ 1:0] csr_t_wrp_val;
     wire[ 7:0] csr_t_xsr_val;
     wire[ 3:0] csr_r_t_bdl_val;
     wire[ 3:0] csr_t_ccd_val;
