@@ -43,19 +43,20 @@ module sdram_top (
     output                     sdram_dqmh          ,
     output [12:0]              sdram_a             ,
     output [ 1:0]              sdram_ba            ,
-    input  [15:0]              sdram_dq
+    inout  [15:0]              sdram_dq
 );
 
     parameter AW_CSR   = 16;
 
-    wire [31:0]    sdram_addr;
-    wire           sdram_wr;
-    wire           sdram_rd;
-    wire [15:0]    sdram_wr_data;
-    wire [15:0]    sdram_rd_data;
-    wire           sdram_op_done;
-    //wire         sdram_op_err; // TBI
-    //wire         sdram_busy;   // TBI
+    wire        sdram_access;
+    wire        sdram_cmd_ready;
+    wire        sdram_cmd_accepted;
+    wire        sdram_cmd_done;
+    wire [31:0] sdram_addr;
+    wire        sdram_wr_nrd;
+    wire [15:0] sdram_wr_data;
+    wire [15:0] sdram_rd_data;
+    //wire      sdram_op_err; // TBI
 
     sdram_wb sdram_wb_inst (
         .clk                        (clk                        ),
@@ -72,16 +73,19 @@ module sdram_top (
         //.wbs_err                  (wbs_sdram_err              ), // TBI
                                                                 
         .sdram_addr                 (sdram_addr                 ),
-        .sdram_wr                   (sdram_wr                   ),
-        .sdram_rd                   (sdram_rd                   ),
+        .sdram_wr_nrd               (sdram_wr_nrd               ),
+        .sdram_cmd_rdy              (sdram_cmd_rdy              ),
+        .sdram_cmd_accepted         (sdram_cmd_accepted         ),
+        .sdram_cmd_done             (sdram_cmd_done             ),
         .sdram_wr_data              (sdram_wr_data              ),
         .sdram_rd_data              (sdram_rd_data              ),
-        .sdram_op_done              (sdram_op_done              ) 
-        //.sdram_op_err             (sdram_op_err               ), // TBI
+        .sdram_access               (sdram_access               )
+        //.sdram_op_err             (sdram_op_err               ) 
     );
 
     wire[ 0:0] csr_ctrl_start;
     wire[ 0:0] csr_ctrl_self_refresh;
+    wire[ 0:0] csr_ctrl_load_mode_register;
     wire[ 1:0] csr_opmode_ba_reserved;
     wire[ 2:0] csr_opmode_a_reserved;
     wire[ 0:0] csr_opmode_wr_burst_mode;
@@ -149,6 +153,7 @@ module sdram_top (
         // CSR
         .csr_ctrl_start             (csr_ctrl_start             ),
         .csr_ctrl_self_refresh      (csr_ctrl_self_refresh      ),
+        .csr_ctrl_load_mode_register(csr_ctrl_load_mode_register),
         .csr_opmode_ba_reserved     (csr_opmode_ba_reserved     ),
         .csr_opmode_a_reserved      (csr_opmode_a_reserved      ),
         .csr_opmode_wr_burst_mode   (csr_opmode_wr_burst_mode   ),
@@ -205,14 +210,15 @@ module sdram_top (
         .clk                        (clk                        ),
         .reset                      (reset                      ),
                                                                 
+        .sdram_access               (sdram_access               ),
+        .sdram_cmd_ready            (sdram_cmd_ready            ),
+        .sdram_cmd_accepted         (sdram_cmd_accepted         ),
+        .sdram_cmd_done             (sdram_cmd_done             ),
         .sdram_addr                 (sdram_addr                 ),
-        .sdram_wr                   (sdram_wr                   ),
-        .sdram_rd                   (sdram_rd                   ),
+        .sdram_wr_nrd               (sdram_wr_nrd               ),
         .sdram_wr_data              (sdram_wr_data              ),
         .sdram_rd_data              (sdram_rd_data              ),
-        .sdram_op_done              (sdram_op_done              ),
-        //.sdram_op_err             (sdram_op_err               ), // TBI
-        //.sdram_busy               (sdram_busy                 ), // TBI
+        //.sdram_op_err             (sdram_op_err               ),
                                                                 
         .sdram_clk                  (sdram_clk                  ),
         .sdram_cke                  (sdram_cke                  ),
@@ -229,6 +235,7 @@ module sdram_top (
         // CSR
         .csr_ctrl_start             (csr_ctrl_start             ),
         .csr_ctrl_self_refresh      (csr_ctrl_self_refresh      ),
+        .csr_ctrl_load_mode_register(csr_ctrl_load_mode_register),
         .csr_opmode_ba_reserved     (csr_opmode_ba_reserved     ),
         .csr_opmode_a_reserved      (csr_opmode_a_reserved      ),
         .csr_opmode_wr_burst_mode   (csr_opmode_wr_burst_mode   ),

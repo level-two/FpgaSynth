@@ -46,7 +46,7 @@ module tb_sdram_top();
     wire                      sdram_dqmh          ;
     wire [12:0]               sdram_a             ;
     wire [ 1:0]               sdram_ba            ;
-    reg  [15:0]               sdram_dq            ;
+    tri  [15:0]               sdram_dq            ;
 
 
     sdram_top dut (
@@ -152,9 +152,5 @@ module tb_sdram_top();
         wbs_sdram_strobe    <= 0;
         wbs_sdram_cycle     <= 0;
         wbs_sdram_write     <= 0;
-    end
-
-    initial begin
-        sdram_dq <= 0;
     end
 endmodule
