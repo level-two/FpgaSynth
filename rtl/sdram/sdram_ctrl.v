@@ -18,7 +18,7 @@ module sdram_ctrl (
     output            sdram_cmd_accepted  ,
     output            sdram_cmd_done      ,
     input [31:0]      sdram_addr          ,
-    input             sdram_wr_rdn        ,
+    input             sdram_wr_nrd        ,
     input  [15:0]     sdram_wr_data       ,
     output [15:0]     sdram_rd_data       ,
     //input           sdram_op_err        , // TBI
@@ -76,7 +76,7 @@ module sdram_ctrl (
     input [ 9:0] csr_t_ref_min_val,
     input [ 7:0] csr_t_rp_val,
     input [ 7:0] csr_t_rrd_val,
-    input [ 7:0] csr_t_wrp_val,
+    input [ 1:0] csr_t_wrp_val,
     input [ 7:0] csr_t_xsr_val,
 
     input [ 3:0] csr_r_t_bdl_val,
@@ -94,32 +94,6 @@ module sdram_ctrl (
     input [ 3:0] csr_t_rdl_val,
     input [ 3:0] csr_t_roh_val
 );
-
-    // WISHBONE INTERFACE TODO
-    reg  wb_trans_dly;
-    wire wb_trans = wbs_strobe & wbs_cycle;
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) wb_trans_dly <= 1'h0;
-        else       wb_trans_dly <= wb_trans;
-    end
-
-    assign sdram_rd      = wb_trans & ~wb_trans_dly & ~wbs_write;
-    assign sdram_wr      = wb_trans & ~wb_trans_dly & wbs_write;
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) wb_stall <= 1'h0;
-        else       wb_stall <= (wb_trans &&
-                              !(state == ST_CMD_READ || state == ST_CMD_WRITE));
-    end
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) wb_ack <= 1'h0;
-        else       wb_ack <= (rd_data_valid[0] || state == ST_CMD_WRITE);
-    end
-
-
-
 
     // STATE MACHINE
     localparam ST_RESET               = 'h00;
@@ -172,7 +146,6 @@ module sdram_ctrl (
             ST_INIT_AUTOREFR2: begin
                 if (timer_done) next_state = ST_CMD_LMR;
             end
-
             ST_IDLE: begin
                 next_state = csr_ctrl_start        ? ST_INIT_NOP        :
                              need_autorefresh      ? ST_CMD_AUTOREFRESH :
@@ -188,7 +161,7 @@ module sdram_ctrl (
             end
             ST_CMD_ACTIVE: begin
                 next_state = !timer_done   ? ST_CMD_ACTIVE :
-                              sdram_wr_rdn ? ST_CMD_WRITE  :
+                              sdram_wr_nrd ? ST_CMD_WRITE  :
                                              ST_CMD_READ   ;
             end
             ST_CMD_READ: begin
@@ -200,8 +173,8 @@ module sdram_ctrl (
                 // TODO In case of AUTOPRECHARGE after RD or WR operation
                 // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 next_state = 
-                    sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
-                    sdram_cmd_ready &&  sdram_wr_rdn ? ST_READ_TO_WRITE :
+                    sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
+                    sdram_cmd_ready &&  sdram_wr_nrd ? ST_READ_TO_WRITE :
                                                        ST_READ_TO_IDLE  ;
             end
             ST_CMD_WRITE: begin
@@ -215,15 +188,15 @@ module sdram_ctrl (
                 // TODO Time to PRECHARGE is tWR (if tCLK < 15ns => at least
                 // 1 clock)
                 next_state =
-                    sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
-                    sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
+                    sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE     :
+                    sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
                     (csr_t_wrp_val == 1)             ? ST_RW_IDLE       :
                                                        ST_WRITE_TO_IDLE ;
             end
             ST_READ_TO_IDLE: begin
                     next_state = 
-                        sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
-                        sdram_cmd_ready &&  sdram_wr_rdn ? ST_READ_TO_WRITE :
+                        sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
+                        sdram_cmd_ready &&  sdram_wr_nrd ? ST_READ_TO_WRITE :
                         timer_done                       ? ST_RW_IDLE       :
                                                            ST_READ_TO_IDLE  ;
             end
@@ -234,17 +207,20 @@ module sdram_ctrl (
             end
             ST_WRITE_TO_IDLE: begin
                 next_state = 
-                     sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
-                     sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
+                     sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
+                     sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE     :
                      timer_done                       ? ST_RW_IDLE       :
                                                         ST_WRITE_TO_IDLE ;
             end
             ST_RW_IDLE: begin
                 next_state = 
-                     sdram_cmd_ready && !sdram_wr_rdn ? ST_CMD_READ      :
-                     sdram_cmd_ready &&  sdram_wr_rdn ? ST_CMD_WRITE     :
-                     !sdram_access                    ? ST_CMD_PRECHARGE :
-                                                        ST_RW_IDLE       ;
+                     sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ          :
+                     sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE         :
+                     !sdram_access                    ? ST_CMD_PRECHARGE_ALL :
+                                                        ST_RW_IDLE           ;
+            end
+            ST_CMD_PRECHARGE_ALL: begin
+                if (timer_done) next_state = ST_IDLE;
             end
             default: begin
                 next_state = ST_IDLE;
@@ -253,21 +229,24 @@ module sdram_ctrl (
     end
 
 
-    reg [31:0] timer_cnt;
-    wire timer_done        = (timer_cnt     == 32'b0 &&
-                              timer_cnt_val != 32'b0);
-    wire timer_in_progress = (timer_cnt     != timer_cnt_val &&
-                              timer_cnt     != 32'b0 &&
-                              timer_cnt_val != 32'b0);
-
     wire [31:0] timer_cnt_val = 
-        (state == ST_100US_DLY_AFTER_RST) ? csr_t_dly_rst_val  :
-        (state == ST_INIT_PRECHG_ALL    ) ? csr_t_rp_val       :
-        (state == ST_INIT_AUTOREFR1     ) ? csr_t_rfc_val      :
-        (state == ST_INIT_AUTOREFR2     ) ? csr_t_rfc_val      :
-        (state == ST_CMD_AUTOREFRESH    ) ? csr_t_rfc_val      :
-        (state == ST_CMD_LMR            ) ? csr_t_mrd_val      :
-        32'h0;
+        (state == ST_100US_DLY_AFTER_RST) ? csr_t_dly_rst_val      :
+        (state == ST_INIT_PRECHG_ALL    ) ? csr_t_rp_val           :
+        (state == ST_INIT_AUTOREFR1     ) ? csr_t_rfc_val          :
+        (state == ST_INIT_AUTOREFR2     ) ? csr_t_rfc_val          :
+        (state == ST_CMD_AUTOREFRESH    ) ? csr_t_rfc_val          :
+        (state == ST_CMD_LMR            ) ? csr_t_mrd_val          :
+        (state == ST_CMD_ACTIVE         ) ? csr_t_rcd_val          :
+        (state == ST_CMD_PRECHARGE_ALL  ) ? csr_t_rp_val           :
+        (state == ST_READ_TO_IDLE       ) ? csr_opmode_cas_latency :
+        (state == ST_READ_TO_WRITE      ) ? csr_opmode_cas_latency :
+        (state == ST_WRITE_TO_IDLE      ) ? csr_t_wrp_val-1        :
+        0;
+
+    reg [31:0] timer_cnt;
+    wire timer_start   = (timer_cnt_val != 0 && timer_cnt == timer_cnt_val);
+    wire timer_running = (timer_cnt_val != 0 && timer_cnt != 0            );
+    wire timer_done    = (timer_cnt_val != 0 && timer_cnt == 1            );
     
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -276,10 +255,11 @@ module sdram_ctrl (
         else if (timer_cnt != 0) begin
             timer_cnt <= timer_cnt - 'h1;
         end
-        else if (timer_cnt == 0 && next_state != state) begin
+        else if (next_state != state) begin
             timer_cnt <= timer_cnt_val;
         end
     end
+
 
     reg [31:0] autorefresh_timer;
     always @(posedge clk or posedge reset) begin
@@ -326,23 +306,10 @@ module sdram_ctrl (
         end
     end
 
-    
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            wbs_readdata <= 16'h0000;
-            sdram_dq     <= 16'hzzzz;
-        end
-        else if (state == ST_CMD_WRITE) begin
-            sdram_dq <= wbs_writedata;
-        end
-        else if (rd_data_valid[0]]) begin
-            wbs_readdata <= sdram_dq;
-        end
-    end
-
-
     // SDRAM SIGNALS DRIVE
-    assign sdram_clk = clk;
+    assign sdram_clk     = clk;
+    assign sdram_dq      = (state == ST_CMD_WRITE   ) ? sdram_wr_data : 16'hzzzz;
+    assign sdram_rd_data = (rd_data_valid[0] == 1'b1) ? sdram_dq      : 16'h0000;
 
     always @(*) begin
         // INHIBIT
@@ -356,7 +323,7 @@ module sdram_ctrl (
         sdram_a    = 13'h0;
         sdram_ba   = 2'h0;
 
-        if (timer_in_progress || timer_done) begin
+        if (timer_running && !timer_start) begin
             // NOP
             sdram_ncs  = 1'b0;
         end
@@ -421,6 +388,16 @@ module sdram_ctrl (
             sdram_ba     = sdram_addr[10:9];   // Bank addr
             sdram_a[8:0] = sdram_addr[8:0];    // Col addr
             sdram_a[10]  = csr_config_prechg_after_rd;
+        end
+        else if (state == ST_READ_TO_IDLE  ||
+                 state == ST_READ_TO_WRITE ||
+                 state == ST_WRITE_TO_IDLE ||
+                 state == ST_RW_IDLE       ) begin
+            // NOP
+            sdram_ncs   = 1'b0;
+            sdram_nras  = 1'b1;
+            sdram_ncas  = 1'b1;
+            sdram_nwe   = 1'b1;
         end
         else begin
             // NOP
