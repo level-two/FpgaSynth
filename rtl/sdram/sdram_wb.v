@@ -25,14 +25,13 @@ module sdram_wb
     //output          wbs_err             , // TBI
                                           
     output [31:0]     sdram_addr          , // Cur cmd adddr from CMD fifo
-    output            sdram_wr_rdn        , // Cur w/r from CMD fifo
+    output            sdram_wr_nrd        , // Cur w/r from CMD fifo
     output            sdram_cmd_rdy       , // CMD fifo is not emty
-    input             sdram_cmd_accepted  ,
-    input             sdram_cmd_done      , // POP prev cmd from CMD fifo
-                                          
+    input             sdram_cmd_accepted  , // POP prev cmd from CMD fifo
+    input             sdram_cmd_done      , // Send ack that command is done
     output [15:0]     sdram_wr_data       , // To fifo
     input  [15:0]     sdram_rd_data       , // From SDRAM
-    output            sdram_access        ,
+    output            sdram_access         
     //input           sdram_op_err        , // TBI
 );
 
@@ -52,17 +51,17 @@ module sdram_wb
     wire               fifo_full;
 
     assign sdram_access         = wbs_cycle;
-    assign fifo_push            = wbs_strobe && ~fifo_full;
-    assign fifo_pop             = sdram_cmd_done;
+    assign fifo_push            = wbs_strobe;
+    assign fifo_pop             = sdram_cmd_accepted;
     assign fifo_data_in         = {wbs_address, wbs_write, wbs_writedata};
     assign sdram_cmd_rdy        = !fifo_empty;
-    assign {sdram_address, sdram_write, sdram_writedata} = fifo_data_out;
+    assign {sdram_addr, sdram_wr_nrd, sdram_wr_data} = fifo_data_out;
 
-    module syn_fifo #(
+    syn_fifo #(
         .DATA_W     (      FIFO_DW),
         .ADDR_W     (            3),
-        .FIFO_DEPTH (            8))
-    (
+        .FIFO_DEPTH (            8)
+    ) cmd_fifo_inst (
         .clk        (clk          ),
         .rst        (reset        ),
         .wr         (fifo_push    ),

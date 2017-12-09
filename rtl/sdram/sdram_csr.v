@@ -24,6 +24,7 @@ module sdram_csr#(parameter AW = 16)
     // CSR
     output [0:0] csr_ctrl_start,
     output [0:0] csr_ctrl_self_refresh,
+    output [0:0] csr_ctrl_load_mode_register ,
     output [1:0] csr_opmode_ba_reserved,
     output [2:0] csr_opmode_a_reserved,
     output [0:0] csr_opmode_wr_burst_mode,
@@ -145,7 +146,8 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_roh;
 
     assign { csr_ctrl_self_refresh     [0:0]    ,
-             csr_ctrl_start            [0:0]    } = csr_ctrl;
+             csr_ctrl_start            [0:0]    ,
+             csr_ctrl_load_mode_register[0:0]   } = csr_ctrl;
     assign { csr_opmode_ba_reserved    [1:0]    ,
              csr_opmode_a_reserved     [2:0]    ,
              csr_opmode_wr_burst_mode  [0:0]    ,

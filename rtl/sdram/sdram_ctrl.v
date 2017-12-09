@@ -17,7 +17,7 @@ module sdram_ctrl (
     input             sdram_cmd_ready     ,
     output            sdram_cmd_accepted  ,
     output            sdram_cmd_done      ,
-    input [31:0]      sdram_addr          ,
+    input  [31:0]     sdram_addr          ,
     input             sdram_wr_nrd        ,
     input  [15:0]     sdram_wr_data       ,
     output [15:0]     sdram_rd_data       ,
@@ -38,7 +38,9 @@ module sdram_ctrl (
 
     // CSR
     input [0:0] csr_ctrl_start              ,
-    input [0:0] csr_ctrl_self_refresh       ,
+    input [0:0] csr_ctrl_self_refresh       , // TODO
+    input [0:0] csr_ctrl_load_mode_register ,
+
     input [1:0] csr_opmode_ba_reserved      ,
     input [2:0] csr_opmode_a_reserved       ,
     input [0:0] csr_opmode_wr_burst_mode    ,
@@ -147,10 +149,12 @@ module sdram_ctrl (
                 if (timer_done) next_state = ST_CMD_LMR;
             end
             ST_IDLE: begin
+                // use sdram_cmd_ready instead of sdram_access to ensure
+                // that there is valid address for ACTIVE command
                 next_state = csr_ctrl_start        ? ST_INIT_NOP        :
                              need_autorefresh      ? ST_CMD_AUTOREFRESH :
-                             csr_load_mode_reg_req ? ST_CMD_LMR         :
-                             sdram_access          ? ST_CMD_ACTIVE      :
+                             csr_ctrl_load_mode_register ? ST_CMD_LMR   :
+                             sdram_cmd_ready       ? ST_CMD_ACTIVE      :
                                                      ST_IDLE            ;
             end
             ST_CMD_LMR: begin
@@ -165,11 +169,6 @@ module sdram_ctrl (
                                              ST_CMD_READ   ;
             end
             ST_CMD_READ: begin
-                // TODO Issue accept to the FIFO
-                // TODO If next command is WR - switch to
-                // CMD_READ_WAIT_FOR_END state
-                // TODO after sdram_access switch to the PRECHARGE and then to
-                // IDLE. 
                 // TODO In case of AUTOPRECHARGE after RD or WR operation
                 // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 next_state = 
@@ -178,15 +177,8 @@ module sdram_ctrl (
                                                        ST_READ_TO_IDLE  ;
             end
             ST_CMD_WRITE: begin
-                // TODO Issue accept to the FIFO
-                // TODO If next command is RD - switch to
-                // CMD_WRITE_WAIT_FOR_END state
-                // TODO after sdram_access switch to the PRECHARGE and then to
-                // IDLE. 
                 // TODO In case of AUTOPRECHARGE after RD or WR operation
                 // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
-                // TODO Time to PRECHARGE is tWR (if tCLK < 15ns => at least
-                // 1 clock)
                 next_state =
                     sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE     :
                     sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
@@ -287,9 +279,6 @@ module sdram_ctrl (
         end
     end
 
-    assign sdram_cmd_accepted = (state == ST_CMD_READ || state == ST_CMD_WRITE);
-    assign sdram_cmd_done     = rd_data_valid[0] || state == ST_CMD_WRITE;
-
     reg [2:0] rd_data_valid;
     always @(posedge clk or posedge reset) begin
         if (reset) begin
@@ -307,9 +296,13 @@ module sdram_ctrl (
     end
 
     // SDRAM SIGNALS DRIVE
-    assign sdram_clk     = clk;
-    assign sdram_dq      = (state == ST_CMD_WRITE   ) ? sdram_wr_data : 16'hzzzz;
-    assign sdram_rd_data = (rd_data_valid[0] == 1'b1) ? sdram_dq      : 16'h0000;
+    assign sdram_clk          = clk;
+    assign sdram_cmd_accepted = (next_state == ST_CMD_READ ||
+                                 next_state == ST_CMD_WRITE);
+    assign sdram_dq           = (state == ST_CMD_WRITE) ? sdram_wr_data : 16'hzzzz;
+    assign sdram_rd_data      = rd_data_valid[0] ? sdram_dq : 16'h0000;
+    assign sdram_cmd_done     = rd_data_valid[0] || state == ST_CMD_WRITE;
+
 
     always @(*) begin
         // INHIBIT
