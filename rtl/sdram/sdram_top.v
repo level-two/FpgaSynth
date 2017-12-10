@@ -30,6 +30,7 @@ module sdram_top (
     input                      wbs_sdram_cycle     ,
     input                      wbs_sdram_write     ,
     output                     wbs_sdram_ack       ,
+    output                     wbs_sdram_stall     ,
     //output                   wbs_sdram_err       , // TBI
 
     // INTERFACE TO SDRAM
@@ -70,11 +71,12 @@ module sdram_top (
         .wbs_cycle                  (wbs_sdram_cycle            ),
         .wbs_write                  (wbs_sdram_write            ),
         .wbs_ack                    (wbs_sdram_ack              ),
+        .wbs_stall                  (wbs_sdram_stall            ),
         //.wbs_err                  (wbs_sdram_err              ), // TBI
                                                                 
         .sdram_addr                 (sdram_addr                 ),
         .sdram_wr_nrd               (sdram_wr_nrd               ),
-        .sdram_cmd_rdy              (sdram_cmd_rdy              ),
+        .sdram_cmd_ready            (sdram_cmd_ready            ),
         .sdram_cmd_accepted         (sdram_cmd_accepted         ),
         .sdram_cmd_done             (sdram_cmd_done             ),
         .sdram_wr_data              (sdram_wr_data              ),

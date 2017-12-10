@@ -145,9 +145,9 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_rdl;
     reg [31:0] csr_t_roh;
 
-    assign { csr_ctrl_self_refresh     [0:0]    ,
-             csr_ctrl_start            [0:0]    ,
-             csr_ctrl_load_mode_register[0:0]   } = csr_ctrl;
+    assign { csr_ctrl_load_mode_register[0:0]   ,
+             csr_ctrl_self_refresh     [0:0]    ,
+             csr_ctrl_start            [0:0]    } = csr_ctrl;
     assign { csr_opmode_ba_reserved    [1:0]    ,
              csr_opmode_a_reserved     [2:0]    ,
              csr_opmode_wr_burst_mode  [0:0]    ,
@@ -363,7 +363,7 @@ module sdram_csr#(parameter AW = 16)
         end
     end
 
-    localparam TCLK  = 1000; // Clock period in ps
+    localparam TCLK  = 10000; // Clock period in ps
 
 
     function integer ceil_div;
