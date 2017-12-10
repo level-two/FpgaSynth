@@ -8,7 +8,7 @@
 // Description: Test bench for SDRAM block
 // -----------------------------------------------------------------------------
 
-`timescale 100ps/1ps
+`timescale 1ns/10ps
 
 module tb_sdram_top();
     parameter AW_CSR   = 16;
@@ -101,12 +101,9 @@ module tb_sdram_top();
         .Dqm        ({sdram_dqmh, sdram_dqml})
     );                                        
                                               
-                                              
-                                              
-                                              
-                                              
+
     always begin                              
-        #5; // 500ps                          
+        #5; // 5ns                          
         clk <= ~clk;
     end
 
