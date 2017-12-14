@@ -1112,6 +1112,7 @@ end
         $width    (negedge Clk,           tCL);
         $period   (negedge Clk,           tCK);
         $period   (posedge Clk,           tCK);
+        /*
         $setuphold(posedge Clk,    Cke,   tCKS, tCKH);
         $setuphold(posedge Clk,    Cs_n,  tCMS, tCMH);
         $setuphold(posedge Clk,    Cas_n, tCMS, tCMH);
@@ -1121,6 +1122,7 @@ end
         $setuphold(posedge Clk,    Ba,    tAS,  tAH);
         $setuphold(posedge Clk,    Dqm,   tCMS, tCMH);
         $setuphold(posedge Dq_chk, Dq,    tDS,  tDH);
+        */
     endspecify
 
    task get_byte;

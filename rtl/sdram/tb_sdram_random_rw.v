@@ -10,7 +10,7 @@
 
 `timescale 1ns/10ps
 
-module tb_sdram_top();
+module tb_sdram_random_rw();
     parameter AW_CSR   = 16;
     parameter AW_SDRAM = 32;
 
@@ -158,73 +158,50 @@ module tb_sdram_top();
         wbs_csr_strobe    <= 0;
         wbs_csr_cycle     <= 0;
         wbs_csr_write     <= 0;
-
     end
 
-    localparam NUM_OPS = 'h20;
+    localparam NUM_OPS = 1000;
 
-    integer sent_words_cnt;
-    integer written_words_cnt;
-    reg[31:0] next_addr;
-
-    integer requested_words_cnt;
-    integer read_words_cnt;
+    integer requests_n;
+    integer acks_n;
 
     initial begin
-        sent_words_cnt      = 0;
-        written_words_cnt   = 0;
-        requested_words_cnt = 0;
-        read_words_cnt      = 0;
-
-        next_addr           <= 0;
-
         wbs_sdram_cycle     <= 0;
         wbs_sdram_strobe    <= 0;
         wbs_sdram_address   <= 0;
         wbs_sdram_write     <= 0;
         wbs_sdram_writedata <= 0;
-        next_addr           <= 32'h0;
+
+        requests_n <= 0;
+        acks_n <= 0;
 
         #150000; // 150 us
 
-        @(posedge clk);
-
-        while (wbs_sdram_address < NUM_OPS || sent_words_cnt != written_words_cnt) begin
+        while (wbs_sdram_address < 'h100) begin
             @(posedge clk);
-
             wbs_sdram_cycle     <= 1;
-
             if (wbs_sdram_stall) begin
                 // do nothing
             end
-            else if (wbs_sdram_address < NUM_OPS) begin
-                wbs_sdram_strobe    <= 1;
-                wbs_sdram_address   <= next_addr;
-                wbs_sdram_write     <= 1;
-                wbs_sdram_writedata <= {4{next_addr[7:0]}};
-                next_addr           <= next_addr + 1;
-                sent_words_cnt      <= sent_words_cnt + 1;
-            end
             else begin
-                wbs_sdram_strobe    <= 0;
-            end
-
-            if (wbs_sdram_ack) begin
-                written_words_cnt <= written_words_cnt + 1;
+                wbs_sdram_strobe    <= 1;
+                wbs_sdram_address   <= wbs_sdram_address + 1;
+                wbs_sdram_write     <= 1;
+                wbs_sdram_writedata <= {2{wbs_sdram_address[7:0]}};
             end
         end
-
         @(posedge clk);
         wbs_sdram_cycle     <= 0;
         wbs_sdram_strobe    <= 0;
         wbs_sdram_address   <= 0;
         wbs_sdram_write     <= 0;
-        next_addr           <= 0;
 
         repeat(10) @(posedge clk);
 
-        // READ
-        while (wbs_sdram_address < NUM_OPS || requested_words_cnt != read_words_cnt) begin
+
+
+
+        while (requests_n < NUM_OPS) begin
             @(posedge clk);
 
             wbs_sdram_cycle     <= 1;
@@ -232,24 +209,27 @@ module tb_sdram_top();
             if (wbs_sdram_stall) begin
                 // do nothing
             end
+            //else if ($random() % 100 < 40) begin
+            //    wbs_sdram_strobe    <= 0;
+            //end
             else if (wbs_sdram_address < NUM_OPS) begin
                 wbs_sdram_strobe    <= 1;
-                wbs_sdram_address   <= next_addr;
-                wbs_sdram_write     <= 0;
-                next_addr           <= next_addr + 1;
-                requested_words_cnt <= requested_words_cnt + 1;
+                wbs_sdram_address   <= $random() % 'h100;
+                wbs_sdram_write     <= $random() % 2;
+                wbs_sdram_writedata <= $random() % 2 ? 'hdead : 'hbeef;
+                requests_n          <= requests_n + 1;
             end
             else begin
                 wbs_sdram_strobe    <= 0;
             end
 
             if (wbs_sdram_ack) begin
-                $display("READ: ADDR: %0h, DATA: %0h", read_words_cnt, wbs_sdram_readdata);
-                read_words_cnt <= read_words_cnt + 1;
+                acks_n <= acks_n + 1;
             end
         end
 
-        @(posedge clk);
+        repeat (10) @(posedge clk);
+
         wbs_sdram_cycle     <= 0;
 
         repeat (10) @(posedge clk);

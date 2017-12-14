@@ -40,7 +40,6 @@ module sdram_csr#(parameter AW = 16)
     output [ 7:0] csr_t_ah_val,
     output [ 7:0] csr_t_as_val,
     output [ 7:0] csr_t_ch_val,
-    output [ 7:0] csr_t_cl_val,
     output [ 7:0] csr_t_ck_val,
     output [ 7:0] csr_t_ckh_val,
     output [ 7:0] csr_t_cks_val,
@@ -56,7 +55,6 @@ module sdram_csr#(parameter AW = 16)
     output [19:0] csr_t_rasmax_val,
     output [ 7:0] csr_t_rc_val,
     output [ 7:0] csr_t_rcd_val,
-    output [19:0] csr_t_ref_val,
     output [ 7:0] csr_t_rfc_val,
     output [ 9:0] csr_t_ref_min_val,
     output [ 7:0] csr_t_rp_val,
@@ -106,7 +104,6 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_ah;
     reg [31:0] csr_t_as;
     reg [31:0] csr_t_ch;
-    reg [31:0] csr_t_cl;
     reg [31:0] csr_t_ck;
     reg [31:0] csr_t_ckh;
     reg [31:0] csr_t_cks;
@@ -122,7 +119,6 @@ module sdram_csr#(parameter AW = 16)
     reg [31:0] csr_t_rasmax;
     reg [31:0] csr_t_rc;
     reg [31:0] csr_t_rcd;
-    reg [31:0] csr_t_ref;
     reg [31:0] csr_t_rfc;
     reg [31:0] csr_t_ref_min;
     reg [31:0] csr_t_rp;
@@ -163,7 +159,6 @@ module sdram_csr#(parameter AW = 16)
     assign { csr_t_ah_val     [ 7:0] } = csr_t_ah     [ 7:0];
     assign { csr_t_as_val     [ 7:0] } = csr_t_as     [ 7:0];
     assign { csr_t_ch_val     [ 7:0] } = csr_t_ch     [ 7:0];
-    assign { csr_t_cl_val     [ 7:0] } = csr_t_cl     [ 7:0];
     assign { csr_t_ck_val     [ 7:0] } = csr_t_ck     [ 7:0];
     assign { csr_t_ckh_val    [ 7:0] } = csr_t_ckh    [ 7:0];
     assign { csr_t_cks_val    [ 7:0] } = csr_t_cks    [ 7:0];
@@ -179,7 +174,6 @@ module sdram_csr#(parameter AW = 16)
     assign { csr_t_rasmax_val [19:0] } = csr_t_rasmax [19:0];
     assign { csr_t_rc_val     [ 7:0] } = csr_t_rc     [ 7:0];
     assign { csr_t_rcd_val    [ 7:0] } = csr_t_rcd    [ 7:0];
-    assign { csr_t_ref_val    [19:0] } = csr_t_ref    [19:0];
     assign { csr_t_rfc_val    [ 7:0] } = csr_t_rfc    [ 7:0];
     assign { csr_t_ref_min_val[ 9:0] } = csr_t_ref_min[ 9:0];
     assign { csr_t_rp_val     [ 7:0] } = csr_t_rp     [ 7:0];
@@ -205,7 +199,7 @@ module sdram_csr#(parameter AW = 16)
     always @(posedge clk or posedge reset) begin
         if (reset) begin 
             csr_ctrl      <= 32'h0;
-            csr_opmode    <= 32'h0;
+            csr_opmode    <= {19'h0, 3'b000, 1'b1, 2'b00, 3'b010, 1'b0, 3'b0};
             csr_config    <= 32'h0;
 
             csr_t_dly_rst <= T_DLY_RST;
@@ -213,7 +207,6 @@ module sdram_csr#(parameter AW = 16)
             csr_t_ah      <= T_AH;
             csr_t_as      <= T_AS;
             csr_t_ch      <= T_CH;
-            csr_t_cl      <= T_CL;
             csr_t_ck      <= T_CK;
             csr_t_ckh     <= T_CKH;
             csr_t_cks     <= T_CKS;
@@ -229,7 +222,6 @@ module sdram_csr#(parameter AW = 16)
             csr_t_rasmax  <= T_RASMAX;
             csr_t_rc      <= T_RC;
             csr_t_rcd     <= T_RCD;
-            csr_t_ref     <= T_REF;
             csr_t_rfc     <= T_RFC;
             csr_t_ref_min <= T_REF_MIN;
             csr_t_rp      <= T_RP;
@@ -262,43 +254,41 @@ module sdram_csr#(parameter AW = 16)
                 8'h28: csr_t_ah      <= wbs_writedata;
                 8'h2c: csr_t_as      <= wbs_writedata;
                 8'h30: csr_t_ch      <= wbs_writedata;
-                8'h34: csr_t_cl      <= wbs_writedata;
-                8'h38: csr_t_ck      <= wbs_writedata;
-                8'h3c: csr_t_ckh     <= wbs_writedata;
-                8'h40: csr_t_cks     <= wbs_writedata;
-                8'h44: csr_t_cmh     <= wbs_writedata;
-                8'h48: csr_t_cms     <= wbs_writedata;
-                8'h4c: csr_t_dh      <= wbs_writedata;
-                8'h50: csr_t_ds      <= wbs_writedata;
-                8'h54: csr_t_hz      <= wbs_writedata;
-                8'h58: csr_t_lz      <= wbs_writedata;
-                8'h5c: csr_t_oh      <= wbs_writedata;
-                8'h60: csr_t_ohn     <= wbs_writedata;
-                8'h64: csr_t_rasmin  <= wbs_writedata;
-                8'h68: csr_t_rasmax  <= wbs_writedata;
-                8'h6c: csr_t_rc      <= wbs_writedata;
-                8'h70: csr_t_rcd     <= wbs_writedata;
-                8'h74: csr_t_ref     <= wbs_writedata;
-                8'h78: csr_t_rfc     <= wbs_writedata;
-                8'h7c: csr_t_ref_min <= wbs_writedata;
-                8'h80: csr_t_rp      <= wbs_writedata;
-                8'h84: csr_t_rrd     <= wbs_writedata;
-                8'h88: csr_t_wrp     <= wbs_writedata;
-                8'h8c: csr_t_xsr     <= wbs_writedata;
-                8'h90: csr_t_bdl     <= wbs_writedata;
-                8'h94: csr_t_ccd     <= wbs_writedata;
-                8'h98: csr_t_cdl     <= wbs_writedata;
-                8'h9c: csr_t_cked    <= wbs_writedata;
-                8'ha0: csr_t_dal     <= wbs_writedata;
-                8'ha4: csr_t_dpl     <= wbs_writedata;
-                8'ha8: csr_t_dqd     <= wbs_writedata;
-                8'hac: csr_t_dqm     <= wbs_writedata;
-                8'hb0: csr_t_dqz     <= wbs_writedata;
-                8'hb4: csr_t_dwd     <= wbs_writedata;
-                8'hb8: csr_t_mrd     <= wbs_writedata;
-                8'hbc: csr_t_ped     <= wbs_writedata;
-                8'hc0: csr_t_rdl     <= wbs_writedata;
-                8'hc4: csr_t_roh     <= wbs_writedata;
+                8'h34: csr_t_ck      <= wbs_writedata;
+                8'h38: csr_t_ckh     <= wbs_writedata;
+                8'h3c: csr_t_cks     <= wbs_writedata;
+                8'h40: csr_t_cmh     <= wbs_writedata;
+                8'h44: csr_t_cms     <= wbs_writedata;
+                8'h48: csr_t_dh      <= wbs_writedata;
+                8'h4c: csr_t_ds      <= wbs_writedata;
+                8'h50: csr_t_hz      <= wbs_writedata;
+                8'h54: csr_t_lz      <= wbs_writedata;
+                8'h58: csr_t_oh      <= wbs_writedata;
+                8'h5c: csr_t_ohn     <= wbs_writedata;
+                8'h60: csr_t_rasmin  <= wbs_writedata;
+                8'h64: csr_t_rasmax  <= wbs_writedata;
+                8'h68: csr_t_rc      <= wbs_writedata;
+                8'h6c: csr_t_rcd     <= wbs_writedata;
+                8'h70: csr_t_rfc     <= wbs_writedata;
+                8'h74: csr_t_ref_min <= wbs_writedata;
+                8'h78: csr_t_rp      <= wbs_writedata;
+                8'h7c: csr_t_rrd     <= wbs_writedata;
+                8'h80: csr_t_wrp     <= wbs_writedata;
+                8'h84: csr_t_xsr     <= wbs_writedata;
+                8'h88: csr_t_bdl     <= wbs_writedata;
+                8'h8c: csr_t_ccd     <= wbs_writedata;
+                8'h90: csr_t_cdl     <= wbs_writedata;
+                8'h94: csr_t_cked    <= wbs_writedata;
+                8'h98: csr_t_dal     <= wbs_writedata;
+                8'h9c: csr_t_dpl     <= wbs_writedata;
+                8'ha0: csr_t_dqd     <= wbs_writedata;
+                8'ha4: csr_t_dqm     <= wbs_writedata;
+                8'ha8: csr_t_dqz     <= wbs_writedata;
+                8'hac: csr_t_dwd     <= wbs_writedata;
+                8'hb0: csr_t_mrd     <= wbs_writedata;
+                8'hb4: csr_t_ped     <= wbs_writedata;
+                8'hb8: csr_t_rdl     <= wbs_writedata;
+                8'hbc: csr_t_roh     <= wbs_writedata;
             endcase
         end
     end
@@ -322,43 +312,41 @@ module sdram_csr#(parameter AW = 16)
                 'h28: wbs_readdata = csr_t_ah      ;
                 'h2c: wbs_readdata = csr_t_as      ;
                 'h30: wbs_readdata = csr_t_ch      ;
-                'h34: wbs_readdata = csr_t_cl      ;
-                'h38: wbs_readdata = csr_t_ck      ;
-                'h3c: wbs_readdata = csr_t_ckh     ;
-                'h40: wbs_readdata = csr_t_cks     ;
-                'h44: wbs_readdata = csr_t_cmh     ;
-                'h48: wbs_readdata = csr_t_cms     ;
-                'h4c: wbs_readdata = csr_t_dh      ;
-                'h50: wbs_readdata = csr_t_ds      ;
-                'h54: wbs_readdata = csr_t_hz      ;
-                'h58: wbs_readdata = csr_t_lz      ;
-                'h5c: wbs_readdata = csr_t_oh      ;
-                'h60: wbs_readdata = csr_t_ohn     ;
-                'h64: wbs_readdata = csr_t_rasmin  ;
-                'h68: wbs_readdata = csr_t_rasmax  ;
-                'h6c: wbs_readdata = csr_t_rc      ;
-                'h70: wbs_readdata = csr_t_rcd     ;
-                'h74: wbs_readdata = csr_t_ref     ;
-                'h78: wbs_readdata = csr_t_rfc     ;
-                'h7c: wbs_readdata = csr_t_ref_min ;
-                'h80: wbs_readdata = csr_t_rp      ;
-                'h84: wbs_readdata = csr_t_rrd     ;
-                'h88: wbs_readdata = csr_t_wrp     ;
-                'h8c: wbs_readdata = csr_t_xsr     ;
-                'h90: wbs_readdata = csr_t_bdl     ;
-                'h94: wbs_readdata = csr_t_ccd     ;
-                'h98: wbs_readdata = csr_t_cdl     ;
-                'h9c: wbs_readdata = csr_t_cked    ;
-                'ha0: wbs_readdata = csr_t_dal     ;
-                'ha4: wbs_readdata = csr_t_dpl     ;
-                'ha8: wbs_readdata = csr_t_dqd     ;
-                'hac: wbs_readdata = csr_t_dqm     ;
-                'hb0: wbs_readdata = csr_t_dqz     ;
-                'hb4: wbs_readdata = csr_t_dwd     ;
-                'hb8: wbs_readdata = csr_t_mrd     ;
-                'hbc: wbs_readdata = csr_t_ped     ;
-                'hc0: wbs_readdata = csr_t_rdl     ;
-                'hc4: wbs_readdata = csr_t_roh     ;
+                'h34: wbs_readdata = csr_t_ck      ;
+                'h38: wbs_readdata = csr_t_ckh     ;
+                'h3c: wbs_readdata = csr_t_cks     ;
+                'h40: wbs_readdata = csr_t_cmh     ;
+                'h44: wbs_readdata = csr_t_cms     ;
+                'h48: wbs_readdata = csr_t_dh      ;
+                'h4c: wbs_readdata = csr_t_ds      ;
+                'h50: wbs_readdata = csr_t_hz      ;
+                'h54: wbs_readdata = csr_t_lz      ;
+                'h58: wbs_readdata = csr_t_oh      ;
+                'h5c: wbs_readdata = csr_t_ohn     ;
+                'h60: wbs_readdata = csr_t_rasmin  ;
+                'h64: wbs_readdata = csr_t_rasmax  ;
+                'h68: wbs_readdata = csr_t_rc      ;
+                'h6c: wbs_readdata = csr_t_rcd     ;
+                'h70: wbs_readdata = csr_t_rfc     ;
+                'h74: wbs_readdata = csr_t_ref_min ;
+                'h78: wbs_readdata = csr_t_rp      ;
+                'h7c: wbs_readdata = csr_t_rrd     ;
+                'h80: wbs_readdata = csr_t_wrp     ;
+                'h84: wbs_readdata = csr_t_xsr     ;
+                'h88: wbs_readdata = csr_t_bdl     ;
+                'h8c: wbs_readdata = csr_t_ccd     ;
+                'h90: wbs_readdata = csr_t_cdl     ;
+                'h94: wbs_readdata = csr_t_cked    ;
+                'h98: wbs_readdata = csr_t_dal     ;
+                'h9c: wbs_readdata = csr_t_dpl     ;
+                'ha0: wbs_readdata = csr_t_dqd     ;
+                'ha4: wbs_readdata = csr_t_dqm     ;
+                'ha8: wbs_readdata = csr_t_dqz     ;
+                'hac: wbs_readdata = csr_t_dwd     ;
+                'hb0: wbs_readdata = csr_t_mrd     ;
+                'hb4: wbs_readdata = csr_t_ped     ;
+                'hb8: wbs_readdata = csr_t_rdl     ;
+                'hbc: wbs_readdata = csr_t_roh     ;
             endcase
         end
     end
@@ -411,7 +399,6 @@ module sdram_csr#(parameter AW = 16)
     localparam T_AH      = ns2ck_min(  800); // Address hold time
     localparam T_AS      = ns2ck_min( 1500); // Address setup time
     localparam T_CH      = ns2ck_min( 2500); // CLK high-level width
-    localparam T_CL      = ns2ck_min( 2500); // CLK low-level width
     localparam T_CK      = ns2ck_min( 7500); // 7.5ns for CL=2 // Clock cycle time CL = 2
     localparam T_CKH     = ns2ck_min(  800); // CKE hold time
     localparam T_CKS     = ns2ck_min( 1500); // CKE setup time
@@ -427,9 +414,8 @@ module sdram_csr#(parameter AW = 16)
     localparam T_RASMAX  = ns2ck_max(120_000_000); // ACTIVE-to-PRECHARGE command
     localparam T_RC      = ns2ck_min( 60000); // ACTIVE-to-ACTIVE command period
     localparam T_RCD     = ns2ck_min( 15000); // ACTIVE-to-READ or WRITE delay
-    localparam T_REF     = ns2ck_max( 64_000_000); // Refresh period (8192 rows)
     localparam T_RFC     = ns2ck_min( 66000); // AUTO REFRESH period
-    localparam T_REF_MIN = ns2ck_min( 64_000_000/8192); // AUTO REFRESH min period
+    localparam T_REF_MIN = ns2ck_min( 7_813_000); // AUTO REFRESH min period
     localparam T_RP      = ns2ck_min( 15000); // PRECHARGE command period
     localparam T_RRD     = ns2ck_min( 14000); // ACTIVE bank a to ACTIVE bank b command
   //localparam T_T       = ns2ck_min_max( 300, 1200); // Transition time

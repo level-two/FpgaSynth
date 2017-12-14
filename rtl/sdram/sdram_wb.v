@@ -39,7 +39,7 @@ module sdram_wb
     localparam FIFO_DW  = 32+1+16;
 
     wire   wbs_trans    = wbs_strobe & wbs_cycle;
-    assign wbs_stall    = fifo_near_full; 
+    assign wbs_stall    = fifo_full; 
     assign wbs_ack      = sdram_cmd_done;
     assign wbs_readdata = sdram_rd_data;
     //assign wbs_err    = sdram_op_err; // TBI
@@ -49,12 +49,11 @@ module sdram_wb
     wire [FIFO_DW-1:0] fifo_data_in;
     wire [FIFO_DW-1:0] fifo_data_out;
     wire               fifo_empty;
-    wire               fifo_near_full;
-    wire               fifo_full_nc;
+    wire               fifo_full;
 
     assign sdram_access         = wbs_cycle;
-    assign fifo_push            = wbs_strobe;
-    assign fifo_pop             = sdram_cmd_accepted;
+    assign fifo_push            = wbs_strobe && !fifo_full;
+    assign fifo_pop             = sdram_cmd_accepted && !fifo_empty;
     assign fifo_data_in         = {wbs_address, wbs_write, wbs_writedata};
     assign sdram_cmd_ready      = !fifo_empty;
     assign {sdram_addr, sdram_wr_nrd, sdram_wr_data} = fifo_data_out;
@@ -62,8 +61,7 @@ module sdram_wb
     syn_fifo #(
         .DATA_W        (        FIFO_DW),
         .ADDR_W        (              4),
-        .FIFO_DEPTH    (             16),
-        .NEAR_FULL_VAL (             12)
+        .FIFO_DEPTH    (              2)
     ) cmd_fifo_inst (
         .clk        (clk               ),
         .rst        (reset             ),
@@ -72,7 +70,6 @@ module sdram_wb
         .data_in    (fifo_data_in      ),
         .data_out   (fifo_data_out     ),
         .empty      (fifo_empty        ),
-        .near_full  (fifo_near_full    ),
-        .full       (fifo_full_nc      )
+        .full       (fifo_full         )
     );    
 endmodule
