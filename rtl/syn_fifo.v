@@ -11,8 +11,7 @@
 module syn_fifo #(
     parameter DATA_W        = 8,
     parameter ADDR_W        = 8,
-    parameter FIFO_DEPTH    = (1 << ADDR_W),
-    parameter NEAR_FULL_VAL = FIFO_DEPTH)
+    parameter FIFO_DEPTH    = (1 << ADDR_W))
 (
     input               clk,
     input               rst,
@@ -21,7 +20,6 @@ module syn_fifo #(
     input  [DATA_W-1:0] data_in,
     output [DATA_W-1:0] data_out,
     output              empty,
-    output              near_full,
     output              full
 );    
 
@@ -30,7 +28,6 @@ module syn_fifo #(
     reg  [ADDR_W:0]     status_cnt;
     wire [DATA_W-1:0]   rd_data;
 
-    assign near_full = (status_cnt >= NEAR_FULL_VAL);
     assign full      = (status_cnt == FIFO_DEPTH);
     assign empty     = (status_cnt == 0);
 

@@ -101,7 +101,6 @@ module sdram_top (
     wire[ 7:0] csr_t_ah_val;
     wire[ 7:0] csr_t_as_val;
     wire[ 7:0] csr_t_ch_val;
-    wire[ 7:0] csr_t_cl_val;
     wire[ 7:0] csr_t_ck_val;
     wire[ 7:0] csr_t_ckh_val;
     wire[ 7:0] csr_t_cks_val;
@@ -117,7 +116,6 @@ module sdram_top (
     wire[19:0] csr_t_rasmax_val;
     wire[ 7:0] csr_t_rc_val;
     wire[ 7:0] csr_t_rcd_val;
-    wire[19:0] csr_t_ref_val;
     wire[ 7:0] csr_t_rfc_val;
     wire[ 9:0] csr_t_ref_min_val;
     wire[ 7:0] csr_t_rp_val;
@@ -169,7 +167,6 @@ module sdram_top (
         .csr_t_ah_val               (csr_t_ah_val               ),
         .csr_t_as_val               (csr_t_as_val               ),
         .csr_t_ch_val               (csr_t_ch_val               ),
-        .csr_t_cl_val               (csr_t_cl_val               ),
         .csr_t_ck_val               (csr_t_ck_val               ),
         .csr_t_ckh_val              (csr_t_ckh_val              ),
         .csr_t_cks_val              (csr_t_cks_val              ),
@@ -185,7 +182,6 @@ module sdram_top (
         .csr_t_rasmax_val           (csr_t_rasmax_val           ),
         .csr_t_rc_val               (csr_t_rc_val               ),
         .csr_t_rcd_val              (csr_t_rcd_val              ),
-        .csr_t_ref_val              (csr_t_ref_val              ),
         .csr_t_rfc_val              (csr_t_rfc_val              ),
         .csr_t_ref_min_val          (csr_t_ref_min_val          ),
         .csr_t_rp_val               (csr_t_rp_val               ),
@@ -251,7 +247,6 @@ module sdram_top (
         .csr_t_ah_val               (csr_t_ah_val               ),
         .csr_t_as_val               (csr_t_as_val               ),
         .csr_t_ch_val               (csr_t_ch_val               ),
-        .csr_t_cl_val               (csr_t_cl_val               ),
         .csr_t_ck_val               (csr_t_ck_val               ),
         .csr_t_ckh_val              (csr_t_ckh_val              ),
         .csr_t_cks_val              (csr_t_cks_val              ),
@@ -267,7 +262,6 @@ module sdram_top (
         .csr_t_rasmax_val           (csr_t_rasmax_val           ),
         .csr_t_rc_val               (csr_t_rc_val               ),
         .csr_t_rcd_val              (csr_t_rcd_val              ),
-        .csr_t_ref_val              (csr_t_ref_val              ),
         .csr_t_rfc_val              (csr_t_rfc_val              ),
         .csr_t_ref_min_val          (csr_t_ref_min_val          ),
         .csr_t_rp_val               (csr_t_rp_val               ),
