@@ -114,6 +114,8 @@ module sdram_ctrl (
     localparam ST_READ_TO_WRITE       = 'h0f;
     localparam ST_WRITE_TO_IDLE       = 'h10;
     localparam ST_RW_IDLE             = 'h11;
+    localparam ST_READ_TO_PRECHARGE   = 'h12;
+    localparam ST_WRITE_TO_PRECHARGE  = 'h13;
 
     reg [31:0] state;
     reg [31:0] next_state;
@@ -147,8 +149,6 @@ module sdram_ctrl (
                 if (timer_done) next_state = ST_CMD_LMR;
             end
             ST_IDLE: begin
-                // use sdram_cmd_ready instead of sdram_access to ensure
-                // that there is valid address for ACTIVE command
                 next_state = csr_ctrl_start               ? ST_INIT_NOP        :
                              csr_ctrl_load_mode_register  ? ST_CMD_LMR         :
                              sdram_cmd_ready              ? ST_CMD_ACTIVE      :
@@ -167,40 +167,44 @@ module sdram_ctrl (
                                              ST_CMD_READ   ;
             end
             ST_CMD_READ: begin
-                // TODO In case of AUTOPRECHARGE after RD or WR operation
-                // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 next_state = 
-                    sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
-                    sdram_cmd_ready &&  sdram_wr_nrd ? ST_READ_TO_WRITE :
-                                                       ST_READ_TO_IDLE  ;
+                    row_bank_change                  ? ST_READ_TO_PRECHARGE  :
+                    sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ           :
+                    sdram_cmd_ready &&  sdram_wr_nrd ? ST_READ_TO_WRITE      :
+                                                       ST_READ_TO_IDLE       ;
             end
             ST_CMD_WRITE: begin
-                // TODO In case of AUTOPRECHARGE after RD or WR operation
-                // deissue turn to WAIT_AUTOPRECHARGE_DONE sate
                 next_state =
-                    sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE     :
-                    sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
-                    (csr_t_wrp_val == 1)             ? ST_RW_IDLE       :
-                                                       ST_WRITE_TO_IDLE ;
+                    row_bank_change && csr_t_wrp_val == 1 ? ST_CMD_PRECHARGE_ALL  :
+                    row_bank_change                       ? ST_WRITE_TO_PRECHARGE :
+                    sdram_cmd_ready && !sdram_wr_nrd      ? ST_CMD_READ           :
+                    sdram_cmd_ready &&  sdram_wr_nrd      ? ST_CMD_WRITE          :
+                    (csr_t_wrp_val == 1)                  ? ST_RW_IDLE            :
+                                                            ST_WRITE_TO_IDLE      ;
             end
             ST_READ_TO_IDLE: begin
-                    next_state = 
-                        sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
-                        sdram_cmd_ready &&  sdram_wr_nrd ? ST_READ_TO_WRITE :
-                        timer_done                       ? ST_RW_IDLE       :
-                                                           ST_READ_TO_IDLE  ;
+                next_state = 
+                    row_bank_change                   ? ST_READ_TO_PRECHARGE  :
+                    sdram_cmd_ready && !sdram_wr_nrd  ? ST_CMD_READ           :
+                    sdram_cmd_ready &&  sdram_wr_nrd  ? ST_READ_TO_WRITE      :
+                    timer_done                        ? ST_RW_IDLE            :
+                                                        ST_READ_TO_IDLE       ;
+            end
+            ST_READ_TO_PRECHARGE: begin
+                if (timer_done) next_state = ST_CMD_PRECHARGE_ALL;
             end
             ST_READ_TO_WRITE: begin
-                next_state =
-                    timer_done ? ST_CMD_WRITE     :
-                                 ST_READ_TO_WRITE ;
+                if (timer_done) next_state = ST_CMD_WRITE;
             end
             ST_WRITE_TO_IDLE: begin
                 next_state = 
-                     sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ      :
-                     sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE     :
-                     timer_done                       ? ST_RW_IDLE       :
-                                                        ST_WRITE_TO_IDLE ;
+                    row_bank_change                   ? ST_CMD_PRECHARGE_ALL :
+                    sdram_cmd_ready && !sdram_wr_nrd  ? ST_CMD_READ          :
+                    sdram_cmd_ready &&  sdram_wr_nrd  ? ST_CMD_WRITE         :
+                                                        ST_RW_IDLE           ;
+            end
+            ST_WRITE_TO_PRECHARGE: begin
+                next_state = ST_CMD_PRECHARGE_ALL;
             end
             ST_RW_IDLE: begin
                 next_state = 
@@ -210,7 +214,9 @@ module sdram_ctrl (
                                                         ST_RW_IDLE           ;
             end
             ST_CMD_PRECHARGE_ALL: begin
-                if (timer_done) next_state = ST_IDLE;
+                next_state = !timer_done     ? ST_CMD_PRECHARGE_ALL :
+                             row_bank_change ? ST_CMD_ACTIVE        :
+                                               ST_IDLE              ;
             end
             default: begin
                 next_state = ST_IDLE;
@@ -229,9 +235,8 @@ module sdram_ctrl (
         (next_state == ST_CMD_ACTIVE         ) ? csr_t_rcd_val          :
         (next_state == ST_CMD_PRECHARGE_ALL  ) ? csr_t_rp_val           :
         (next_state == ST_READ_TO_IDLE       ) ? csr_opmode_cas_latency :
-        //(next_state == ST_READ_TO_WRITE      ) ? (csr_opmode_cas_latency == 2 ? 3 : 4) :
+        (next_state == ST_READ_TO_PRECHARGE  ) ? csr_opmode_cas_latency :
         (next_state == ST_READ_TO_WRITE      ) ? csr_opmode_cas_latency :
-        (next_state == ST_WRITE_TO_IDLE      ) ? csr_t_wrp_val-1        :
         0;
 
     reg [31:0] timer_cnt;
@@ -327,6 +332,8 @@ module sdram_ctrl (
         end
     end
 
+    wire row_bank_change = (sdram_cmd_ready && sdram_addr[24:9] != cur_sdram_addr[24:9]);
+
 
     // SDRAM SIGNALS DRIVE
     assign sdram_clk          = clk;
@@ -412,10 +419,12 @@ module sdram_ctrl (
             sdram_a[8:0] = cur_sdram_addr[8:0];    // Col addr
             sdram_a[10]  = csr_config_prechg_after_rd;
         end
-        else if (state == ST_READ_TO_IDLE  ||
-                 state == ST_WRITE_TO_IDLE ||
-                 state == ST_READ_TO_WRITE ||
-                 state == ST_RW_IDLE       ) begin
+        else if (state == ST_READ_TO_IDLE       ||
+                 state == ST_WRITE_TO_IDLE      ||
+                 state == ST_READ_TO_WRITE      ||
+                 state == ST_READ_TO_PRECHARGE  ||
+                 state == ST_WRITE_TO_PRECHARGE ||
+                 state == ST_RW_IDLE             ) begin
             // NOP
             sdram_ncs   = 1'b0;
             sdram_nras  = 1'b1;
