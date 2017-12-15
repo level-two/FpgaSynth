@@ -61,7 +61,7 @@ module sdram_wb
     syn_fifo #(
         .DATA_W        (        FIFO_DW),
         .ADDR_W        (              4),
-        .FIFO_DEPTH    (              2)
+        .FIFO_DEPTH    (             16)
     ) cmd_fifo_inst (
         .clk        (clk               ),
         .rst        (reset             ),

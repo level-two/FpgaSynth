@@ -177,7 +177,7 @@ module tb_sdram_random_rw();
 
         #150000; // 150 us
 
-        while (wbs_sdram_address < 'h100) begin
+        while (wbs_sdram_address < 'h1000) begin
             @(posedge clk);
             wbs_sdram_cycle     <= 1;
             if (wbs_sdram_stall) begin
@@ -206,21 +206,12 @@ module tb_sdram_random_rw();
 
             wbs_sdram_cycle     <= 1;
 
-            if (wbs_sdram_stall) begin
-                // do nothing
-            end
-            //else if ($random() % 100 < 40) begin
-            //    wbs_sdram_strobe    <= 0;
-            //end
-            else if (wbs_sdram_address < NUM_OPS) begin
+            if (!wbs_sdram_stall) begin
                 wbs_sdram_strobe    <= 1;
-                wbs_sdram_address   <= $random() % 'h100;
+                wbs_sdram_address   <= $random() % 'h300;
                 wbs_sdram_write     <= $random() % 2;
                 wbs_sdram_writedata <= $random() % 2 ? 'hdead : 'hbeef;
                 requests_n          <= requests_n + 1;
-            end
-            else begin
-                wbs_sdram_strobe    <= 0;
             end
 
             if (wbs_sdram_ack) begin
@@ -228,8 +219,10 @@ module tb_sdram_random_rw();
             end
         end
 
-        repeat (10) @(posedge clk);
+        @(posedge clk);
+        wbs_sdram_strobe    <= 0;
 
+        repeat (10) @(posedge clk);
         wbs_sdram_cycle     <= 0;
 
         repeat (10) @(posedge clk);
