@@ -37,17 +37,17 @@ module tb_sdram_random_rw();
     //wire                    wbs_sdram_err       ; // TBI
 
     // INTERFACE TO SDRAM
-    wire                      sdram_clk           ;
-    wire                      sdram_cke           ;
-    wire                      sdram_ncs           ;
-    wire                      sdram_ncas          ;
-    wire                      sdram_nras          ;
-    wire                      sdram_nwe           ;
-    wire                      sdram_dqml          ;
-    wire                      sdram_dqmh          ;
-    wire [12:0]               sdram_a             ;
-    wire [ 1:0]               sdram_ba            ;
-    tri  [15:0]               sdram_dq            ;
+    wire                      sdram_if_clk        ;
+    wire                      sdram_if_cke        ;
+    wire                      sdram_if_ncs        ;
+    wire                      sdram_if_ncas       ;
+    wire                      sdram_if_nras       ;
+    wire                      sdram_if_nwe        ;
+    wire                      sdram_if_dqml       ;
+    wire                      sdram_if_dqmh       ;
+    wire [12:0]               sdram_if_a          ;
+    wire [ 1:0]               sdram_if_ba         ;
+    tri  [15:0]               sdram_if_dq         ;
 
 
     sdram_top dut (
@@ -76,33 +76,33 @@ module tb_sdram_random_rw();
         //.wbs_sdram_err     (wbs_sdram_err         ), // TBI
 
         // INTERFACE TO SDRAM
-        .sdram_clk           (sdram_clk             ),
-        .sdram_cke           (sdram_cke             ),
-        .sdram_ncs           (sdram_ncs             ),
-        .sdram_ncas          (sdram_ncas            ),
-        .sdram_nras          (sdram_nras            ),
-        .sdram_nwe           (sdram_nwe             ),
-        .sdram_dqml          (sdram_dqml            ),
-        .sdram_dqmh          (sdram_dqmh            ),
-        .sdram_a             (sdram_a               ),
-        .sdram_ba            (sdram_ba              ),
-        .sdram_dq            (sdram_dq              )
+        .sdram_if_clk           (sdram_if_clk       ),
+        .sdram_if_cke           (sdram_if_cke       ),
+        .sdram_if_ncs           (sdram_if_ncs       ),
+        .sdram_if_ncas          (sdram_if_ncas      ),
+        .sdram_if_nras          (sdram_if_nras      ),
+        .sdram_if_nwe           (sdram_if_nwe       ),
+        .sdram_if_dqml          (sdram_if_dqml      ),
+        .sdram_if_dqmh          (sdram_if_dqmh      ),
+        .sdram_if_a             (sdram_if_a         ),
+        .sdram_if_ba            (sdram_if_ba        ),
+        .sdram_if_dq            (sdram_if_dq        )
     );
 
 
 
     mt48lc16m16a2 sdram_model_inst (
-        .Dq         (sdram_dq               ),
-        .Addr       (sdram_a                ),
-        .Ba         (sdram_ba               ),
-        .Clk        (sdram_clk              ),
-        .Cke        (sdram_cke              ),
-        .Cs_n       (sdram_ncs              ),
-        .Ras_n      (sdram_nras             ),
-        .Cas_n      (sdram_ncas             ),
-        .We_n       (sdram_nwe              ),
-        .Dqm        ({sdram_dqmh, sdram_dqml})
-    );                                        
+        .Dq         (sdram_if_dq               ),
+        .Addr       (sdram_if_a                ),
+        .Ba         (sdram_if_ba               ),
+        .Clk        (sdram_if_clk              ),
+        .Cke        (sdram_if_cke              ),
+        .Cs_n       (sdram_if_ncs              ),
+        .Ras_n      (sdram_if_nras             ),
+        .Cas_n      (sdram_if_ncas             ),
+        .We_n       (sdram_if_nwe              ),
+        .Dqm        ({sdram_if_dqmh, sdram_if_dqml})
+    );
                                               
 
     always begin                              

@@ -4,7 +4,7 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: sdram_wb.v
+// File: sdram_ctrl_wb.v
 // Description: Wishbone interface implementation for the sdram driver
 // -----------------------------------------------------------------------------
 
@@ -25,24 +25,24 @@ module sdram_wb
     output            wbs_stall           ,
     //output          wbs_err             , // TBI
                                           
-    output [31:0]     sdram_addr          , // Cur cmd adddr from CMD fifo
-    output            sdram_wr_nrd        , // Cur w/r from CMD fifo
-    output            sdram_cmd_ready     , // CMD fifo is not emty
-    input             sdram_cmd_accepted  , // POP prev cmd from CMD fifo
-    input             sdram_cmd_done      , // Send ack that command is done
-    output [15:0]     sdram_wr_data       , // To fifo
-    input  [15:0]     sdram_rd_data       , // From SDRAM
-    output            sdram_access         
-    //input           sdram_op_err        , // TBI
+    output [31:0]     sdram_ctrl_addr          , // Cur cmd adddr from CMD fifo
+    output            sdram_ctrl_wr_nrd        , // Cur w/r from CMD fifo
+    output            sdram_ctrl_cmd_ready     , // CMD fifo is not emty
+    input             sdram_ctrl_cmd_accepted  , // POP prev cmd from CMD fifo
+    input             sdram_ctrl_cmd_done      , // Send ack that command is done
+    output [15:0]     sdram_ctrl_wr_data       , // To fifo
+    input  [15:0]     sdram_ctrl_rd_data       , // From SDRAM
+    output            sdram_ctrl_access         
+    //input           sdram_ctrl_op_err        , // TBI
 );
 
     localparam FIFO_DW  = 32+1+16;
 
     wire   wbs_trans    = wbs_strobe & wbs_cycle;
     assign wbs_stall    = fifo_full; 
-    assign wbs_ack      = sdram_cmd_done;
-    assign wbs_readdata = sdram_rd_data;
-    //assign wbs_err    = sdram_op_err; // TBI
+    assign wbs_ack      = sdram_ctrl_cmd_done;
+    assign wbs_readdata = sdram_ctrl_rd_data;
+    //assign wbs_err    = sdram_ctrl_op_err; // TBI
 
     wire               fifo_push;
     wire               fifo_pop;
@@ -51,17 +51,17 @@ module sdram_wb
     wire               fifo_empty;
     wire               fifo_full;
 
-    assign sdram_access         = wbs_cycle;
+    assign sdram_ctrl_access    = wbs_cycle;
     assign fifo_push            = wbs_strobe && !fifo_full;
-    assign fifo_pop             = sdram_cmd_accepted && !fifo_empty;
+    assign fifo_pop             = sdram_ctrl_cmd_accepted && !fifo_empty;
     assign fifo_data_in         = {wbs_address, wbs_write, wbs_writedata};
-    assign sdram_cmd_ready      = !fifo_empty;
-    assign {sdram_addr, sdram_wr_nrd, sdram_wr_data} = fifo_data_out;
+    assign sdram_ctrl_cmd_ready = !fifo_empty;
+    assign {sdram_ctrl_addr, sdram_ctrl_wr_nrd, sdram_ctrl_wr_data} = fifo_data_out;
 
     syn_fifo #(
-        .DATA_W        (        FIFO_DW),
-        .ADDR_W        (              4),
-        .FIFO_DEPTH    (             16)
+        .DATA_W     (           FIFO_DW),
+        .ADDR_W     (                 4),
+        .FIFO_DEPTH (                16)
     ) cmd_fifo_inst (
         .clk        (clk               ),
         .rst        (reset             ),
