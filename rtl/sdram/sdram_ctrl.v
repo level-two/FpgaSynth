@@ -208,6 +208,7 @@ module sdram_ctrl (
             end
             ST_RW_IDLE: begin
                 next_state = 
+                     row_bank_change                  ? ST_CMD_PRECHARGE_ALL :
                      sdram_cmd_ready && !sdram_wr_nrd ? ST_CMD_READ          :
                      sdram_cmd_ready &&  sdram_wr_nrd ? ST_CMD_WRITE         :
                      !sdram_access                    ? ST_CMD_PRECHARGE_ALL :
