@@ -7,6 +7,20 @@
 // File: sdram_ctrl.v
 // Description: Sdram controller
 // -----------------------------------------------------------------------------
+//       From page 37 of MT48LC16M16A2 datasheet
+//       Name (Function)       CS# RAS# CAS# WE# DQM  Addr    Data
+//       COMMAND INHIBIT (NOP)  H   X    X    X   X     X       X
+//       NO OPERATION (NOP)     L   H    H    H   X     X       X
+//       ACTIVE                 L   L    H    H   X  Bank/row   X
+//       READ                   L   H    L    H  L/H Bank/col   X
+//       WRITE                  L   H    L    L  L/H Bank/col Valid
+//       BURST TERMINATE        L   H    H    L   X     X     Active
+//       PRECHARGE              L   L    H    L   X   Code      X
+//       AUTO REFRESH           L   L    L    H   X     X       X 
+//       LOAD MODE REGISTER     L   L    L    L   X  Op-code    X 
+//       Write enable           X   X    X    X   L     X     Active
+//       Write inhibit          X   X    X    X   H     X     High-Z
+// -----------------------------------------------------------------------------
 
 
 module sdram_ctrl (
@@ -62,6 +76,7 @@ module sdram_ctrl (
 
     input [ 3:0] csr_t_mrd_val
 );
+
 
     // STATE MACHINE
     localparam ST_RESET               = 'h00;
@@ -303,7 +318,21 @@ module sdram_ctrl (
 
 
     // SDRAM SIGNALS DRIVE
-    assign sdram_if_clk            = clk;
+    //assign sdram_if_clk            = clk;
+    ODDR2 #(
+        .DDR_ALIGNMENT("NONE"                ),
+        .INIT         (0                     ),
+        .SRTYPE       ("SYNC"                )
+    ) oddr2_inst (
+        .CE  (1'b1                           ),
+        .R   (1'b0                           ),
+        .S   (1'b0                           ),
+        .D0  (1'b1                           ),
+        .D1  (1'b0                           ),
+        .C0  (clk                            ),
+        .C1  (~clk                           ),
+        .Q   (sdram_if_clk                   )
+    );
     assign sdram_ctrl_cmd_accepted = (next_state == ST_CMD_READ ||
                                       next_state == ST_CMD_WRITE);
     assign sdram_if_dq             = (state == ST_CMD_WRITE) ? cur_sdram_wr_data : 16'hzzzz;

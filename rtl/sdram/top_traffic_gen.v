@@ -9,9 +9,9 @@
 // -----------------------------------------------------------------------------
 
 module top_traffic_gen(
-    input            CLK_50M,
-    input  [0:0]     PB,
-    output [1:0]     LED
+    input            CLK_50M          ,
+    input  [0:0]     PB               ,
+    output [1:0]     LED              ,
 
     // INTERFACE TO SDRAM
     output           SDRAM_CLK        ,
