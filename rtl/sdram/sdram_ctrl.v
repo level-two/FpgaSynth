@@ -85,8 +85,8 @@ module sdram_ctrl (
     localparam ST_READ_TO_PRECHARGE   = 'h12;
     localparam ST_WRITE_TO_PRECHARGE  = 'h13;
 
-    reg [31:0] state;
-    reg [31:0] next_state;
+    reg [4:0] state;
+    reg [4:0] next_state;
     always @(posedge clk or posedge reset) begin
         if (reset) state <= ST_RESET;
         else       state <= next_state;
@@ -102,7 +102,8 @@ module sdram_ctrl (
                 if (timer_done) next_state = ST_WAIT_INIT;
             end
             ST_WAIT_INIT: begin
-                if (csr_ctrl_start) next_state = ST_INIT_NOP;
+                //if (csr_ctrl_start) next_state = ST_INIT_NOP;
+                next_state = ST_INIT_NOP;
             end
             ST_INIT_NOP: begin
                 next_state = ST_INIT_PRECHG_ALL;
