@@ -34,30 +34,30 @@ module sdram_top (
     //output                   wbs_sdram_err       , // TBI
 
     // INTERFACE TO SDRAM
-    output                     sdram_clk           ,
-    output                     sdram_cke           ,
-    output                     sdram_ncs           ,
-    output                     sdram_ncas          ,
-    output                     sdram_nras          ,
-    output                     sdram_nwe           ,
-    output                     sdram_dqml          ,
-    output                     sdram_dqmh          ,
-    output [12:0]              sdram_a             ,
-    output [ 1:0]              sdram_ba            ,
-    inout  [15:0]              sdram_dq
+    output                     sdram_if_clk        ,
+    output                     sdram_if_cke        ,
+    output                     sdram_if_ncs        ,
+    output                     sdram_if_ncas       ,
+    output                     sdram_if_nras       ,
+    output                     sdram_if_nwe        ,
+    output                     sdram_if_dqml       ,
+    output                     sdram_if_dqmh       ,
+    output [12:0]              sdram_if_a          ,
+    output [ 1:0]              sdram_if_ba         ,
+    inout  [15:0]              sdram_if_dq
 );
 
     parameter AW_CSR   = 16;
 
-    wire        sdram_access;
-    wire        sdram_cmd_ready;
-    wire        sdram_cmd_accepted;
-    wire        sdram_cmd_done;
-    wire [31:0] sdram_addr;
-    wire        sdram_wr_nrd;
-    wire [15:0] sdram_wr_data;
-    wire [15:0] sdram_rd_data;
-    //wire      sdram_op_err; // TBI
+    wire        sdram_ctrl_access;
+    wire        sdram_ctrl_cmd_ready;
+    wire        sdram_ctrl_cmd_accepted;
+    wire        sdram_ctrl_cmd_done;
+    wire [31:0] sdram_ctrl_addr;
+    wire        sdram_ctrl_wr_nrd;
+    wire [15:0] sdram_ctrl_wr_data;
+    wire [15:0] sdram_ctrl_rd_data;
+    //wire      sdram_ctrl_op_err; // TBI
 
     sdram_wb sdram_wb_inst (
         .clk                        (clk                        ),
@@ -74,15 +74,15 @@ module sdram_top (
         .wbs_stall                  (wbs_sdram_stall            ),
         //.wbs_err                  (wbs_sdram_err              ), // TBI
                                                                 
-        .sdram_addr                 (sdram_addr                 ),
-        .sdram_wr_nrd               (sdram_wr_nrd               ),
-        .sdram_cmd_ready            (sdram_cmd_ready            ),
-        .sdram_cmd_accepted         (sdram_cmd_accepted         ),
-        .sdram_cmd_done             (sdram_cmd_done             ),
-        .sdram_wr_data              (sdram_wr_data              ),
-        .sdram_rd_data              (sdram_rd_data              ),
-        .sdram_access               (sdram_access               )
-        //.sdram_op_err             (sdram_op_err               ) 
+        .sdram_ctrl_addr            (sdram_ctrl_addr            ),
+        .sdram_ctrl_wr_nrd          (sdram_ctrl_wr_nrd          ),
+        .sdram_ctrl_cmd_ready       (sdram_ctrl_cmd_ready       ),
+        .sdram_ctrl_cmd_accepted    (sdram_ctrl_cmd_accepted    ),
+        .sdram_ctrl_cmd_done        (sdram_ctrl_cmd_done        ),
+        .sdram_ctrl_wr_data         (sdram_ctrl_wr_data         ),
+        .sdram_ctrl_rd_data         (sdram_ctrl_rd_data         ),
+        .sdram_ctrl_access          (sdram_ctrl_access          )
+        //.sdram_ctrl_op_err        (sdram_ctrl_op_err          ) 
     );
 
     wire[ 0:0] csr_ctrl_start;
@@ -97,45 +97,12 @@ module sdram_top (
     wire[ 2:0] csr_opmode_burst_len;
     wire[ 0:0] csr_config_prechg_after_rd;
     wire[19:0] csr_t_dly_rst_val;
-    wire[ 7:0] csr_t_ac_val;
-    wire[ 7:0] csr_t_ah_val;
-    wire[ 7:0] csr_t_as_val;
-    wire[ 7:0] csr_t_ch_val;
-    wire[ 7:0] csr_t_ck_val;
-    wire[ 7:0] csr_t_ckh_val;
-    wire[ 7:0] csr_t_cks_val;
-    wire[ 7:0] csr_t_cmh_val;
-    wire[ 7:0] csr_t_cms_val;
-    wire[ 7:0] csr_t_dh_val;
-    wire[ 7:0] csr_t_ds_val;
-    wire[ 7:0] csr_t_hz_val;
-    wire[ 7:0] csr_t_lz_val;
-    wire[ 7:0] csr_t_oh_val;
-    wire[ 7:0] csr_t_ohn_val;
-    wire[ 7:0] csr_t_rasmin_val;
-    wire[19:0] csr_t_rasmax_val;
-    wire[ 7:0] csr_t_rc_val;
     wire[ 7:0] csr_t_rcd_val;
     wire[ 7:0] csr_t_rfc_val;
     wire[ 9:0] csr_t_ref_min_val;
     wire[ 7:0] csr_t_rp_val;
-    wire[ 7:0] csr_t_rrd_val;
     wire[ 1:0] csr_t_wrp_val;
-    wire[ 7:0] csr_t_xsr_val;
-    wire[ 3:0] csr_r_t_bdl_val;
-    wire[ 3:0] csr_t_ccd_val;
-    wire[ 3:0] csr_t_cdl_val;
-    wire[ 3:0] csr_t_cked_val;
-    wire[ 3:0] csr_t_dal_val;
-    wire[ 3:0] csr_t_dpl_val;
-    wire[ 3:0] csr_t_dqd_val;
-    wire[ 3:0] csr_t_dqm_val;
-    wire[ 3:0] csr_t_dqz_val;
-    wire[ 3:0] csr_t_dwd_val;
     wire[ 3:0] csr_t_mrd_val;
-    wire[ 3:0] csr_t_ped_val;
-    wire[ 3:0] csr_t_rdl_val;
-    wire[ 3:0] csr_t_roh_val;
 
     sdram_csr#(.AW(AW_CSR)) sdram_csr_inst
     (
@@ -163,72 +130,39 @@ module sdram_top (
         .csr_opmode_burst_len       (csr_opmode_burst_len       ),
         .csr_config_prechg_after_rd (csr_config_prechg_after_rd ),
         .csr_t_dly_rst_val          (csr_t_dly_rst_val          ),
-        .csr_t_ac_val               (csr_t_ac_val               ),
-        .csr_t_ah_val               (csr_t_ah_val               ),
-        .csr_t_as_val               (csr_t_as_val               ),
-        .csr_t_ch_val               (csr_t_ch_val               ),
-        .csr_t_ck_val               (csr_t_ck_val               ),
-        .csr_t_ckh_val              (csr_t_ckh_val              ),
-        .csr_t_cks_val              (csr_t_cks_val              ),
-        .csr_t_cmh_val              (csr_t_cmh_val              ),
-        .csr_t_cms_val              (csr_t_cms_val              ),
-        .csr_t_dh_val               (csr_t_dh_val               ),
-        .csr_t_ds_val               (csr_t_ds_val               ),
-        .csr_t_hz_val               (csr_t_hz_val               ),
-        .csr_t_lz_val               (csr_t_lz_val               ),
-        .csr_t_oh_val               (csr_t_oh_val               ),
-        .csr_t_ohn_val              (csr_t_ohn_val              ),
-        .csr_t_rasmin_val           (csr_t_rasmin_val           ),
-        .csr_t_rasmax_val           (csr_t_rasmax_val           ),
-        .csr_t_rc_val               (csr_t_rc_val               ),
         .csr_t_rcd_val              (csr_t_rcd_val              ),
         .csr_t_rfc_val              (csr_t_rfc_val              ),
         .csr_t_ref_min_val          (csr_t_ref_min_val          ),
         .csr_t_rp_val               (csr_t_rp_val               ),
-        .csr_t_rrd_val              (csr_t_rrd_val              ),
         .csr_t_wrp_val              (csr_t_wrp_val              ),
-        .csr_t_xsr_val              (csr_t_xsr_val              ),
-        .csr_r_t_bdl_val            (csr_r_t_bdl_val            ),
-        .csr_t_ccd_val              (csr_t_ccd_val              ),
-        .csr_t_cdl_val              (csr_t_cdl_val              ),
-        .csr_t_cked_val             (csr_t_cked_val             ),
-        .csr_t_dal_val              (csr_t_dal_val              ),
-        .csr_t_dpl_val              (csr_t_dpl_val              ),
-        .csr_t_dqd_val              (csr_t_dqd_val              ),
-        .csr_t_dqm_val              (csr_t_dqm_val              ),
-        .csr_t_dqz_val              (csr_t_dqz_val              ),
-        .csr_t_dwd_val              (csr_t_dwd_val              ),
-        .csr_t_mrd_val              (csr_t_mrd_val              ),
-        .csr_t_ped_val              (csr_t_ped_val              ),
-        .csr_t_rdl_val              (csr_t_rdl_val              ),
-        .csr_t_roh_val              (csr_t_roh_val              )
+        .csr_t_mrd_val              (csr_t_mrd_val              )
     );
 
     sdram_ctrl sdram_ctrl_inst (
         .clk                        (clk                        ),
         .reset                      (reset                      ),
                                                                 
-        .sdram_access               (sdram_access               ),
-        .sdram_cmd_ready            (sdram_cmd_ready            ),
-        .sdram_cmd_accepted         (sdram_cmd_accepted         ),
-        .sdram_cmd_done             (sdram_cmd_done             ),
-        .sdram_addr                 (sdram_addr                 ),
-        .sdram_wr_nrd               (sdram_wr_nrd               ),
-        .sdram_wr_data              (sdram_wr_data              ),
-        .sdram_rd_data              (sdram_rd_data              ),
-        //.sdram_op_err             (sdram_op_err               ),
+        .sdram_ctrl_access          (sdram_ctrl_access           ),
+        .sdram_ctrl_cmd_ready       (sdram_ctrl_cmd_ready        ),
+        .sdram_ctrl_cmd_accepted    (sdram_ctrl_cmd_accepted     ),
+        .sdram_ctrl_cmd_done        (sdram_ctrl_cmd_done         ),
+        .sdram_ctrl_addr            (sdram_ctrl_addr             ),
+        .sdram_ctrl_wr_nrd          (sdram_ctrl_wr_nrd           ),
+        .sdram_ctrl_wr_data         (sdram_ctrl_wr_data          ),
+        .sdram_ctrl_rd_data         (sdram_ctrl_rd_data          ),
+        //.sdram_ctrl_op_err        (sdram_ctrl_op_err               ),
                                                                 
-        .sdram_clk                  (sdram_clk                  ),
-        .sdram_cke                  (sdram_cke                  ),
-        .sdram_ncs                  (sdram_ncs                  ),
-        .sdram_ncas                 (sdram_ncas                 ),
-        .sdram_nras                 (sdram_nras                 ),
-        .sdram_nwe                  (sdram_nwe                  ),
-        .sdram_dqml                 (sdram_dqml                 ),
-        .sdram_dqmh                 (sdram_dqmh                 ),
-        .sdram_a                    (sdram_a                    ),
-        .sdram_ba                   (sdram_ba                   ),
-        .sdram_dq                   (sdram_dq                   ),
+        .sdram_if_clk               (sdram_if_clk               ),
+        .sdram_if_cke               (sdram_if_cke               ),
+        .sdram_if_ncs               (sdram_if_ncs               ),
+        .sdram_if_ncas              (sdram_if_ncas              ),
+        .sdram_if_nras              (sdram_if_nras              ),
+        .sdram_if_nwe               (sdram_if_nwe               ),
+        .sdram_if_dqml              (sdram_if_dqml              ),
+        .sdram_if_dqmh              (sdram_if_dqmh              ),
+        .sdram_if_a                 (sdram_if_a                 ),
+        .sdram_if_ba                (sdram_if_ba                ),
+        .sdram_if_dq                (sdram_if_dq                ),
 
         // CSR
         .csr_ctrl_start             (csr_ctrl_start             ),
@@ -243,44 +177,11 @@ module sdram_top (
         .csr_opmode_burst_len       (csr_opmode_burst_len       ),
         .csr_config_prechg_after_rd (csr_config_prechg_after_rd ),
         .csr_t_dly_rst_val          (csr_t_dly_rst_val          ),
-        .csr_t_ac_val               (csr_t_ac_val               ),
-        .csr_t_ah_val               (csr_t_ah_val               ),
-        .csr_t_as_val               (csr_t_as_val               ),
-        .csr_t_ch_val               (csr_t_ch_val               ),
-        .csr_t_ck_val               (csr_t_ck_val               ),
-        .csr_t_ckh_val              (csr_t_ckh_val              ),
-        .csr_t_cks_val              (csr_t_cks_val              ),
-        .csr_t_cmh_val              (csr_t_cmh_val              ),
-        .csr_t_cms_val              (csr_t_cms_val              ),
-        .csr_t_dh_val               (csr_t_dh_val               ),
-        .csr_t_ds_val               (csr_t_ds_val               ),
-        .csr_t_hz_val               (csr_t_hz_val               ),
-        .csr_t_lz_val               (csr_t_lz_val               ),
-        .csr_t_oh_val               (csr_t_oh_val               ),
-        .csr_t_ohn_val              (csr_t_ohn_val              ),
-        .csr_t_rasmin_val           (csr_t_rasmin_val           ),
-        .csr_t_rasmax_val           (csr_t_rasmax_val           ),
-        .csr_t_rc_val               (csr_t_rc_val               ),
         .csr_t_rcd_val              (csr_t_rcd_val              ),
         .csr_t_rfc_val              (csr_t_rfc_val              ),
         .csr_t_ref_min_val          (csr_t_ref_min_val          ),
         .csr_t_rp_val               (csr_t_rp_val               ),
-        .csr_t_rrd_val              (csr_t_rrd_val              ),
         .csr_t_wrp_val              (csr_t_wrp_val              ),
-        .csr_t_xsr_val              (csr_t_xsr_val              ),
-        .csr_r_t_bdl_val            (csr_r_t_bdl_val            ),
-        .csr_t_ccd_val              (csr_t_ccd_val              ),
-        .csr_t_cdl_val              (csr_t_cdl_val              ),
-        .csr_t_cked_val             (csr_t_cked_val             ),
-        .csr_t_dal_val              (csr_t_dal_val              ),
-        .csr_t_dpl_val              (csr_t_dpl_val              ),
-        .csr_t_dqd_val              (csr_t_dqd_val              ),
-        .csr_t_dqm_val              (csr_t_dqm_val              ),
-        .csr_t_dqz_val              (csr_t_dqz_val              ),
-        .csr_t_dwd_val              (csr_t_dwd_val              ),
-        .csr_t_mrd_val              (csr_t_mrd_val              ),
-        .csr_t_ped_val              (csr_t_ped_val              ),
-        .csr_t_rdl_val              (csr_t_rdl_val              ),
-        .csr_t_roh_val              (csr_t_roh_val              )
+        .csr_t_mrd_val              (csr_t_mrd_val              )
     );
 endmodule
