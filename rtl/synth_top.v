@@ -57,9 +57,9 @@ module synth_top (
 
     wire               new_sample_trig;
 
-    wire               pgen_smpl_out_rdy;
-    wire signed [17:0] pgen_smpl_out_l;
-    wire signed [17:0] pgen_smpl_out_r;
+    wire               pgen_smp_out_rdy;
+    wire signed [17:0] pgen_smp_out_l;
+    wire signed [17:0] pgen_smp_out_r;
     wire [47:0]        pgen_dsp_outs_flat_l = dsp_outs_flat_l;
     wire [47:0]        pgen_dsp_outs_flat_r = dsp_outs_flat_r;
     wire [91:0]        pgen_dsp_ins_flat_l;
@@ -73,82 +73,89 @@ module synth_top (
         .midi_ch_sysn         (midi_ch_sysn              ),
         .midi_data0           (midi_data0                ),
         .midi_data1           (midi_data1                ),
-        .sample_rate_2x_trig  (new_sample_trig           ),
-        .sample_out_rdy       (pgen_smpl_out_rdy         ),
-        .sample_out_l         (pgen_smpl_out_l           ),
-        .sample_out_r         (pgen_smpl_out_r           ),
+        .smp_rate_2x_trig     (new_sample_trig           ),
+        .smp_out_rdy          (pgen_smp_out_rdy          ),
+        .smp_out_l            (pgen_smp_out_l            ),
+        .smp_out_r            (pgen_smp_out_r            ),
         .dsp_outs_flat_l      (pgen_dsp_outs_flat_l      ),
         .dsp_outs_flat_r      (pgen_dsp_outs_flat_r      ),
         .dsp_ins_flat_l       (pgen_dsp_ins_flat_l       ),
         .dsp_ins_flat_r       (pgen_dsp_ins_flat_r       )
     );
 
-//    wire                lpf_smpl_in_rdy_l;
-//    wire                lpf_smpl_in_rdy_r;
-//    wire                lpf_smpl_out_rdy_l;
-//    wire                lpf_smpl_out_rdy_r;
-//    wire signed [17:0]  lpf_smpl_in_l;
-//    wire signed [17:0]  lpf_smpl_in_r;
-//    wire signed [17:0]  lpf_smpl_out_l;
-//    wire signed [17:0]  lpf_smpl_out_r;
-//    wire                err_overflow_l_nc;
-//    wire                err_overflow_r_nc;
+    wire                lpf_smp_in_rdy;
+    wire signed [17:0]  lpf_smp_l_in;
+    wire signed [17:0]  lpf_smp_r_in;
+    wire                lpf_smp_out_rdy;
+    wire signed [17:0]  lpf_smp_l_out;
+    wire signed [17:0]  lpf_smp_r_out;
+    wire                err_overflow_nc;
 
-//    module_lpf module_lpf_l_inst (
-//        .clk            (clk                      ),
-//        .reset          (reset                    ),
-//        .midi_rdy       (midi_rdy                 ),
-//        .midi_cmd       (midi_cmd                 ),
-//        .midi_ch_sysn   (midi_ch_sysn             ),
-//        .midi_data0     (midi_data0               ),
-//        .midi_data1     (midi_data1               ),
-//        .sample_in_rdy  (lpf_smpl_in_rdy_l        ),
-//        .sample_in      (lpf_smpl_in_l            ),
-//        .sample_out_rdy (lpf_smpl_out_rdy_l       ),
-//        .sample_out     (lpf_smpl_out_l           ),
-//        .err_overflow   (err_overflow_l_nc        )
-//    );
+    module_lpf module_lpf_inst (
+        .clk           (clk                      ),
+        .reset         (reset                    ),
+        .midi_rdy      (midi_rdy                 ),
+        .midi_cmd      (midi_cmd                 ),
+        .midi_ch_sysn  (midi_ch_sysn             ),
+        .midi_data0    (midi_data0               ),
+        .midi_data1    (midi_data1               ),
+        .smp_in_rdy    (lpf_smp_in_rdy           ),
+        .smp_l_in      (lpf_smp_l_in             ),
+        .smp_r_in      (lpf_smp_r_in             ),
+        .smp_out_rdy   (lpf_smp_out_rdy          ),
+        .smp_l_out     (lpf_smp_l_out            ),
+        .smp_r_out     (lpf_smp_r_out            ),
+        .err_overflow  (err_overflow_nc          ),
 
-//    module_lpf module_lpf_r_inst (
-//        .clk            (clk                      ),
-//        .reset          (reset                    ),
-//        .midi_rdy       (midi_rdy                 ),
-//        .midi_cmd       (midi_cmd                 ),
-//        .midi_ch_sysn   (midi_ch_sysn             ),
-//        .midi_data0     (midi_data0               ),
-//        .midi_data1     (midi_data1               ),
-//        .sample_in_rdy  (lpf_smpl_in_rdy_r        ),
-//        .sample_in      (lpf_smpl_in_r            ),
-//        .sample_out_rdy (lpf_smpl_out_rdy_r       ),
-//        .sample_out     (lpf_smpl_out_r           ),
-//        .err_overflow   (err_overflow_r_nc        )
-//    );
+        .dsp_hp_op     (lpf_dsp_hp_op            ),
+        .dsp_hp_al     (lpf_dsp_hp_al            ),
+        .dsp_hp_bl     (lpf_dsp_hp_bl            ),
+        .dsp_hp_cl     (lpf_dsp_hp_cl            ),
+        .dsp_hp_pl     (lpf_dsp_hp_pl            ),
+        .dsp_hp_ar     (lpf_dsp_hp_ar            ),
+        .dsp_hp_br     (lpf_dsp_hp_br            ),
+        .dsp_hp_cr     (lpf_dsp_hp_cr            ),
+        .dsp_hp_pr     (lpf_dsp_hp_pr            ),
+        .dsp_hp_req    (lpf_dsp_hp_req           ),
+        .dsp_hp_gnt    (lpf_dsp_hp_gnt           ),
 
+        .dsp_lp_op     (lpf_dsp_lp_op            ),
+        .dsp_lp_al     (lpf_dsp_lp_al            ),
+        .dsp_lp_bl     (lpf_dsp_lp_bl            ),
+        .dsp_lp_cl     (lpf_dsp_lp_cl            ),
+        .dsp_lp_pl     (lpf_dsp_lp_pl            ),
+        .dsp_lp_ar     (lpf_dsp_lp_ar            ),
+        .dsp_lp_br     (lpf_dsp_lp_br            ),
+        .dsp_lp_cr     (lpf_dsp_lp_cr            ),
+        .dsp_lp_pr     (lpf_dsp_lp_pr            ),
+        .dsp_lp_req    (lpf_dsp_lp_req           ),
+        .dsp_lp_gnt    (lpf_dsp_lp_gnt           )
+    );
 
     // DSP signals interconnection
-    wire [91:0] dsp_ins_flat_l = pgen_dsp_ins_flat_l;
-    wire [91:0] dsp_ins_flat_r = pgen_dsp_ins_flat_r;
-    wire [47:0] dsp_outs_flat_l;
-    wire [47:0] dsp_outs_flat_r;
-
-    dsp48a1_inst dsp48a1_l_inst (
-        .clk            (clk             ),
-        .reset          (reset           ),
-        .dsp_ins_flat   (dsp_ins_flat_l  ),
-        .dsp_outs_flat  (dsp_outs_flat_l )
+    dsp_module #(
+        .CLIENTS_N(2                  ),
+        .DSPS_N   (1                  )
+    ) dsp_module_inst (
+        .clk    ( clk                 ),
+        .reset  ( reset               ),
+        .op     ( {lpf_op , pgen_op } ),
+        .al     ( {lpf_al , pgen_al } ),
+        .bl     ( {lpf_bl , pgen_bl } ),
+        .cl     ( {lpf_cl , pgen_cl } ),
+        .pl     ( {lpf_pl , pgen_pl } ),
+        .ar     ( {lpf_ar , pgen_ar } ),
+        .br     ( {lpf_br , pgen_br } ),
+        .cr     ( {lpf_cr , pgen_cr } ),
+        .pr     ( {lpf_pr , pgen_pr } ),
+        .req    ( {lpf_req, pgen_req} ),
+        .gnt    ( {lpf_gnt, pgen_gnt} )
     );
 
-    dsp48a1_inst dsp48a1_r_inst (
-        .clk            (clk             ),
-        .reset          (reset           ),
-        .dsp_ins_flat   (dsp_ins_flat_r  ),
-        .dsp_outs_flat  (dsp_outs_flat_r )
-    );
 
-
-    wire               i2s_sample_in_rdy = pgen_smpl_out_rdy;
-    wire signed [17:0] i2s_sample_in_l   = pgen_smpl_out_l;
-    wire signed [17:0] i2s_sample_in_r   = pgen_smpl_out_r;
+    wire               i2s_sample_in_rdy = pgen_smp_out_rdy;
+    wire signed [17:0] i2s_sample_in_l   = pgen_smp_out_l;
+    wire signed [17:0] i2s_sample_in_r   = pgen_smp_out_r;
 
     module_i2s_output  module_i2s_output
     (

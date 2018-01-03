@@ -11,27 +11,42 @@
 `include "globals.vh"
 
 module alu_filter_iir (
-    input                    clk,
-    input                    reset,
-    input  [5*18-1:0]        coefs_flat,
-    input  signed [17:0]     sample_in,
-    input                    sample_in_rdy,
-    output reg signed [17:0] sample_out,
-    output reg               sample_out_rdy,
+    input                        clk        ,
+    input                        reset      ,
+    input             [5*18-1:0] coefs_flat ,
+    input      signed [17:0]     smp_in_l   ,
+    input      signed [17:0]     smp_in_r   ,
+    input                        smp_in_rdy ,
+    output reg signed [17:0]     smp_out_l  ,
+    output reg signed [17:0]     smp_out_r  ,
+    output reg                   smp_out_rdy,
 
-    input  [47:0]            dsp_outs_flat,
-    output [91:0]            dsp_ins_flat
+    // DSP
+    output            [ 7:0]     dsp_op     ,
+    output     signed [17:0]     dsp_al     ,
+    output     signed [17:0]     dsp_bl     ,
+    output     signed [47:0]     dsp_cl     ,
+    input      signed [47:0]     dsp_pl     ,
+    output     signed [17:0]     dsp_ar     ,
+    output     signed [17:0]     dsp_br     ,
+    output     signed [47:0]     dsp_cr     ,
+    input      signed [47:0]     dsp_pr     ,
+    output                       dsp_req    ,
+    input                        dsp_gnt
 );
 
 
     // STORE SAMPLE_IN
-    reg signed [17:0] sample_in_reg;
+    reg signed [17:0] smp_in_l_reg;
+    reg signed [17:0] smp_in_r_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_in_reg <= 18'h00000;
+            smp_in_l_reg <= 18'h00000;
+            smp_in_r_reg <= 18'h00000;
         end
-        else if (sample_in_rdy) begin
-            sample_in_reg <= sample_in;
+        else if (smp_in_rdy) begin
+            smp_in_l_reg <= smp_in_l;
+            smp_in_r_reg <= smp_in_r;
         end
     end
 
@@ -82,7 +97,7 @@ module alu_filter_iir (
         else if (tasks & JP_0) begin
             pc <= 4'h0;
         end
-        else if ((tasks & WAIT_IN  && !sample_in_rdy) ||      
+        else if ((tasks & WAIT_IN  && !smp_in_rdy) ||      
                  (tasks & REPEAT_3 && repeat_st     ))
         begin
             pc <= pc;
@@ -126,25 +141,41 @@ module alu_filter_iir (
 
 
     // XY DELAY LINE
-    reg  signed [17:0] xy_dly_line[0:4];
+    reg signed [17:0] xy_l_dly_line[0:4];
+    reg signed [17:0] xy_r_dly_line[0:4];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            xy_dly_line[0] <= 18'h00000;
-            xy_dly_line[1] <= 18'h00000;
-            xy_dly_line[2] <= 18'h00000;
-            xy_dly_line[3] <= 18'h00000;
-            xy_dly_line[4] <= 18'h00000;
+            xy_l_dly_line[0] <= 18'h00000;
+            xy_l_dly_line[1] <= 18'h00000;
+            xy_l_dly_line[2] <= 18'h00000;
+            xy_l_dly_line[3] <= 18'h00000;
+            xy_l_dly_line[4] <= 18'h00000;
+
+            xy_r_dly_line[0] <= 18'h00000;
+            xy_r_dly_line[1] <= 18'h00000;
+            xy_r_dly_line[2] <= 18'h00000;
+            xy_r_dly_line[3] <= 18'h00000;
+            xy_r_dly_line[4] <= 18'h00000;
         end
         else if (tasks & PUSH_X_IN) begin
-            xy_dly_line[0] <= sample_in_reg;
-            xy_dly_line[1] <= xy_dly_line[0];
-            xy_dly_line[2] <= xy_dly_line[1];
+            xy_l_dly_line[0] <= smp_in_l_reg;
+            xy_l_dly_line[1] <= xy_l_dly_line[0];
+            xy_l_dly_line[2] <= xy_l_dly_line[1];
+
+            xy_r_dly_line[0] <= smp_in_r_reg;
+            xy_r_dly_line[1] <= xy_r_dly_line[0];
+            xy_r_dly_line[2] <= xy_r_dly_line[1];
         end
         else if (tasks & PUSH_Y_AC) begin
-            xy_dly_line[3] <= p[36:34] == 3'h0 ? p[33:16] :
-                              p[36:34] == 3'h7 ? p[33:16] :
-                              xy_dly_line[3];
-            xy_dly_line[4] <= xy_dly_line[3];
+            xy_l_dly_line[3] <= dsp_pl[36:34] == 3'h0 ? dsp_pl[33:16] :
+                                dsp_pl[36:34] == 3'h7 ? dsp_pl[33:16] :
+                                xy_l_dly_line[3];
+            xy_l_dly_line[4] <= xy_l_dly_line[3];
+
+            xy_r_dly_line[3] <= dsp_pr[36:34] == 3'h0 ? dsp_pr[33:16] :
+                                dsp_pr[36:34] == 3'h7 ? dsp_pr[33:16] :
+                                xy_r_dly_line[3];
+            xy_r_dly_line[4] <= xy_r_dly_line[3];
         end
     end
 
@@ -165,28 +196,37 @@ module alu_filter_iir (
 
 
     // MUL TASKS
-    wire signed [17:0] ci  = coefs[i_reg];
-    wire signed [17:0] xyi = xy_dly_line[i_reg];
+    wire signed [17:0] ci    = coefs[i_reg];
+    wire signed [17:0] xyi_l = xy_l_dly_line[i_reg];
+    wire signed [17:0] xyi_r = xy_r_dly_line[i_reg];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            opmode <= `DSP_NOP;
-            a      <= 18'h00000;
-            b      <= 18'h00000;
+            dsp_op <= `DSP_NOP;
+            dsp_al <= 18'h00000;
+            dsp_bl <= 18'h00000;
+            dsp_ar <= 18'h00000;
+            dsp_br <= 18'h00000;
         end
         else if (tasks & MUL_CI_IN_AS) begin
-            opmode <= `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            a      <= ci;
-            b      <= sample_in_reg;
+            dsp_op <= `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            dsp_al <= ci;
+            dsp_bl <= smp_in_l_reg;
+            dsp_ar <= ci;
+            dsp_br <= smp_in_r_reg;
         end
         else if (tasks & MUL_CI_XYI_AC) begin
-            opmode <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            a      <= ci;
-            b      <= xyi;
+            dsp_op <= `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            dsp_al <= ci;
+            dsp_bl <= xyi_l;
+            dsp_ar <= ci;
+            dsp_br <= xyi_r;
         end
         else begin
-            opmode <= `DSP_NOP;
-            a      <= 18'h00000;
-            b      <= 18'h00000;
+            dsp_op <= `DSP_NOP;
+            dsp_al <= 18'h00000;
+            dsp_bl <= 18'h00000;
+            dsp_ar <= 18'h00000;
+            dsp_br <= 18'h00000;
         end
     end
 
@@ -194,31 +234,23 @@ module alu_filter_iir (
     // MOVE AC VALUE TO RESULTS
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
+            smp_out_rdy <= 1'b0;
+            smp_l_out   <= 18'h00000;
+            smp_r_out   <= 18'h00000;
         end
         else if (tasks & MOV_RES_AC) begin
-            sample_out_rdy <= 1'b1;
-            sample_out     <= p[36:34] == 3'h0 ? p[33:16] :
-                              p[36:34] == 3'h7 ? p[33:16] :
-                              xy_dly_line[3];
+            smp_out_rdy <= 1'b1;
+            smp_l_out   <= dsp_pl[36:34] == 3'h0 ? dsp_pl[33:16] :
+                           dsp_pl[36:34] == 3'h7 ? dsp_pl[33:16] :
+                           xy_l_dly_line[3];
+            smp_r_out   <= dsp_pr[36:34] == 3'h0 ? dsp_pr[33:16] :
+                           dsp_pr[36:34] == 3'h7 ? dsp_pr[33:16] :
+                           xy_r_dly_line[3];
         end
         else begin
-            sample_out_rdy <= 1'b0;
-            sample_out     <= 18'h00000;
+            smp_out_rdy <= 1'b0;
+            smp_l_out     <= 18'h00000;
+            smp_r_out     <= 18'h00000;
         end
     end
-
-
-    // DSP signals
-    reg         [7:0]  opmode;
-    reg  signed [17:0] a;
-    reg  signed [17:0] b;
-    wire signed [47:0] c_nc = 48'b0;
-    wire signed [47:0] p;
-
-    // Gather local DSP signals 
-    assign dsp_ins_flat[91:0] = {opmode, a, b, c_nc};
-    assign p = dsp_outs_flat;
-
 endmodule

@@ -12,87 +12,47 @@
 `include "globals.vh"
 
 module dsp48a1_inst (
-    input         clk,
-    input         reset,
-    input  [91:0] dsp_ins_flat,
-    output [47:0] dsp_outs_flat
+    input                clk  ,
+    input                reset,
+    input         [ 7:0] op   ,
+    input  signed [17:0] a    ,
+    input  signed [17:0] b    ,
+    input  signed [47:0] c    ,
+    output signed [47:0] p
 );
 
-    wire [1:0]   opmode_x_in;
-    wire [1:0]   opmode_z_in;
-    wire         opmode_use_preadd;
-    wire         opmode_cryin;
-    wire         opmode_preadd_sub;
-    wire         opmode_postadd_sub;
-    wire signed [17:0] ain;
-    wire signed [17:0] bin;
-    wire signed [47:0] cin;
-    wire signed [47:0] pout;
-
-    assign {opmode_postadd_sub, opmode_preadd_sub,
-            opmode_cryin      , opmode_use_preadd,
-            opmode_z_in       , opmode_x_in      ,
-            ain               , bin              ,
-            cin                                  }
-        = dsp_ins_flat[91:0];
-
-    assign dsp_outs_flat = pout;
-
-
-    reg signed [47:0] cin_reg;
+    reg signed [47:0] c_dly;
+    reg        [ 7:0] op_dly;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            cin_reg <= 48'h0;
+            c_dly  <= 48'h0;
+            op_dly <= 8'h00;
         end 
         else begin
-            cin_reg <= cin;
+            c_dly  <= c;
+            op_dly <= op;
         end
     end
 
+    wire [7:0] opmode = {
+        op_dly[7:7], // Postadder/sub mode select
+        op    [6:6], // Preadder/sub mode select
+        op_dly[5:5], // Carry in select
+        op    [4:4], // Use preadder/sub
+        op_dly[3:2], // Z input src select
+        op_dly[1:0]  // X input src select
+    };
 
-//---------------------------------------------
-// -------====== Controll ======-------
-//-----------------------------------------
-    wire [7:0] opmode_in = {opmode_postadd_sub, opmode_preadd_sub,
-                            opmode_cryin      , opmode_use_preadd,
-                            opmode_z_in       , opmode_x_in      };
-
-    reg  [7:0] opmode_in_dly;
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            opmode_in_dly <= 8'h00;
-        end
-        else begin
-            opmode_in_dly <= opmode_in;
-        end
-    end
-
-    wire       opmode_postadd_sub_dly = opmode_in_dly[7];
-    wire       opmode_preadd_sub_dly  = 1'b0; // opmode_in[6];
-    wire       opmode_cryin_dly       = opmode_in_dly[5];
-    wire       opmode_use_preadd_dly  = 1'b0; // opmode_in[4];
-    wire [1:0] opmode_z_in_dly        = opmode_in_dly[3:2];
-    wire [1:0] opmode_x_in_dly        = opmode_in_dly[1:0];
-
-    wire [7:0] opmode = {opmode_postadd_sub_dly, opmode_preadd_sub_dly,
-                         opmode_cryin_dly      , opmode_use_preadd_dly,
-                         opmode_z_in_dly       , opmode_x_in_dly      };
-
-
-//----------------------------------
-// -------====== ALU ======-------
-//------------------------------
     // not connected
-    wire signed [47:0] pcin_nc    = 0;
+    wire signed [47:0] pcin_nc    = 48'h0;
     wire signed [17:0] din_nc     = 18'h00000;
-    wire               carryin_nc = 0;
-
+    wire               carryin_nc = 1'b0;
     wire signed [17:0] bcout_nc;
     wire signed [47:0] pcout_nc;
     wire signed [35:0] m_nc;
     wire               carryout_nc;
     wire               carryoutf_nc;
-
+    
     DSP48A1 #(
         .A0REG      (0          ),  // First stage A pipeline register (0/1)
         .A1REG      (1          ),  // Second stage A pipeline register (0/1)
@@ -114,13 +74,13 @@ module dsp48a1_inst (
         .CARRYOUT  (carryout_nc ), // Carry output (if used, connect to CARRYIN pin of another DSP48A1)
         .CARRYOUTF (carryoutf_nc), // Fabric carry output
         .M         (m_nc        ), // Fabric multiplier data output
-        .P         (pout        ), // Data output
+        .P         (p           ), // Data output
         .PCIN      (pcin_nc     ), // P cascade (if used, connect to PCOUT of another DSP48A1)
         .CLK       (clk         ), // Clock 
         .OPMODE    (opmode      ), // Operation mode 
-        .A         (ain         ), // A data 
-        .B         (bin         ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
-        .C         (cin_reg     ), // C data 
+        .A         (a           ), // A data 
+        .B         (b           ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
+        .C         (c_dly       ), // C data 
         .CARRYIN   (carryin_nc  ), // Carry signal (if used, connect to CARRYOUT pin of another DSP48A1)
         .D         (din_nc      ), // B pre-adder data 
         .CEA       (1'b1        ), // Active high clock enable for A registers
