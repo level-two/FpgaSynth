@@ -1,0 +1,49 @@
+INFO:sim:172 - Generating IP...
+Applying current project options...
+Finished applying current project options.
+WARNING:sim - A core named 'ip_clk_gen_20M' already exists in the project.
+   Output products for this core may be overwritten.
+Resolving generics for 'ip_clk_gen_20M'...
+WARNING:sim - A core named 'ip_clk_gen_20M' already exists in the project.
+   Output products for this core may be overwritten.
+Applying external generics to 'ip_clk_gen_20M'...
+Delivering associated files for 'ip_clk_gen_20M'...
+WARNING:sim - Component clk_wiz_v3_6 does not have a valid model name for VHDL
+   synthesis
+Delivering EJava files for 'ip_clk_gen_20M'...
+Delivered 3 files into directory
+E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M
+Delivered 1 file into directory
+E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M
+Generating ASY schematic symbol...
+Loading device for application Rf_Device from file '6slx9.nph' in environment
+C:\Xilinx\14.7\ISE_DS\ISE\.
+INFO:sim:949 - Finished generation of ASY schematic symbol.
+Generating SYM schematic symbol for 'ip_clk_gen_20M'...
+Generating ISE project...
+XCO file found: ip_clk_gen_20M.xco
+XMDF file found: ip_clk_gen_20M_xmdf.tcl
+Adding E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M.asy
+-view all -origin_type imported
+Adding E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M.ucf
+-view all -origin_type created
+Adding E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M.vhd
+-view all -origin_type created
+INFO:HDLCompiler:1061 - Parsing VHDL file
+   "E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M.vhd"
+   into library work
+INFO:ProjectMgmt - Parsing design hierarchy completed successfully.
+Adding E:/Work/FpgaProjects/FpgaSynth/rtl/ip_spartan6/tmp/_cg/ip_clk_gen_20M.vho
+-view all -origin_type imported
+INFO:TclTasksC:2116 - The automatic calculation of top has been turned-off.
+   Please set the new top explicitly by running the "project set top" command.
+   To re-calculate the new top automatically, set the "Auto Implementation Top"
+   property to true.
+Top level has been set to "/ip_clk_gen_20M"
+Generating README file...
+Generating FLIST file...
+INFO:sim:948 - Finished FLIST file generation.
+Launching README viewer...
+Moving files to output directory...
+Finished moving files to output directory
+Wrote CGP file for project 'ip_clk_gen_20M'.

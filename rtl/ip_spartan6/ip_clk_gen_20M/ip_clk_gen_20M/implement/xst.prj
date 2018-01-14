@@ -1,0 +1,2 @@
+vhdl work ../../ip_clk_gen_20M.vhd
+vhdl work ../example_design/ip_clk_gen_20M_exdes.vhd
