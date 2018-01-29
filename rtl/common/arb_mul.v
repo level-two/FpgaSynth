@@ -4,57 +4,45 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: arb_rr_mul.v
+// File: arb_mul.v
 // Description: Simple round-robin arbiter for multiple outputs
 // -----------------------------------------------------------------------------
 
-module arb_rr_mul
+module arb_mul
 (
-    input reset,
-    input clk,
-
-    input  [PORTS_N-1:0] req_in,
-    output [PORTS_N-1:0] gnt_out,
-    output [PORTS_N*GNTS_W-1:0] gnt_id_out
+    input                           reset       ,
+    input                           clk         ,
+    input      [PORTS_N-1:0]        req_in      ,
+    output reg [PORTS_N-1:0]        gnt_out     ,
+    output reg [PORTS_N*GNTS_W-1:0] gnt_id_out  
 );
 
     parameter  PORTS_N = 4;
     parameter  GNTS_N  = 2;
-    localparam GNTS_W  = clogb2(GNTS_N);
+    parameter  GNTS_W  = 1;
 
-    function integer clogb2;
-        input [31:0] value;
-        begin
-            value = value - 1;
-            for (clogb2 = 0; value > 0; clogb2 = clogb2 + 1) begin
-                value = value >> 1;
-            end
-        end
-    endfunction
 
-    function bit[PORTS_N-1:0] first_one_pos;
-        input bit[PORTS_N-1:0] val;
+    function [PORTS_N-1:0] first_one_pos;
+        input [PORTS_N-1:0] val;
         integer i;
         begin
             first_one_pos = PORTS_N;
             for (i = 0; i < PORTS_N; i = i+1) begin
-                if (val[i]) begin
+                if (val[i] && first_one_pos == PORTS_N) begin
                     first_one_pos = i;
-                    break;
                 end
             end
         end
     endfunction
 
-    function bit[PORTS_N-1:0] first_one_bit;
-        input bit[PORTS_N-1:0] val;
-        integer i;
+    function [PORTS_N-1:0] first_one_bit;
+        input [PORTS_N-1:0] val;
+        integer j;
         begin
             first_one_bit = 32'h0;
-            for (i = 0; i < PORTS_N; i = i+1) begin
-                if (val[i]) begin
-                    first_one_bit[i] = 1'b1;
-                    break;
+            for (j = 0; j < PORTS_N; j = j+1) begin
+                if (val[j] && first_one_bit == 0) begin
+                    first_one_bit[j] = 1'b1;
                 end
             end
         end
@@ -64,9 +52,9 @@ module arb_rr_mul
     reg  [PORTS_N-1:0] req_prev;
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            req_prev <= 1'b0;
+            req_prev <= 'h0;
         end else begin
-            req_prev <= req;
+            req_prev <= req_in;
         end
     end
 
@@ -76,43 +64,48 @@ module arb_rr_mul
     reg               is_active[0:GNTS_N-1];
     reg [GNTS_W-1:0]  gnt_id   [0:PORTS_N-1];
 
-    genvar i;
+    integer i;
 
     always @(posedge clk or posedge reset) begin
-        generate for (i = 0; i < GNTS_N; i = i+1) begin : arb_impl
-            if (reset) begin
+        if (reset) begin
+            for (i=0; i<GNTS_N; i=i+1) begin
                 is_active[i] <= 'h0;
                 gnt[i]       <= 'h0;
             end
-            else begin
-                reg               is_acitive_new = is_active[i];
-                reg [PORTS_N-1:0] gnt_new        = gnt[i];
+            for (i=0; i<PORTS_N; i=i+1) begin
+                gnt_id[i] <= 'h0;
+            end
+        end else begin
+            for (i=0; i<GNTS_N; i=i+1) begin : arb_impl_body
+                reg               is_acitive_new;
+                reg [PORTS_N-1:0] gnt_new;
                 reg [PORTS_N-1:0] req_next_stage;
 
+                is_acitive_new = is_active[i];
+                gnt_new        = gnt[i];
                 req_next_stage = (i==0) ? req_in : req[i];
 
-                if (is_acitive_new && (~req[i] & req_prev[i] & gnt[i]) begin
+                if (is_acitive_new && (~req[i] & req_prev & gnt[i])) begin
                     // req deasserted
                     is_acitive_new  = 1'b0;
                     gnt_new         = 'h0;
                     req_next_stage  = req[i];
                 end
 
-                if (!is_acitive_new && (req[i] & ~req_prev[i]) begin
+                if (!is_acitive_new && (req[i] & ~req_prev)) begin
                     // req asserted
                     is_acitive_new  = 1'b1;
-                    gnt_new         = first_one_bit(req[i] & ~req_prev[i]);
+                    gnt_new         = first_one_bit(req[i] & ~req_prev);
+                    gnt_id[first_one_pos(req[i] & ~req_prev)] <= i;
                     req_next_stage  = req[i] & ~gnt_new;
-                    gnt_id[first_one_pos(gnt_new)] <= i;
                 end
 
-                req_i[i+1]    = req_next_stage; 
+                req[i+1]      = req_next_stage; 
                 is_active[i] <= is_acitive_new;
                 gnt[i]       <= gnt_new;
             end
-        end endgenerate
+        end
     end
-
 
     integer j;
     always @(*) begin
@@ -123,11 +116,11 @@ module arb_rr_mul
     end
 
     integer k;
-    for (k = 0; k < PORTS_N; k = k+1) begin
-        assign gnt_id_out[GNTS_W*(k+1)-1:GNTS_W*k] = gnt_id[k];
+    always @(*) begin
+        for (k = 0; k < PORTS_N; k = k+1) begin
+            gnt_id_out[GNTS_W*k +: GNTS_W] = gnt_id[k];
+        end
     end
-
-
 
     /*
     // Tokens
