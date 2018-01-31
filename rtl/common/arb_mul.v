@@ -32,83 +32,40 @@ module arb_mul
         end
     endfunction
 
-
-    reg [GNTS_W-1:0] gnt_id_val[0:PORTS_N-1];
-    genvar i;
-    generate for(i=0; i<PORTS_N; i=i+1) begin : gnt_id_assign
-        assign gnt_id[GNTS_W*i+:GNTS_W] = gnt_id_val[i];
-    end endgenerate
-
-
-    reg  [PORTS_N-1:0] prev_req;
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            prev_req <= 'h0;
-        end else begin
-            prev_req <= req;
+    function integer first_one_bit_pos;
+        input [PORTS_N-1:0] value;
+        begin
+            first_one_bit_pos = PORTS_N;
+            while (first_one_bit_pos < PORTS_N && !value[first_one_bit_pos]) begin
+                first_one_bit_pos = first_one_bit_pos+1; 
+            end
         end
-    end
+    endfunction
 
-    wire [PORTS_N-1:0] req_masked = req & ~gnt;
-    wire [PORTS_N-1:0] rel_bits   = ~req & prev_req;
-    assign token_mgr_req          = |req_masked;
-    assign rel_fifo_push          = |rel_bits;
-    assign rel_fifo_data_in       = {gnt_id, rel_bits};
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-            gnt        <= {PORTS_N{1'b0}};
-            gnt_id_val <= {GNTS_W*PORTS_N{1'b0}};
-        end else if (token_mgr_req_token_rdy) begin
-            gnt        <= (gnt | first_one_bit(req)) & ~rel_bits;
-            gnt_id_val[first_one_bit_pos(req)] <= token_mgr_req_token;
-        end else begin
-            gnt        <= gnt & ~rel_bits;
-        end
-    end
-
-    wire [GNTS_W-1:0] rel_gnt_id[0:PORTS_N-1];
-    generate for(i=0; i<PORTS_N; i=i+1) begin : rel_gnt_id_assign
-        assign rel_gnt_id[i] = rel_fifo_data_out[GNTS_W*i+PORTS_N+:GNTS_W];
-    end endgenerate
-
-    reg  [PORTS_N-1:0] rel_done;
-    wire [PORTS_N-1:0] rel_masked = rel_fifo_data_out[PORTS_N-1:0] & ~rel_done;
-    assign rel_fifo_pop           = !rel_fifo_empty && !rel_masked;
-    assign token_mgr_rel          = |rel_masked;
-    assign token_mgr_rel_token    = rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0]);
-
-    always @(posedge clk or posedge reset) begin
-        if (reset) begin
-        end else if (rel_fifo_pop) begin
-            rel_done <= {PORTS_N{1'b0}};
-        end else if (!rel_fifo_empty) begin
-            rel_done <= rel_done | first_one_bit(rel_fifo_data_out[PORTS_N-1:0]);
-        end
-    end
 
     // Rel fifo
     wire               rel_fifo_push;
     wire               rel_fifo_pop;
-    wire [FIFO_DW-1:0] rel_fifo_data_in;
-    wire [FIFO_DW-1:0] rel_fifo_data_out;
+    wire [PORTS_N*GNTS_W+PORTS_N-1:0] rel_fifo_data_in;
+    wire [PORTS_N*GNTS_W+PORTS_N-1:0] rel_fifo_data_out;
     wire               rel_fifo_empty;
     wire               rel_fifo_full;
 
     syn_fifo #(
-        .DATA_W     (PORTS_N*GNTS_W    ),
-        .ADDR_W     (clogb2(PORTS_N)   ),
-        .FIFO_DEPTH (PORTS_N           )
-    ) rel_fifo (
-        .clk        (clk               ),
-        .rst        (reset             ),
-        .wr         (rel_fifo_push     ),
-        .rd         (rel_fifo_pop      ),
-        .data_in    (rel_fifo_data_in  ),
-        .data_out   (rel_fifo_data_out ),
-        .empty      (rel_fifo_empty    ),
-        .full       (rel_fifo_full     )
+        .DATA_W     (PORTS_N*GNTS_W+PORTS_N),
+        .ADDR_W     (       clogb2(PORTS_N)),
+        .FIFO_DEPTH (               PORTS_N)
+    ) rel_fifo (                           
+        .clk        (clk                   ),
+        .rst        (reset                 ),
+        .wr         (rel_fifo_push         ),
+        .rd         (rel_fifo_pop          ),
+        .data_in    (rel_fifo_data_in      ),
+        .data_out   (rel_fifo_data_out     ),
+        .empty      (rel_fifo_empty        ),
+        .full       (rel_fifo_full         )
     );    
+
 
     // Token manager
     wire              token_mgr_req;
@@ -129,4 +86,65 @@ module arb_mul
         .ret           (token_mgr_rel              ),
         .ret_token     (token_mgr_rel_token        )
     );
+
+
+    reg [GNTS_W-1:0] gnt_id_val[0:PORTS_N-1];
+    genvar i;
+    generate for(i=0; i<PORTS_N; i=i+1) begin : gnt_id_assign
+        assign gnt_id[GNTS_W*i+:GNTS_W] = gnt_id_val[i];
+    end endgenerate
+
+
+    reg  [PORTS_N-1:0] prev_req;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            prev_req <= 'h0;
+        end else begin
+            prev_req <= req;
+        end
+    end
+
+
+    wire [PORTS_N-1:0] req_masked = req & ~gnt;
+    wire [PORTS_N-1:0] rel_bits   = ~req & prev_req;
+    assign token_mgr_req          = |req_masked;
+    assign rel_fifo_push          = |rel_bits;
+    assign rel_fifo_data_in       = {gnt_id, rel_bits};
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin : gnt_reset
+            integer j;
+            for (j=0; j<PORTS_N; j=j+1) begin
+                gnt_id_val[j] <= {GNTS_W{1'b0}};
+            end
+            gnt <= {PORTS_N{1'b0}};
+        end else if (token_mgr_req_token_rdy) begin
+            gnt_id_val[first_one_bit_pos(req)] <= token_mgr_req_token;
+            gnt <= (gnt | first_one_bit(req)) & ~rel_bits;
+        end else begin
+            gnt <= gnt & ~rel_bits;
+        end
+    end
+
+
+    wire [GNTS_W-1:0] rel_gnt_id[0:PORTS_N-1];
+    generate for(i=0; i<PORTS_N; i=i+1) begin : rel_gnt_id_assign
+        assign rel_gnt_id[i] = rel_fifo_data_out[GNTS_W*i+PORTS_N+:GNTS_W];
+    end endgenerate
+
+
+    reg  [PORTS_N-1:0] rel_done;
+    wire [PORTS_N-1:0] rel_masked = rel_fifo_data_out[PORTS_N-1:0] & ~rel_done;
+    assign rel_fifo_pop           = !rel_fifo_empty && !rel_masked;
+    assign token_mgr_rel          = |rel_masked;
+    assign token_mgr_rel_token    = rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0])];
+
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+        end else if (rel_fifo_pop) begin
+            rel_done <= {PORTS_N{1'b0}};
+        end else if (!rel_fifo_empty) begin
+            rel_done <= rel_done | first_one_bit(rel_fifo_data_out[PORTS_N-1:0]);
+        end
+    end
 endmodule
