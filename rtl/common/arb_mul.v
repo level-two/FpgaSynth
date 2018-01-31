@@ -34,10 +34,21 @@ module arb_mul
 
     function integer first_one_bit_pos;
         input [PORTS_N-1:0] value;
+        /*
         begin
             first_one_bit_pos = PORTS_N;
             while (first_one_bit_pos < PORTS_N && !value[first_one_bit_pos]) begin
                 first_one_bit_pos = first_one_bit_pos+1; 
+            end
+        end
+        */
+        integer i;
+        begin
+            first_one_bit_pos = PORTS_N;
+            for (i=0; i<PORTS_N; i=i+1) begin
+                if (first_one_bit_pos == PORTS_N && value[i]) begin
+                    first_one_bit_pos = i;
+                end
             end
         end
     endfunction
@@ -119,8 +130,10 @@ module arb_mul
             end
             gnt <= {PORTS_N{1'b0}};
         end else if (token_mgr_req_token_rdy) begin
-            gnt_id_val[first_one_bit_pos(req)] <= token_mgr_req_token;
-            gnt <= (gnt | first_one_bit(req)) & ~rel_bits;
+            gnt_id_val[first_one_bit_pos(req_masked)] <= token_mgr_req_token;
+
+            gnt <= (gnt | ('h1 << first_one_bit_pos(req_masked))) & ~rel_bits;
+
         end else begin
             gnt <= gnt & ~rel_bits;
         end
@@ -136,15 +149,17 @@ module arb_mul
     reg  [PORTS_N-1:0] rel_done;
     wire [PORTS_N-1:0] rel_masked = rel_fifo_data_out[PORTS_N-1:0] & ~rel_done;
     assign rel_fifo_pop           = !rel_fifo_empty && !rel_masked;
-    assign token_mgr_rel          = |rel_masked;
-    assign token_mgr_rel_token    = rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0])];
+    assign token_mgr_rel          = !rel_fifo_empty &&  rel_masked;
+    assign token_mgr_rel_token    =
+        rel_fifo_empty ? {GNTS_W{1'b0}} :
+        rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0])];
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
         end else if (rel_fifo_pop) begin
             rel_done <= {PORTS_N{1'b0}};
         end else if (!rel_fifo_empty) begin
-            rel_done <= rel_done | first_one_bit(rel_fifo_data_out[PORTS_N-1:0]);
+            rel_done <= rel_done | ('h1 << first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0]));
         end
     end
 endmodule
