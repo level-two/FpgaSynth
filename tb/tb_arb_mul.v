@@ -32,9 +32,9 @@ module tb_arb_mul();
         clk <= ~clk;
     end
 
-    reg  [PORTS_N-1:0] req_in;
-    wire [PORTS_N-1:0] gnt_out;
-    wire [PORTS_N*GNTS_W-1:0] gnt_id_out;
+    reg  [PORTS_N-1:0] req;
+    wire [PORTS_N-1:0] gnt;
+    wire [PORTS_N*GNTS_W-1:0] gnt_id;
 
     arb_mul #(
         .PORTS_N     (PORTS_N        ),
@@ -43,30 +43,30 @@ module tb_arb_mul();
     ) dut (
         .reset       (reset          ),
         .clk         (clk            ),
-        .req_in      (req_in         ),
-        .gnt_out     (gnt_out        ),
-        .gnt_id_out  (gnt_id_out     )
+        .req         (req            ),
+        .gnt         (gnt            ),
+        .gnt_id      (gnt_id         )
     );
 
 
     initial begin
-        reset       <= 1;
-        req_in      <= 'h0;
+        reset  <= 1;
+        req    <= 'h0;
 
         repeat (10) @(posedge clk);
-        reset <= 0;
+        reset  <= 0;
         repeat (10) @(posedge clk);
 
-        req_in      <= 'h0;
+        req    <= 'h0;
 
         repeat (PORTS_N) begin
-            req_in <= {req_in, 1'b1};
-            repeat (3) @(posedge clk);
+            req <= {req, 1'b1};
+            repeat (10) @(posedge clk);
         end
 
         repeat (PORTS_N) begin
-            req_in <= {req_in, 1'b0};
-            repeat (3) @(posedge clk);
+            req <= {req, 1'b0};
+            repeat (10) @(posedge clk);
         end
     end
 endmodule
