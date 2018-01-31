@@ -60,13 +60,13 @@ module tb_arb_mul();
         req    <= 'h0;
 
         repeat (PORTS_N) begin
-            req <= {req, 1'b1};
+            req <= {req, 2'b11};
             repeat (10) @(posedge clk);
         end
 
-        repeat (PORTS_N) begin
-            req <= {req, 1'b0};
-            repeat (10) @(posedge clk);
+        repeat (PORTS_N-1) begin
+            req <= {req, 2'b00};
+            repeat (20) @(posedge clk);
         end
     end
 endmodule

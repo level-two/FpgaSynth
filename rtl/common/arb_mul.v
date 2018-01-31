@@ -152,14 +152,15 @@ module arb_mul
     assign token_mgr_rel          = !rel_fifo_empty &&  rel_masked;
     assign token_mgr_rel_token    =
         rel_fifo_empty ? {GNTS_W{1'b0}} :
-        rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0])];
+        rel_gnt_id[first_one_bit_pos(rel_masked)];
 
     always @(posedge clk or posedge reset) begin
         if (reset) begin
+            rel_done <= {PORTS_N{1'b0}};
         end else if (rel_fifo_pop) begin
             rel_done <= {PORTS_N{1'b0}};
         end else if (!rel_fifo_empty) begin
-            rel_done <= rel_done | ('h1 << first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0]));
+            rel_done <= rel_done | ('h1 << first_one_bit_pos(rel_masked));
         end
     end
 endmodule
