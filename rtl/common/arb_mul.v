@@ -12,18 +12,32 @@ module arb_mul
 (
     input                           reset       ,
     input                           clk         ,
-    input      [PORTS_N-1:0]        req_in      ,
-    output reg [PORTS_N-1:0]        gnt_out     ,
-    output reg [PORTS_N*GNTS_W-1:0] gnt_id_out  
+    input      [PORTS_N-1:0]        req         ,
+    output reg [PORTS_N-1:0]        gnt         ,
+    output     [PORTS_N*GNTS_W-1:0] gnt_id
 );
 
     parameter  PORTS_N = 4;
     parameter  GNTS_N  = 2;
-    parameter  GNTS_W  = 1;
+    parameter  GNTS_W  = clogb2(GNTS_N);
 
-    //output_gnt  - clear immediatelly when req is deasserted
-    //virtual_gnt - clear only when token is released
 
+    function integer clogb2;
+        input [31:0] value;
+        begin
+            value = value - 1;
+            for (clogb2 = 0; value > 0; clogb2 = clogb2 + 1) begin
+                value = value >> 1;
+            end
+        end
+    endfunction
+
+
+    reg [GNTS_W-1:0] gnt_id_val[0:PORTS_N-1];
+    genvar i;
+    generate for(i=0; i<PORTS_N; i=i+1) begin : gnt_id_assign
+        assign gnt_id[GNTS_W*i+:GNTS_W] = gnt_id_val[i];
+    end endgenerate
 
 
     reg  [PORTS_N-1:0] prev_req;
@@ -31,49 +45,47 @@ module arb_mul
         if (reset) begin
             prev_req <= 'h0;
         end else begin
-            prev_req <= req_in;
+            prev_req <= req;
         end
     end
 
-    wire [PORTS_N-1:0] req_bits =  req & ~prev_req;
-    wire [PORTS_N-1:0] rel_bits = ~req &  prev_req;
+    wire [PORTS_N-1:0] req_masked = req & ~gnt;
+    wire [PORTS_N-1:0] rel_bits   = ~req & prev_req;
+    assign token_mgr_req          = |req_masked;
+    assign rel_fifo_push          = |rel_bits;
+    assign rel_fifo_data_in       = {gnt_id, rel_bits};
 
-    assign req_fifo_push    = |req_bits;
-    assign rel_fifo_push    = |rel_bits;
-    assign req_fifo_data_in =  req_bits;
-    assign rel_fifo_data_in =  rel_bits;
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+            gnt        <= {PORTS_N{1'b0}};
+            gnt_id_val <= {GNTS_W*PORTS_N{1'b0}};
+        end else if (token_mgr_req_token_rdy) begin
+            gnt        <= (gnt | first_one_bit(req)) & ~rel_bits;
+            gnt_id_val[first_one_bit_pos(req)] <= token_mgr_req_token;
+        end else begin
+            gnt        <= gnt & ~rel_bits;
+        end
+    end
 
+    wire [GNTS_W-1:0] rel_gnt_id[0:PORTS_N-1];
+    generate for(i=0; i<PORTS_N; i=i+1) begin : rel_gnt_id_assign
+        assign rel_gnt_id[i] = rel_fifo_data_out[GNTS_W*i+PORTS_N+:GNTS_W];
+    end endgenerate
 
+    reg  [PORTS_N-1:0] rel_done;
+    wire [PORTS_N-1:0] rel_masked = rel_fifo_data_out[PORTS_N-1:0] & ~rel_done;
+    assign rel_fifo_pop           = !rel_fifo_empty && !rel_masked;
+    assign token_mgr_rel          = |rel_masked;
+    assign token_mgr_rel_token    = rel_gnt_id[first_one_bit_pos(rel_fifo_data_out[PORTS_N-1:0]);
 
-    assign tm_req       = !req_fifo_empty &&  (req_fifo_data_out & ~gnt);
-    assign req_fifo_pop = !req_fifo_empty && !(req_fifo_data_out & ~gnt);
-
-
-
-
-
-    // Req fifo
-    wire               req_fifo_push;
-    wire               req_fifo_pop;
-    wire [FIFO_DW-1:0] req_fifo_data_in;
-    wire [FIFO_DW-1:0] req_fifo_data_out;
-    wire               req_fifo_empty;
-    wire               req_fifo_full;
-
-    syn_fifo #(
-        .DATA_W     (           FIFO_DW),
-        .ADDR_W     (                 4),
-        .FIFO_DEPTH (                16)
-    ) req_fifo (
-        .clk        (clk               ),
-        .rst        (reset             ),
-        .wr         (req_fifo_push     ),
-        .rd         (req_fifo_pop      ),
-        .data_in    (req_fifo_data_in  ),
-        .data_out   (req_fifo_data_out ),
-        .empty      (req_fifo_empty    ),
-        .full       (req_fifo_full     )
-    );
+    always @(posedge clk or posedge reset) begin
+        if (reset) begin
+        end else if (rel_fifo_pop) begin
+            rel_done <= {PORTS_N{1'b0}};
+        end else if (!rel_fifo_empty) begin
+            rel_done <= rel_done | first_one_bit(rel_fifo_data_out[PORTS_N-1:0]);
+        end
+    end
 
     // Rel fifo
     wire               rel_fifo_push;
@@ -84,9 +96,9 @@ module arb_mul
     wire               rel_fifo_full;
 
     syn_fifo #(
-        .DATA_W     (           FIFO_DW),
-        .ADDR_W     (                 4),
-        .FIFO_DEPTH (                16)
+        .DATA_W     (PORTS_N*GNTS_W    ),
+        .ADDR_W     (clogb2(PORTS_N)   ),
+        .FIFO_DEPTH (PORTS_N           )
     ) rel_fifo (
         .clk        (clk               ),
         .rst        (reset             ),
@@ -98,25 +110,23 @@ module arb_mul
         .full       (rel_fifo_full     )
     );    
 
-
     // Token manager
-    wire              tm_req;
-    wire              tm_req_token_rdy;
-    wire [GNTS_W-1:0] tm_req_token;
-    wire              tm_ret;
-    wire [GNTS_W-1:0] tm_ret_token;
+    wire              token_mgr_req;
+    wire              token_mgr_req_token_rdy;
+    wire [GNTS_W-1:0] token_mgr_req_token;
+    wire              token_mgr_rel;
+    wire [GNTS_W-1:0] token_mgr_rel_token;
 
     token_manager #(
-        .TOKENS        (GNTS_N              ),
-        .TOKEN_W       (GNTS_W              )
+        .TOKENS        (GNTS_N                     ),
+        .TOKEN_W       (GNTS_W                     )
     ) token_manager_inst (
-        .reset         (reset               ),
-        .clk           (clk                 ),
-        .req           (tm_req              ),
-        .req_token_rdy (tm_req_token_rdy    ),
-        .req_token     (tm_req_token        ),
-        .ret           (tm_rel              ),
-        .ret_token     (tm_rel_token        )
+        .reset         (reset                      ),
+        .clk           (clk                        ),
+        .req           (token_mgr_req              ),
+        .req_token_rdy (token_mgr_req_token_rdy    ),
+        .req_token     (token_mgr_req_token        ),
+        .ret           (token_mgr_rel              ),
+        .ret_token     (token_mgr_rel_token        )
     );
-
 endmodule
