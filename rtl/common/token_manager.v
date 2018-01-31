@@ -14,13 +14,11 @@ module token_manager (
         input                    reset          ,
         input                    clk            ,
         input                    req            ,
-        output reg               req_token_rdy  ,
-        output reg [TOKEN_W-1:0] req_token      ,
+        output                   req_token_rdy  ,
+        output     [TOKEN_W-1:0] req_token      ,
         input                    ret            ,
         input      [TOKEN_W-1:0] ret_token      
     );
-
-    `include "globals.vh"
 
     parameter TOKENS  = 16;
     parameter TOKEN_W = 4;
@@ -66,7 +64,7 @@ module token_manager (
         .DATA_W     (TOKEN_W            ),
         .ADDR_W     (TOKEN_W            ),
         .FIFO_DEPTH (TOKENS             )
-    buf_fifo(
+    ) buf_fifo (
         .clk        (clk                ),
         .rst        (reset              ),
         .wr         (fifo_push          ),
