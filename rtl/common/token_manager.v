@@ -57,9 +57,9 @@ module token_manager (
                                         req;
     assign req_token     = init_mode  ? init_token_cnt :
                                         fifo_out;
-    assign req_token_rdy = init_mode  ? 1'b1  :
+    assign req_token_rdy = init_mode  ? req   :
                            fifo_empty ? 1'b0  : 
-                                        1'b1;
+                                        req   ;
     syn_fifo #(
         .DATA_W     (TOKEN_W            ),
         .ADDR_W     (TOKEN_W            ),
