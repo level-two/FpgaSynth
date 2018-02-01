@@ -34,14 +34,6 @@ module arb_mul
 
     function integer first_one_bit_pos;
         input [PORTS_N-1:0] value;
-        /*
-        begin
-            first_one_bit_pos = PORTS_N;
-            while (first_one_bit_pos < PORTS_N && !value[first_one_bit_pos]) begin
-                first_one_bit_pos = first_one_bit_pos+1; 
-            end
-        end
-        */
         integer i;
         begin
             first_one_bit_pos = PORTS_N;
@@ -64,8 +56,8 @@ module arb_mul
 
     syn_fifo #(
         .DATA_W     (PORTS_N*GNTS_W+PORTS_N),
-        .ADDR_W     (       clogb2(PORTS_N)),
-        .FIFO_DEPTH (               PORTS_N)
+        .ADDR_W     (                GNTS_W),
+        .FIFO_DEPTH (                GNTS_N)
     ) rel_fifo (                           
         .clk        (clk                   ),
         .rst        (reset                 ),
