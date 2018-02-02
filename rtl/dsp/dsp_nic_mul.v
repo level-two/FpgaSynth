@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: dsp_nic_mul.v
+// File: alu_nic_mul.v
 // Description: Interconnection with arbitration for DSP clients
 // -----------------------------------------------------------------------------
 
 `include "globals.vh"
 
-module dsp_nic_mul (
+module alu_nic_mul (
     input                     clk,
     input                     reset,
            
@@ -24,63 +24,69 @@ module dsp_nic_mul (
     input  [48*CLIENTS_N-1:0] client_cr,
     output [48*CLIENTS_N-1:0] client_pr,
 
-    output [ 8*DSPS_N-1   :0] dsp_op,
-    output [18*DSPS_N-1   :0] dsp_al,
-    output [18*DSPS_N-1   :0] dsp_bl,
-    output [48*DSPS_N-1   :0] dsp_cl,
-    input  [48*DSPS_N-1   :0] dsp_pl,
-    output [18*DSPS_N-1   :0] dsp_ar,
-    output [18*DSPS_N-1   :0] dsp_br,
-    output [48*DSPS_N-1   :0] dsp_cr,
-    input  [48*DSPS_N-1   :0] dsp_pr,
+    output [ 8*ALUS_N-1   :0] alu_op,
+    output [18*ALUS_N-1   :0] alu_al,
+    output [18*ALUS_N-1   :0] alu_bl,
+    output [48*ALUS_N-1   :0] alu_cl,
+    input  [48*ALUS_N-1   :0] alu_pl,
+    output [18*ALUS_N-1   :0] alu_ar,
+    output [18*ALUS_N-1   :0] alu_br,
+    output [48*ALUS_N-1   :0] alu_cr,
+    input  [48*ALUS_N-1   :0] alu_pr,
 
     input  [CLIENTS_N-1   :0] req,
     output [CLIENTS_N-1   :0] gnt
 );
 
-    parameter DSPS_N    = 1; // TODO Implement arbiter for multiple DSPS
     parameter CLIENTS_N = 2;
-    
-    wire gnt_matrix[DSPS_N * CLIENTS_N];
+    parameter ALUS_N    = 2;
+    parameter ALUS_W    = 1;
 
-    arb_rr #(CLIENTS_N, DSPS_N) arb_rr_inst
-    (
+    wire [CLIENTS_N-1:0]        gnt_val;
+    assign gnt = gnt_val;
+
+    wire [CLIENTS_N*ALUS_N-1:0] gnt_id;
+
+    arb_mul #(
+        .PORTS_N    (CLIENTS_N       ),
+        .GNTS_N     (ALUS_N          ),
+        .GNTS_W     (ALUS_W          )
+    ) arb_mul_inst (
         .clk        (clk             ),
         .reset      (reset           ),
         .req        (req             ),
-        .gnt_matrix (gnt_matrix      ) // gnt_matrix[CLIENTS_N][DSPS_N]
+        .gnt        (gnt_val         ),
+        .gnt_id     (gnt_id          )
     );
 
-    genvar i;
     genvar j;
 
     always @(*) begin
         gnt    = {CLEINTS_N{1'h0};
-        dsp_op = {DSPS_N{8'h0};
-        dsp_al = {DSPS_N{17'h0};
-        dsp_bl = {DSPS_N{17'h0};
-        dsp_cl = {DSPS_N{47'h0};
-        dsp_ar = {DSPS_N{17'h0};
-        dsp_br = {DSPS_N{17'h0};
-        dsp_cr = {DSPS_N{47'h0};
+        alu_op = {ALUS_N{8'h0};
+        alu_al = {ALUS_N{17'h0};
+        alu_bl = {ALUS_N{17'h0};
+        alu_cl = {ALUS_N{47'h0};
+        alu_ar = {ALUS_N{17'h0};
+        alu_br = {ALUS_N{17'h0};
+        alu_cr = {ALUS_N{47'h0};
         cl_pl  = {CLEINTS_N{47'h0};
         cl_pr  = {CLEINTS_N{47'h0};
 
-        generate for (i = 0; i < DSPS_N; i=i+1) begin : conn_dsp_signals
-            generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
-                if (gnt_matrix[i*CLIENTS_N+j]) begin
-                    gnt[j] = 1'b1;
-                    dsp_op[i] = client_op[ 8*(j+1)-1 :  8*j];
-                    dsp_al[i] = client_al[18*(j+1)-1 : 18*j];
-                    dsp_bl[i] = client_bl[18*(j+1)-1 : 18*j];
-                    dsp_cl[i] = client_cl[48*(j+1)-1 : 48*j];
-                    dsp_ar[i] = client_ar[18*(j+1)-1 : 18*j];
-                    dsp_br[i] = client_br[18*(j+1)-1 : 18*j];
-                    dsp_cr[i] = client_cr[48*(j+1)-1 : 48*j];
-                    client_pl[48*(j+1)-1 : 48*j] = dsp_pl[i];
-                    client_pr[48*(j+1)-1 : 48*j] = dsp_pr[i];
-                end
-            end endgenerate
+        generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
+            if (gnt_val[j]) begin : on_gnt
+                integer alu_id;
+                alu_id = gnt_id[ALUS_W*j +: ALUS_W];
+                alu_op[alu_id] = client_op[ 8*j +:  8];
+                alu_al[alu_id] = client_al[18*j +: 18];
+                alu_bl[alu_id] = client_bl[18*j +: 18];
+                alu_cl[alu_id] = client_cl[48*j +: 48];
+                alu_ar[alu_id] = client_ar[18*j +: 18];
+                alu_br[alu_id] = client_br[18*j +: 18];
+                alu_cr[alu_id] = client_cr[48*j +: 48];
+                client_pl[48*j +: 48] = alu_pl[alu_id];
+                client_pr[48*j +: 48] = alu_pr[alu_id];
+            end
         end endgenerate
     end
 endmodule
