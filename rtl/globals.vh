@@ -43,10 +43,12 @@
 `define MIDI_CMD_SIZE           5
 
 // Functions selectors for the alu_taylor module
-`define ALU_TAYLOR_NONE         3'h0
-`define ALU_TAYLOR_SIN          3'h1
-`define ALU_TAYLOR_COS          3'h2
-`define ALU_TAYLOR_INV_1_PLUS_X 3'h3
+`define ALU_MODE_DSP            1'b0
+`define ALU_MODE_FUNC           1'b1
+                                
+`define ALU_FUNC_SIN            8'h01
+`define ALU_FUNC_COS            8'h02
+`define ALU_FUNC_INV_1_PLUS_X   8'h03
 
 // DSP48A1 constants
 `define DSP_NOP                 8'h00
