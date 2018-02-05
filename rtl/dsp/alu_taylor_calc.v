@@ -24,31 +24,44 @@
 //   end
 // -----------------------------------------------------------------------------
 
+
 `include "globals.vh"
 
 module alu_taylor_calc (
-    input                    clk,
-    input                    reset,
-    input                    do_calc,
-    input [2:0]              func_sel,
-    input signed [17:0]      x_in,
-    output reg               calc_done,
-    output reg signed [17:0] result,
+    input                    clk        ,
+    input                    reset      ,
+    input                    do_calc    ,
+    input             [ 2:0] func_sel   ,
+    input      signed [17:0] xl         ,
+    input      signed [17:0] xr         ,
+    output reg               calc_done  ,
+    output reg signed [17:0] resl       ,
+    output reg signed [17:0] resr       ,
 
-    input  [47:0]            dsp_outs_flat,
-    output [91:0]            dsp_ins_flat
+    output            [ 7:0] dsp_op     ,
+    output     signed [17:0] dsp_al     ,
+    output     signed [17:0] dsp_bl     ,
+    output     signed [47:0] dsp_cl     ,
+    input      signed [47:0] dsp_pl     ,
+    output     signed [17:0] dsp_ar     ,
+    output     signed [17:0] dsp_br     ,
+    output     signed [47:0] dsp_cr     ,
+    input      signed [47:0] dsp_pr
 );
 
     // STORE SAMPLE_IN
-    reg signed [17:0] x_reg;
-    reg        [2:0]  func_sel_reg;
+    reg signed [17:0] xl_reg;
+    reg signed [17:0] xr_reg;
+    reg        [ 2:0] func_sel_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            x_reg        <= 18'h00000;
+            xl_reg       <= 18'h00000;
+            xr_reg       <= 18'h00000;
             func_sel_reg <= 3'h0;
         end
         else if (do_calc) begin
-            x_reg        <= x_in;
+            xl_reg       <= xl;
+            xr_reg       <= xr;
             func_sel_reg <= func_sel;
         end
     end
@@ -183,42 +196,56 @@ module alu_taylor_calc (
 
 
     // MUL TASKS
-    wire signed [17:0] fj  = frac_coef_j;
-    wire signed [17:0] ci  = deriv_coef_i;
-    wire signed [17:0] vi  = val[i_reg];
-    wire signed [17:0] vj  = val[j_reg];
+    wire signed [17:0] fj   = frac_coef_j;
+    wire signed [17:0] ci   = deriv_coef_i;
+    wire signed [17:0] vil  = vall[i_reg];
+    wire signed [17:0] vir  = valr[i_reg];
+    wire signed [17:0] vjl  = vall[j_reg];
+    wire signed [17:0] vjr  = valr[j_reg];
 
     always @(*) begin
-        opmode = `DSP_NOP;
-        a      = 18'h00000;
-        b      = 18'h00000;
-        c      = 48'h00000;
+        dsp_op = `DSP_NOP;
+        dsp_al      = 18'h00000;
+        dsp_ar      = 18'h00000;
+        dsp_bl      = 18'h00000;
+        dsp_br      = 18'h00000;
+        dsp_cl      = 48'h00000;
+        dsp_cr      = 48'h00000;
 
         if (tasks & MUL_X_FJ_VJ) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            a      = x_reg;
-            b      = fj;
+            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            dsp_al = xl_reg;
+            dsp_ar = xr_reg;
+            dsp_bl = fj;
+            dsp_br = fj;
         end
         else if (tasks & MUL_VI_VJ_VJ) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            a      = vi;
-            b      = vj;
+            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            dsp_al = vil;
+            dsp_ar = vir;
+            dsp_bl = vjl;
+            dsp_br = vjr;
         end
         else if (tasks & MUL_AC_VJ_VJ) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            a      = p[33:16];
-            b      = vj;
+            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
+            dsp_al = dsp_pl[33:16];
+            dsp_ar = dsp_pr[33:16];
+            dsp_bl = vjl;
+            dsp_br = vjr;
         end
         else if (tasks & MADD_VI_CI_AC) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_CIN;
-            a      = vi;
-            b      = ci;
-            c      = p;
+            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_CIN;
+            dsp_al = vil;
+            dsp_ar = vir;
+            dsp_bl = ci;
+            dsp_br = ci;
+            dsp_cl = dsp_pl;
+            dsp_cr = dsp_pr;
         end
     end
         
 
-    // Array of the intermediate values
+    // Array of the intermediate vallues
     reg       mov_val_m_trig[0:2];
     reg [3:0] mov_val_m_idx [0:2];
 
@@ -251,16 +278,19 @@ module alu_taylor_calc (
         end
     end
     
-    reg signed [17:0] val[0:10];
+    reg signed [17:0] vall[0:10];
+    reg signed [17:0] valr[0:10];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // do nothing
         end 
         else if (tasks & MOV_V0_1) begin
-            val[0] <= 18'h10000;
+            vall[0] <= 18'h10000;
+            valr[0] <= 18'h10000;
         end
         else if (mov_val_m_trig[2] == 1'b1) begin
-            val[mov_val_m_idx[2]] <= p[33:16];
+            vall[mov_val_m_idx[2]] <= dsp_pl[33:16];
+            valr[mov_val_m_idx[2]] <= dsp_pr[33:16];
         end
     end
 
@@ -269,28 +299,18 @@ module alu_taylor_calc (
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             calc_done <= 1'b0;
-            result    <= 18'h00000;
+            resl      <= 18'h00000;
+            resr      <= 18'h00000;
         end
         else if (tasks & MOV_RES_AC) begin
             calc_done <= 1'b1;
-            result    <= p[33:16];
+            resl      <= dsp_pl[33:16];
+            resr      <= dsp_pr[33:16];
         end
         else begin
             calc_done <= 1'b0;
-            result    <= 18'h00000;
+            resl      <= 18'h00000;
+            resr      <= 18'h00000;
         end
     end
-
-
-    // DSP signals
-    reg         [7:0]  opmode;
-    reg  signed [17:0] a;
-    reg  signed [17:0] b;
-    reg  signed [47:0] c;
-    wire signed [47:0] p;
-
-    // Gather local DSP signals 
-    assign dsp_ins_flat[91:0] = {opmode, a, b, c};
-    assign p = dsp_outs_flat;
 endmodule
-
