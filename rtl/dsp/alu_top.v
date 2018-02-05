@@ -103,6 +103,8 @@ module alu_top (
     always @(*) begin
         alu_ack   = 1'b0;
         alu_stall = 1'b0;
+        alu_pl    = 48'h0;
+        alu_pr    = 48'h0;
 
         if (!alu_cycle) begin
             // do nothing
@@ -110,14 +112,20 @@ module alu_top (
         else if (alu_mode == `ALU_MODE_DSP) begin
             alu_ack   = ack_q[2];
             alu_stall = 1'b0;
+            alu_pl    = dsp_pl;
+            alu_pr    = dsp_pr;
         end
         else if (alu_op == `ALU_FUNC_SIN || alu_op == `ALU_FUNC_COS) begin
             alu_ack   = taylor_calc_done;
             alu_stall = !taylor_calc_done;
+            alu_pl    = taylor_resl;
+            alu_pr    = taylor_resr;
         end
         else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
             alu_ack   = taylor1_calc_done;
             alu_stall = !taylor1_calc_done;
+            alu_pl    = taylor1_resl;
+            alu_pr    = taylor1_resl;
         end
     end
 
@@ -188,14 +196,14 @@ module alu_top (
         .resl           (taylor_resl         ),
         .resr           (taylor_resr         ),
         .dsp_op         (taylor_dsp_op       ),
-        .dsp_a_l        (taylor_dsp_al       ),
-        .dsp_b_l        (taylor_dsp_bl       ),
-        .dsp_c_l        (taylor_dsp_cl       ),
-        .dsp_p_l        (taylor_dsp_pl       ),
-        .dsp_a_r        (taylor_dsp_ar       ),
-        .dsp_b_r        (taylor_dsp_br       ),
-        .dsp_c_r        (taylor_dsp_cr       ),
-        .dsp_p_r        (taylor_dsp_pr       )
+        .dsp_al         (taylor_dsp_al       ),
+        .dsp_bl         (taylor_dsp_bl       ),
+        .dsp_cl         (taylor_dsp_cl       ),
+        .dsp_pl         (taylor_dsp_pl       ),
+        .dsp_ar         (taylor_dsp_ar       ),
+        .dsp_br         (taylor_dsp_br       ),
+        .dsp_cr         (taylor_dsp_cr       ),
+        .dsp_pr         (taylor_dsp_pr       )
     );
 
 
@@ -230,14 +238,14 @@ module alu_top (
         .resl           (taylor1_resl        ),
         .resr           (taylor1_resr        ),
         .dsp_op         (taylor1_dsp_op      ),
-        .dsp_a_l        (taylor1_dsp_al      ),
-        .dsp_b_l        (taylor1_dsp_bl      ),
-        .dsp_c_l        (taylor1_dsp_cl      ),
-        .dsp_p_l        (taylor1_dsp_pl      ),
-        .dsp_a_r        (taylor1_dsp_ar      ),
-        .dsp_b_r        (taylor1_dsp_br      ),
-        .dsp_c_r        (taylor1_dsp_cr      ),
-        .dsp_p_r        (taylor1_dsp_pr      )
+        .dsp_al         (taylor1_dsp_al      ),
+        .dsp_bl         (taylor1_dsp_bl      ),
+        .dsp_cl         (taylor1_dsp_cl      ),
+        .dsp_pl         (taylor1_dsp_pl      ),
+        .dsp_ar         (taylor1_dsp_ar      ),
+        .dsp_br         (taylor1_dsp_br      ),
+        .dsp_cr         (taylor1_dsp_cr      ),
+        .dsp_pr         (taylor1_dsp_pr      )
     );
 
     // DSP signals
