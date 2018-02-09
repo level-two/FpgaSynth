@@ -29,7 +29,6 @@ module alu_nic_mul (
     input  [18*CLIENTS_N-1:0] client_br     ,
     input  [48*CLIENTS_N-1:0] client_cr     ,
     output [48*CLIENTS_N-1:0] client_pr     ,
-
     input  [   CLIENTS_N-1:0] client_req    ,
     output [   CLIENTS_N-1:0] client_gnt    ,
 
