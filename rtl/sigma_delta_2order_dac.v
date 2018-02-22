@@ -20,9 +20,6 @@ module sigma_delta_2order_dac
     output reg          dout_l,
     output reg          dout_r
 );
- 
-    localparam signed [47:0] DELTA = 48'h18000;
-
 
     // STORE SAMPLE_IN
     reg signed [17:0] sample_in_l_reg;
@@ -45,23 +42,24 @@ module sigma_delta_2order_dac
 
 
     // TASKS
-    localparam [15:0] NOP               = 16'h0000;
-    localparam [15:0] WAIT_IN           = 16'h0001;
-    localparam [15:0] JP_0              = 16'h0002;
-    localparam [15:0] ADD_SL_I1L        = 16'h0004;
-    localparam [15:0] ADD_SR_I1R        = 16'h0008;
-    localparam [15:0] ADD_DL            = 16'h0010;
-    localparam [15:0] ADD_DR            = 16'h0020;
-    localparam [15:0] ADD_I2L           = 16'h0040;
-    localparam [15:0] ADD_I2R           = 16'h0080;
-    localparam [15:0] MOV_I1L_ACC       = 16'h0100;
-    localparam [15:0] MOV_I1R_ACC       = 16'h0200;
-    localparam [15:0] MOV_I2L_ACC       = 16'h0400;
-    localparam [15:0] MOV_I2R_ACC       = 16'h0800;
-    localparam [15:0] MOV_DL_ACCSGN     = 16'h1000;
-    localparam [15:0] MOV_DR_ACCSGN     = 16'h2000;
-    localparam [15:0] MOV_OUTL_ACCSGN   = 16'h4000;
-    localparam [15:0] MOV_OUTR_ACCSGN   = 16'h8000;
+    localparam [16:0] NOP               = 17'h00000;
+    localparam [16:0] WAIT_IN           = 17'h00001;
+    localparam [16:0] JP_0              = 17'h00002;
+    localparam [16:0] ADD_SL_I1L        = 17'h00004;
+    localparam [16:0] ADD_SR_I1R        = 17'h00008;
+    localparam [16:0] ADD_DL            = 17'h00010;
+    localparam [16:0] ADD_DR            = 17'h00020;
+    localparam [16:0] ADD_I2L           = 17'h00040;
+    localparam [16:0] ADD_I2R           = 17'h00080;
+    localparam [16:0] MOV_I1L_ACC       = 17'h00100;
+    localparam [16:0] MOV_I1R_ACC       = 17'h00200;
+    localparam [16:0] MOV_I2L_ACC       = 17'h00400;
+    localparam [16:0] MOV_I2R_ACC       = 17'h00800;
+    localparam [16:0] MOV_DL_ACCSGN     = 17'h01000;
+    localparam [16:0] MOV_DR_ACCSGN     = 17'h02000;
+    localparam [16:0] MOV_OUTL_ACCSGN   = 17'h04000;
+    localparam [16:0] MOV_OUTR_ACCSGN   = 17'h08000;
+    localparam [16:0] INC_DELTA_CNT     = 17'h10000;
               
     reg [15:0] tasks;
     always @(pc) begin
@@ -82,6 +80,7 @@ module sigma_delta_2order_dac
             4'h7   : tasks = MOV_DR_ACCSGN      |
                              MOV_I1R_ACC        |
                              MOV_OUTR_ACCSGN    |
+                             INC_DELTA_CNT      |
                              JP_0               ;
             default: tasks = JP_0               ;
         endcase
@@ -103,6 +102,38 @@ module sigma_delta_2order_dac
         else begin
             pc <= pc + 4'h1;
         end
+    end
+
+    reg [3:0] delta_cnt;
+    always @(posedge reset or posedge clk) begin
+        if (reset) begin
+            delta_cnt <= 4'h0;
+        end
+        else if (tasks & INC_DELTA_CNT) begin
+            delta_cnt <= delta_cnt + 4'h1;
+        end
+    end
+
+    reg signed [17:0] delta;
+    always @(delta_cnt) begin
+        case (delta_cnt)
+            'h0    : begin delta <= 18'h18000; end
+            'h1    : begin delta <= 18'h189CB; end
+            'h2    : begin delta <= 18'h1921A; end
+            'h3    : begin delta <= 18'h197A6; end
+            'h4    : begin delta <= 18'h19999; end
+            'h5    : begin delta <= 18'h197A6; end
+            'h6    : begin delta <= 18'h1921A; end
+            'h7    : begin delta <= 18'h189CB; end
+            'h8    : begin delta <= 18'h18000; end
+            'h9    : begin delta <= 18'h17634; end
+            'ha    : begin delta <= 18'h16DE5; end
+            'hb    : begin delta <= 18'h16859; end
+            'hc    : begin delta <= 18'h16666; end
+            'hd    : begin delta <= 18'h16859; end
+            'he    : begin delta <= 18'h16DE5; end
+            'hf    : begin delta <= 18'h17634; end
+        endcase
     end
 
 
@@ -129,14 +160,14 @@ module sigma_delta_2order_dac
             opmode = `DSP_XIN_DAB  |
                      `DSP_ZIN_POUT |
                      (delta_add_l ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    = DELTA;
+            dab    = {30'h0, delta};
             c      = 48'h00000;
         end
         else if (tasks & ADD_DR) begin
             opmode = `DSP_XIN_DAB  |
                      `DSP_ZIN_POUT |
                      (delta_add_r ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
-            dab    = DELTA;
+            dab    = {30'h0, delta};
             c      = 48'h00000;
         end
         else if (tasks & ADD_I2L) begin
