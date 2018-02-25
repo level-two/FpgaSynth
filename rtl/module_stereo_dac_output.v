@@ -142,10 +142,16 @@ module module_stereo_dac_output (
     wire signed [17:0] i1_sample_out_l;
     wire signed [17:0] i1_sample_out_r;
     wire               i1_done;
-    wire [91:0]        i1_dsp_ins_flat_l;
-    wire [91:0]        i1_dsp_ins_flat_r;
-    wire [47:0]        i1_dsp_outs_flat_l = dsp_outs_flat_l;
-    wire [47:0]        i1_dsp_outs_flat_r = dsp_outs_flat_r;
+    wire        [ 7:0] i1_opl;
+    wire        [17:0] i1_al;
+    wire        [17:0] i1_bl;
+    wire        [47:0] i1_cl;
+    wire        [47:0] i1_pl;
+    wire        [ 7:0] i1_opr;
+    wire        [17:0] i1_ar;
+    wire        [17:0] i1_br;
+    wire        [47:0] i1_cr;
+    wire        [47:0] i1_pr;
 
     fir_interp_halfband_2x  i1_48k_96k (
         .clk             (clk                   ),
@@ -157,10 +163,16 @@ module module_stereo_dac_output (
         .sample_out_l    (i1_sample_out_l       ),
         .sample_out_r    (i1_sample_out_r       ),
         .done            (i1_done               ),
-        .dsp_outs_flat_l (i1_dsp_outs_flat_l    ),
-        .dsp_outs_flat_r (i1_dsp_outs_flat_r    ),
-        .dsp_ins_flat_l  (i1_dsp_ins_flat_l     ),
-        .dsp_ins_flat_r  (i1_dsp_ins_flat_r     )
+        .opl             (i1_opl                ),
+        .al              (i1_al                 ),
+        .bl              (i1_bl                 ),
+        .cl              (i1_cl                 ),
+        .pl              (i1_pl                 ),
+        .opr             (i1_opr                ),
+        .ar              (i1_ar                 ),
+        .br              (i1_br                 ),
+        .cr              (i1_cr                 ),
+        .pr              (i1_pr                 )
     );
 
     wire               i2_sample_in_rdy = fifo_1_2_rd;
@@ -170,10 +182,16 @@ module module_stereo_dac_output (
     wire signed [17:0] i2_sample_out_l;
     wire signed [17:0] i2_sample_out_r;
     wire               i2_done;
-    wire [91:0]        i2_dsp_ins_flat_l;
-    wire [91:0]        i2_dsp_ins_flat_r;
-    wire [47:0]        i2_dsp_outs_flat_l = dsp_outs_flat_l;
-    wire [47:0]        i2_dsp_outs_flat_r = dsp_outs_flat_r;
+    wire        [ 7:0] i2_opl;
+    wire        [17:0] i2_al;
+    wire        [17:0] i2_bl;
+    wire        [47:0] i2_cl;
+    wire        [47:0] i2_pl;
+    wire        [ 7:0] i2_opr;
+    wire        [17:0] i2_ar;
+    wire        [17:0] i2_br;
+    wire        [47:0] i2_cr;
+    wire        [47:0] i2_pr;
 
     fir_interp_halfband_2x  i2_96k_192k (
         .clk             (clk                   ),
@@ -185,10 +203,16 @@ module module_stereo_dac_output (
         .sample_out_l    (i2_sample_out_l       ),
         .sample_out_r    (i2_sample_out_r       ),
         .done            (i2_done               ),
-        .dsp_outs_flat_l (i2_dsp_outs_flat_l    ),
-        .dsp_outs_flat_r (i2_dsp_outs_flat_r    ),
-        .dsp_ins_flat_l  (i2_dsp_ins_flat_l     ),
-        .dsp_ins_flat_r  (i2_dsp_ins_flat_r     )
+        .opl             (i2_opl                ),
+        .al              (i2_al                 ),
+        .bl              (i2_bl                 ),
+        .cl              (i2_cl                 ),
+        .pl              (i2_pl                 ),
+        .opr             (i2_opr                ),
+        .ar              (i2_ar                 ),
+        .br              (i2_br                 ),
+        .cr              (i2_cr                 ),
+        .pr              (i2_pr                 )
     );
 
     wire               i3_sample_in_rdy = fifo_2_3_rd;
@@ -198,10 +222,16 @@ module module_stereo_dac_output (
     wire signed [17:0] i3_sample_out_l;
     wire signed [17:0] i3_sample_out_r;
     wire               i3_done;
-    wire [91:0]        i3_dsp_ins_flat_l;
-    wire [91:0]        i3_dsp_ins_flat_r;
-    wire [47:0]        i3_dsp_outs_flat_l = dsp_outs_flat_l;
-    wire [47:0]        i3_dsp_outs_flat_r = dsp_outs_flat_r;
+    wire        [ 7:0] i3_opl;
+    wire        [17:0] i3_al;
+    wire        [17:0] i3_bl;
+    wire        [47:0] i3_cl;
+    wire        [47:0] i3_pl;
+    wire        [ 7:0] i3_opr;
+    wire        [17:0] i3_ar;
+    wire        [17:0] i3_br;
+    wire        [47:0] i3_cr;
+    wire        [47:0] i3_pr;
 
     fir_interp_20k_192k_8x  i3_192k_1536k (
         .clk             (clk                   ),
@@ -212,34 +242,58 @@ module module_stereo_dac_output (
         .sample_out_rdy  (i3_sample_out_rdy     ),
         .sample_out_l    (i3_sample_out_l       ),
         .sample_out_r    (i3_sample_out_r       ),
-        .done            (i3_done               ),
-        .dsp_outs_flat_l (i3_dsp_outs_flat_l    ),
-        .dsp_outs_flat_r (i3_dsp_outs_flat_r    ),
-        .dsp_ins_flat_l  (i3_dsp_ins_flat_l     ),
-        .dsp_ins_flat_r  (i3_dsp_ins_flat_r     )
+        .opl             (i3_opl                ),
+        .al              (i3_al                 ),
+        .bl              (i3_bl                 ),
+        .cl              (i3_cl                 ),
+        .pl              (i3_pl                 ),
+        .opr             (i3_opr                ),
+        .ar              (i3_ar                 ),
+        .br              (i3_br                 ),
+        .cr              (i3_cr                 ),
+        .pr              (i3_pr                 )
     );
 
 
     // DSP signals interconnection
-    wire [91:0] dsp_ins_flat_l = i1_dsp_ins_flat_l | i2_dsp_ins_flat_l |
-                                 i3_dsp_ins_flat_l;
-    wire [91:0] dsp_ins_flat_r = i1_dsp_ins_flat_r | i2_dsp_ins_flat_r |
-                                 i3_dsp_ins_flat_r;
-    wire [47:0] dsp_outs_flat_l;
-    wire [47:0] dsp_outs_flat_r;
+    wire [ 7:0] opl = i1_opl | i2_opl | i3_opl;
+    wire [17:0] al  = i1_al  | i2_al  | i3_al;
+    wire [17:0] bl  = i1_bl  | i2_bl  | i3_bl;
+    wire [47:0] cl  = i1_cl  | i2_cl  | i3_cl;
+    wire [ 7:0] opr = i1_opr | i2_opr | i3_opr;
+    wire [17:0] ar  = i1_ar  | i2_ar  | i3_ar;
+    wire [17:0] br  = i1_br  | i2_br  | i3_br;
+    wire [47:0] cr  = i1_cr  | i2_cr  | i3_cr;
+
+    wire [47:0] pl;
+    wire [47:0] pr;
+
+    assign i1_pl = pl;
+    assign i2_pl = pl;
+    assign i3_pl = pl;
+    assign i1_pr = pr;
+    assign i2_pr = pr;
+    assign i3_pr = pr;
+
 
     dsp48a1_inst dsp48a1_l (
         .clk            (clk             ),
         .reset          (reset           ),
-        .dsp_ins_flat   (dsp_ins_flat_l  ),
-        .dsp_outs_flat  (dsp_outs_flat_l )
+        .op             (opl             ),
+        .a              (al              ),
+        .b              (bl              ),
+        .c              (cl              ),
+        .p              (pl              )
     );
 
     dsp48a1_inst dsp48a1_r (
         .clk            (clk             ),
         .reset          (reset           ),
-        .dsp_ins_flat   (dsp_ins_flat_r  ),
-        .dsp_outs_flat  (dsp_outs_flat_r )
+        .op             (opr             ),
+        .a              (ar              ),
+        .b              (br              ),
+        .c              (cr              ),
+        .p              (pr              )
     );
 
 

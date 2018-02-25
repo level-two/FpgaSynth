@@ -9,7 +9,7 @@
 //              mode
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module dsp48a1_inst (
     input                clk  ,

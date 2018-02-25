@@ -56,7 +56,7 @@ module tb_alu_taylor_calc();
         clk          <= 0;
         reset        <= 1;
         do_calc      <= 0;
-        func_sel     <= `ALU_TAYLOR_SIN;
+        func_sel     <= `ALU_FUNC_SIN;
         x_in         <= 18'h21000;
         repeat (100) @(posedge clk);
         reset <= 0;
@@ -64,7 +64,7 @@ module tb_alu_taylor_calc();
 
         while (x_in != 18'h1f000) begin
             do_calc      <= 1;
-            func_sel     <= `ALU_TAYLOR_SIN;
+            func_sel     <= `ALU_FUNC_SIN;
             x_in         <= x_in + 18'h01000;
             @(posedge clk);
             do_calc      <= 0;

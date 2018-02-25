@@ -19,18 +19,24 @@ module fir_interp_20k_192k_8x (
     input                    reset,
 
     input                    sample_in_rdy,
-    input  signed [17:0]     sample_in_l,
-    input  signed [17:0]     sample_in_r,
+    input  signed     [17:0] sample_in_l,
+    input  signed     [17:0] sample_in_r,
 
     output reg               sample_out_rdy,
     output reg signed [17:0] sample_out_l,
     output reg signed [17:0] sample_out_r,
     output reg               done,
 
-    input  [47:0]            dsp_outs_flat_l,
-    input  [47:0]            dsp_outs_flat_r,
-    output [91:0]            dsp_ins_flat_l,
-    output [91:0]            dsp_ins_flat_r
+    output reg        [ 7:0] opl   ,
+    output reg signed [17:0] al    ,
+    output reg signed [17:0] bl    ,
+    output     signed [47:0] cl    ,
+    input      signed [47:0] pl    ,
+    output reg        [ 7:0] opr   ,
+    output reg signed [17:0] ar    ,
+    output reg signed [17:0] br    ,
+    output     signed [47:0] cr    ,
+    input      signed [47:0] pr    
 );
 
     // STORE SAMPLE_IN
@@ -280,18 +286,20 @@ module fir_interp_20k_192k_8x (
 
     // MUL TASKS
     always @(*) begin
-        opmode = `DSP_NOP;
-        al     = 18'h00000;
-        ar     = 18'h00000;
-        bl     = 18'h00000;
-        br     = 18'h00000;
+        opl = `DSP_NOP;
+        opr = `DSP_NOP;
+        al  = 18'h00000;
+        ar  = 18'h00000;
+        bl  = 18'h00000;
+        br  = 18'h00000;
 
         if (tasks & MAC_CIJ_X) begin
-            opmode = `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            al     = cij;
-            ar     = cij;
-            bl     = xjl;
-            br     = xjr;
+            opl = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            opr = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            al  = cij;
+            ar  = cij;
+            bl  = xjl;
+            br  = xjr;
         end
     end
 
@@ -329,20 +337,7 @@ module fir_interp_20k_192k_8x (
         end
     end
 
-
     // DSP signals
-    reg         [7:0]  opmode;
-    reg  signed [17:0] al;
-    reg  signed [17:0] ar;
-    reg  signed [17:0] bl;
-    reg  signed [17:0] br;
-    wire signed [47:0] c_nc = 48'b0;
-    wire signed [47:0] pl;
-    wire signed [47:0] pr;
-
-    // Gather local DSP signals 
-    assign dsp_ins_flat_l[91:0] = {opmode, al, bl, c_nc};
-    assign dsp_ins_flat_r[91:0] = {opmode, ar, br, c_nc};
-    assign pl = dsp_outs_flat_l;
-    assign pr = dsp_outs_flat_r;
+    assign cl = 48'b0;
+    assign cr = 48'b0;
 endmodule
