@@ -18,7 +18,8 @@ module wbm_traffic_gen
     //input                   wbm_sdram_err       , // TBI
 );
 
-    localparam INIT_WAIT = 1_000_00; // 1ms
+    //localparam INIT_WAIT = 1_000_00; // 1ms
+    localparam INIT_WAIT = 200_00; // 1ms
     localparam CMDS_N    = 10000;
     localparam WAIT_N    = 1000;
 

@@ -10,7 +10,7 @@
 
 module top_traffic_gen(
     input            CLK_50M          ,
-    input  [0:0]     PB               ,
+    input  [1:0]     PB               ,
     output [1:0]     LED              ,
 
     // INTERFACE TO SDRAM
@@ -35,15 +35,17 @@ module top_traffic_gen(
     wire reset_n = clk_valid & PB[0];
     wire reset   = ~reset_n;
 
-    ip_clk_gen_100M  clk_gen
-    (
-        .clk_in_50M   (CLK_50M          ), 
-        .clk_out_100M (clk              ), 
-        .CLK_VALID    (clk_valid        )
-    );
+    wire clk_reset = ~PB[1];
+    wire [2:0] clk_status;
 
-    assign LED[0] = data_mismatch;
-    assign LED[1] = wbs_sdram_address[24];
+    ip_clk_gen_20M  clk_gen
+    (
+        .reset        (clk_reset        ),
+        .clk_in_50M   (CLK_50M          ), 
+        .clk_out_20M  (clk              ), 
+        .clk_valid    (clk_valid        ),
+        .status       (clk_status       )
+    );
 
     // WISHBONE SLAVE INTERFACE FOR SDRAM ACCESS
     wire [AW_SDRAM-1:0]       wbs_sdram_address   ;
@@ -55,8 +57,10 @@ module top_traffic_gen(
     wire                      wbs_sdram_ack       ;
     wire                      wbs_sdram_stall     ;
     //wire                    wbs_sdram_err       ; // TBI
-
     wire data_mismatch;
+
+    assign LED[0] = clk_valid;
+    assign LED[1] = clk_status[2];
 
     wbm_traffic_gen wbm_traffic_gen_inst
     (

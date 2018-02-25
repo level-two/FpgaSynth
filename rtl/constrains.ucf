@@ -14,14 +14,15 @@
 
 ##### Grouping Constraints #####
 NET  CLK_50M     TNM_NET = clk50_grp;
-NET  SDRAM_CLK   TNM_NET = clk100_grp;
-NET  clk         TNM_NET = clk100_grp;
+NET  SDRAM_CLK   TNM_NET = clk20_grp;
+NET  clk         TNM_NET = clk20_grp;
 #NET clk_6p140M  TNM_NET = clk6p140_grp;
 #NET SYS_SPI_SCK TNM_NET = clk32_grp;
 
 ##### Clock Period Constraints #####
 TIMESPEC TS_PER_CLK50     = PERIOD "clk50_grp"    50.000 MHz;
-TIMESPEC TS_PER_CLK100    = PERIOD "clk100_grp"   100.000 MHz;
+#TIMESPEC TS_PER_CLK100   = PERIOD "clk100_grp"  100.000 MHz;
+TIMESPEC TS_PER_CLK20     = PERIOD "clk20_grp"    20.000 MHz;
 #TIMESPEC TS_PER_CLK6p140 = PERIOD "clk6p140_grp" 6.140 MHz;
 #
 #
@@ -48,7 +49,7 @@ NET "CLK_50M"               LOC = "P85"         | IOSTANDARD = LVTTL;
 NET "LED<0>"                LOC = "P105"        | IOSTANDARD = LVTTL;       #SHARED WITH ARD_D6
 NET "LED<1>"                LOC = "P104"        | IOSTANDARD = LVTTL;       #SHARED WITH ARD_D7
 NET "PB<0>"                 LOC = "P102"        | IOSTANDARD = LVTTL;
-#NET "PB<1>"                LOC = "P101"        | IOSTANDARD = LVTTL;
+NET "PB<1>"                 LOC = "P101"        | IOSTANDARD = LVTTL;
 #NET "SW<0>"                LOC = "P99"         | IOSTANDARD = LVTTL;
 #NET "SW<1>"                LOC = "P100"        | IOSTANDARD = LVTTL;
     

@@ -142,7 +142,8 @@ module sdram_csr#(parameter AW = 16)
         end
     end
 
-    localparam TCLK  = 10000; // Clock period in ps
+    //localparam TCLK  = 10000; // Clock period in ps - 10 ns
+    localparam TCLK  = 50000; // Clock period in ps - 50ns
 
 
     function integer ceil_div;

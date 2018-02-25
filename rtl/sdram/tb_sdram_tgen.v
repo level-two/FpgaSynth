@@ -117,7 +117,7 @@ module tb_sdram_tgen();
     );
                                               
     always begin                              
-        #5; // 5ns                          
+        #25; // 25ns                          
         clk <= ~clk;
     end
 

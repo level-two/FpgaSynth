@@ -319,12 +319,14 @@ module sdram_ctrl (
 
     // SDRAM SIGNALS DRIVE
     //assign sdram_if_clk            = clk;
+assign sdram_if_clk = 1'b0;
+/*
     ODDR2 #(
         .DDR_ALIGNMENT("NONE"                ),
         .INIT         (0                     ),
         .SRTYPE       ("SYNC"                )
     ) oddr2_inst (
-        .CE  (1'b1                           ),
+        .CE  (~reset                         ),
         .R   (1'b0                           ),
         .S   (1'b0                           ),
         .D0  (1'b1                           ),
@@ -333,6 +335,7 @@ module sdram_ctrl (
         .C1  (~clk                           ),
         .Q   (sdram_if_clk                   )
     );
+    */
     assign sdram_ctrl_cmd_accepted = (next_state == ST_CMD_READ ||
                                       next_state == ST_CMD_WRITE);
     assign sdram_if_dq             = (state == ST_CMD_WRITE) ? cur_sdram_wr_data : 16'hzzzz;

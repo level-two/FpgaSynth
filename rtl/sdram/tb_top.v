@@ -22,7 +22,7 @@ module tb_top;
     // INTERFACE TO SDRAM
     wire         sdram_if_clk ;
     wire         sdram_if_cke ;
-    wire         sdram_if_ncs ;
+    //wire       sdram_if_ncs ;
     wire         sdram_if_ncas;
     wire         sdram_if_nras;
     wire         sdram_if_nwe ;
@@ -55,7 +55,7 @@ module tb_top;
         .Ba         (sdram_if_ba               ),
         .Clk        (sdram_if_clk              ),
         .Cke        (sdram_if_cke              ),
-        .Cs_n       (sdram_if_ncs              ),
+        .Cs_n       (1'b0                      ),
         .Ras_n      (sdram_if_nras             ),
         .Cas_n      (sdram_if_ncas             ),
         .We_n       (sdram_if_nwe              ),
