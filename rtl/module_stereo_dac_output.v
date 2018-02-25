@@ -242,6 +242,7 @@ module module_stereo_dac_output (
         .sample_out_rdy  (i3_sample_out_rdy     ),
         .sample_out_l    (i3_sample_out_l       ),
         .sample_out_r    (i3_sample_out_r       ),
+        .done            (i3_done               ),
         .opl             (i3_opl                ),
         .al              (i3_al                 ),
         .bl              (i3_bl                 ),
