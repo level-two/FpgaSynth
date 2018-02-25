@@ -63,22 +63,10 @@ module tb_module_stereo_dac_output();
             sample_in_rdy   <= 1;
             @(posedge clk);
             sample_in_rdy   <= 0;
-            repeat (2079) @(posedge clk);
-            sample_in_rdy   <= 1;
-            @(posedge clk);
-            sample_in_rdy   <= 0;
-            repeat (2079) @(posedge clk);
+            repeat (2082) @(posedge clk);
 
-            sample_in_r     <= ~sample_in_r;
-
-            sample_in_rdy   <= 1;
-            @(posedge clk);
-            sample_in_rdy   <= 0;
-            repeat (2079) @(posedge clk);
-            sample_in_rdy   <= 1;
-            @(posedge clk);
-            sample_in_rdy   <= 0;
-            repeat (2079) @(posedge clk);
+            sample_in_l     <= sample_in_l - 18'h0001;
+            sample_in_r     <= sample_in_r + 18'h0001;
         end
 
         #100;
