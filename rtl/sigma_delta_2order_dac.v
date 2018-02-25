@@ -42,26 +42,26 @@ module sigma_delta_2order_dac
 
 
     // TASKS
-    localparam [16:0] NOP               = 17'h00000;
-    localparam [16:0] WAIT_IN           = 17'h00001;
-    localparam [16:0] JP_0              = 17'h00002;
-    localparam [16:0] ADD_SL_I1L        = 17'h00004;
-    localparam [16:0] ADD_SR_I1R        = 17'h00008;
-    localparam [16:0] ADD_DL            = 17'h00010;
-    localparam [16:0] ADD_DR            = 17'h00020;
-    localparam [16:0] ADD_I2L           = 17'h00040;
-    localparam [16:0] ADD_I2R           = 17'h00080;
-    localparam [16:0] MOV_I1L_ACC       = 17'h00100;
-    localparam [16:0] MOV_I1R_ACC       = 17'h00200;
-    localparam [16:0] MOV_I2L_ACC       = 17'h00400;
-    localparam [16:0] MOV_I2R_ACC       = 17'h00800;
-    localparam [16:0] MOV_DL_ACCSGN     = 17'h01000;
-    localparam [16:0] MOV_DR_ACCSGN     = 17'h02000;
-    localparam [16:0] MOV_OUTL_ACCSGN   = 17'h04000;
-    localparam [16:0] MOV_OUTR_ACCSGN   = 17'h08000;
-    localparam [16:0] INC_DELTA_CNT     = 17'h10000;
+    localparam [23:0] NOP               = 24'h00000;
+    localparam [23:0] WAIT_IN           = 24'h00001;
+    localparam [23:0] JP_0              = 24'h00002;
+    localparam [23:0] ADD_SL_I1L        = 24'h00004;
+    localparam [23:0] ADD_SR_I1R        = 24'h00008;
+    localparam [23:0] ADD_DL            = 24'h00010;
+    localparam [23:0] ADD_DR            = 24'h00020;
+    localparam [23:0] ADD_I2L           = 24'h00040;
+    localparam [23:0] ADD_I2R           = 24'h00080;
+    localparam [23:0] MOV_I1L_ACC       = 24'h00100;
+    localparam [23:0] MOV_I1R_ACC       = 24'h00200;
+    localparam [23:0] MOV_I2L_ACC       = 24'h00400;
+    localparam [23:0] MOV_I2R_ACC       = 24'h00800;
+    localparam [23:0] MOV_DL_ACCSGN     = 24'h01000;
+    localparam [23:0] MOV_DR_ACCSGN     = 24'h02000;
+    localparam [23:0] MOV_OUTL_ACCSGN   = 24'h04000;
+    localparam [23:0] MOV_OUTR_ACCSGN   = 24'h08000;
+    localparam [23:0] INC_DELTA_CNT     = 24'h10000;
               
-    reg [15:0] tasks;
+    reg [23:0] tasks;
     always @(pc) begin
         case (pc)
             4'h0   : tasks = WAIT_IN            ;
@@ -133,6 +133,7 @@ module sigma_delta_2order_dac
             'hd    : begin delta <= 18'h16859; end
             'he    : begin delta <= 18'h16DE5; end
             'hf    : begin delta <= 18'h17634; end
+            default: begin delta <= 18'h00000; end
         endcase
     end
 
