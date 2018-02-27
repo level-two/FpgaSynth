@@ -16,7 +16,7 @@ module top_traffic_gen(
     // INTERFACE TO SDRAM
     output           SDRAM_CLK        ,
     output           SDRAM_CKE        ,
-    //output         SDRAM_NCS        ,
+    output           SDRAM_NCS        ,
     output           SDRAM_NCAS       ,
     output           SDRAM_NRAS       ,
     output           SDRAM_NWE        ,
@@ -106,8 +106,7 @@ module top_traffic_gen(
         // INTERFACE TO SDRAM
         .sdram_if_clk        (SDRAM_CLK                   ),
         .sdram_if_cke        (SDRAM_CKE                   ),
-        //.sdram_if_ncs      (SDRAM_NCS                   ),
-        .sdram_if_ncs        (                            ),
+        .sdram_if_ncs        (SDRAM_NCS                   ),
         .sdram_if_ncas       (SDRAM_NCAS                  ),
         .sdram_if_nras       (SDRAM_NRAS                  ),
         .sdram_if_nwe        (SDRAM_NWE                   ),

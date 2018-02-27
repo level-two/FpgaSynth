@@ -38,7 +38,7 @@ module tb_top;
         .LED              (LED                   ),
         .SDRAM_CLK        (sdram_if_clk          ),
         .SDRAM_CKE        (sdram_if_cke          ),
-        //.SDRAM_NCS      (sdram_if_ncs          ),
+        .SDRAM_NCS        (sdram_if_ncs          ),
         .SDRAM_NCAS       (sdram_if_ncas         ),
         .SDRAM_NRAS       (sdram_if_nras         ),
         .SDRAM_NWE        (sdram_if_nwe          ),

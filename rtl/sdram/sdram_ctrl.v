@@ -284,19 +284,18 @@ module sdram_ctrl (
         end
     end
 
-    reg [2:0] rd_data_valid;
+    reg [1:0] rd_data_valid;
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            rd_data_valid      <= 3'b0;
+            rd_data_valid[1:0] <= 2'b0;
         end
         else if (csr_opmode_cas_latency == 3) begin
-            rd_data_valid[2]   <= (state == ST_CMD_READ);
-            rd_data_valid[1:0] <= rd_data_valid[2:1];
-        end
-        else if (csr_opmode_cas_latency == 2) begin
-            rd_data_valid[2]   <= 1'b0;
             rd_data_valid[1]   <= (state == ST_CMD_READ);
             rd_data_valid[0]   <= rd_data_valid[1];
+        end
+        else if (csr_opmode_cas_latency == 2) begin
+            rd_data_valid[1]   <= 1'b0;
+            rd_data_valid[0]   <= (state == ST_CMD_READ);
         end
     end
 
