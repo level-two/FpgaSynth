@@ -52,14 +52,14 @@ set work work
 vlib work
 
 # compile all of the files
-vlog -work work $env(XILINX)/verilog/src/glbl.v
-vlog -work work ../../../ip_clk_gen_100M.v
-vlog -work work ../../example_design/ip_clk_gen_100M_exdes.v
-vlog -work work ../ip_clk_gen_100M_tb.v
+vcom -work work ../../../ip_clk_gen_100M.vhd
+vcom -work work ../../example_design/ip_clk_gen_100M_exdes.vhd
+vcom -work work ../ip_clk_gen_100M_tb.vhd
 
 # run the simulation
-vsim  -t ps -voptargs="+acc" -L unisims_ver work.ip_clk_gen_100M_tb work.glbl
+vsim  -t ps -voptargs="+acc" -L unisim work.ip_clk_gen_100M_tb 
 do wave.do
+when {end_of_sim} {echo "End of Simulation"; stop} 
 log ip_clk_gen_100M_tb/dut/counter
 log -r /*
 run 50000ns

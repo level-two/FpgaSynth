@@ -49,13 +49,12 @@
 
 # nt64
 # create the project
-vlogcomp -work work ${XILINX}/verilog/src/glbl.v
-vlogcomp -work work ../../../ip_clk_gen_100M.v
-vlogcomp -work work ../../example_design/ip_clk_gen_100M_exdes.v
-vlogcomp -work work ../ip_clk_gen_100M_tb.v
+vhpcomp -work work ../../../ip_clk_gen_100M.vhd
+vhpcomp -work work ../../example_design/ip_clk_gen_100M_exdes.vhd
+vhpcomp -work work ../ip_clk_gen_100M_tb.vhd
 
 # compile the project
-fuse work.ip_clk_gen_100M_tb work.glbl -L unisims_ver -o ip_clk_gen_100M_isim.exe
+fuse work.ip_clk_gen_100M_tb  -L unisim -o ip_clk_gen_100M_isim.exe
 
 # run the simulation script
 ./ip_clk_gen_100M_isim.exe -gui -tclbatch simcmds.tcl

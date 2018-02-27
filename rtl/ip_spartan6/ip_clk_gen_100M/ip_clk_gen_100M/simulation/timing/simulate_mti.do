@@ -52,12 +52,12 @@ set work work
 vlib work
 
 # compile all of the files
-vlog -work work $env(XILINX)/verilog/src/glbl.v
-vlog -work work ../../implement/results/routed.v
-vlog -work work ip_clk_gen_100M_tb.v
+vcom -work work ../../implement/results/routed.vhd
+vcom -work work ip_clk_gen_100M_tb.vhd
 
 # run the simulation
-vsim -t ps +transport_int_delays -voptargs="+acc" -L secureip -L simprims_ver -sdfmax ip_clk_gen_100M_tb/dut=../../implement/results/routed.sdf +no_notifier work.ip_clk_gen_100M_tb work.glbl
+vsim -t ps +transport_int_delays -voptargs="+acc" -L secureip -L simprim -sdfmax ip_clk_gen_100M_tb/dut=../../implement/results/routed.sdf +no_notifier work.ip_clk_gen_100M_tb 
+when {end_of_sim} {echo "End of Simulation"; stop} 
 #do wave.do
 #log -r /*
 run 50000ns

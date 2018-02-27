@@ -51,11 +51,10 @@ REM set up the working directory
 vlib work
 
 REM compile all of the files
-vlog -work work %XILINX%\verilog\src\glbl.v
-vlog -work work ..\..\..\ip_clk_gen_100M.v
-vlog -work work ..\..\example_design\ip_clk_gen_100M_exdes.v
-vlog -work work ..\ip_clk_gen_100M_tb.v
+vcom -work work ..\..\..\ip_clk_gen_100M.vhd
+vcom -work work ..\..\example_design\ip_clk_gen_100M_exdes.vhd
+vcom -work work ..\ip_clk_gen_100M_tb.vhd
 
 REM run the simulation
-vsim -c -t ps -voptargs="+acc" -L secureip -L unisims_ver work.ip_clk_gen_100M_tb work.glbl
+vsim -c -t ps -voptargs="+acc" -L secureip -L unisim work.ip_clk_gen_100M_tb 
 

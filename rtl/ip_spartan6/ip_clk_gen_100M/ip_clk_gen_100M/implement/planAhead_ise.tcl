@@ -58,8 +58,8 @@ set_property design_mode RTL [get_filesets sources_1]
 
 ## Source files
 #set verilogSources [glob $srcDir/*.v]
-import_files -fileset [get_filesets sources_1] -force -norecurse ../../example_design/ip_clk_gen_100M_exdes.v
-import_files -fileset [get_filesets sources_1] -force -norecurse ../../../ip_clk_gen_100M.v
+import_files -fileset [get_filesets sources_1] -force -norecurse ../../example_design/ip_clk_gen_100M_exdes.vhd
+import_files -fileset [get_filesets sources_1] -force -norecurse ../../../ip_clk_gen_100M.vhd
 
 
 #UCF file

@@ -49,24 +49,22 @@
 # 
 
 # remove old files
-rm -rf simv* csrc DVEfiles AN.DB
+rm -rf simv* csrc DVEfiles AN.DB 
 
 # compile all of the files
 # Note that -sverilog is not strictly required- You can
 #   remove the -sverilog if you change the type of the
 #   localparam for the periods in the testbench file to 
 #   [63:0] from time
-vlogan -sverilog \
-      ${XILINX}/verilog/src/glbl.v \
-      ../../../ip_clk_gen_100M.v \
-      ../../example_design/ip_clk_gen_100M_exdes.v \
-      ../ip_clk_gen_100M_tb.v
+vhdlan -xlrm ../../../ip_clk_gen_100M.vhd \
+      ../../example_design/ip_clk_gen_100M_exdes.vhd \
+      ../ip_clk_gen_100M_tb.vhd
 
 # prepare the simulation 
-vcs +vcs+lic+wait -debug ip_clk_gen_100M_tb glbl
+vcs +vcs+lic+wait -xlrm -debug ip_clk_gen_100M_tb
 
 # run the simulation
-./simv -ucli -i ucli_commands.key
+./simv -xlrm -ucli -i ucli_commands.key
 
 # launch the viewer
-dve -vpd vcdplus.vpd -session vcs_session.tcl
+#dve -vpd vcdplus.vpd -session vcs_session.tcl
