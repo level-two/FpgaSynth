@@ -179,7 +179,6 @@ NET "SDRAM_DQ<15>"          LOC = "P55"         | IOSTANDARD = LVTTL ;
 
 
 
-
 //global system clock
 NET "CLK_50M_IN" 		LOC = A10 	| IOSTANDARD = LVTTL;
 //reset signal
@@ -188,6 +187,9 @@ NET "sys_rst_n" 		LOC = R7 	| IOSTANDARD = LVTTL;
 NET "led_1" 			LOC = T9 	| IOSTANDARD = LVTTL;
 //led_2 signal
 NET "led_2" 			LOC = R9 	| IOSTANDARD = LVTTL;
+
+//key_1 signal
+NET "key_1" 		LOC = T8 	| IOSTANDARD = LVTTL;
 
 //100M SDRAM Clock
 NET "SDCLK0" 			LOC = H1 	| IOSTANDARD = LVTTL;
