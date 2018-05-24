@@ -10,7 +10,7 @@
 
 module top_traffic_gen(
     input            CLK_50M          ,
-    input  [0:0]     PB               ,
+    input            BTN_RST          ,
     output [1:0]     LED              ,
 
     // INTERFACE TO SDRAM
@@ -32,7 +32,7 @@ module top_traffic_gen(
 
     wire clk;
     wire clk_valid;
-    wire reset_n = clk_valid & PB[0];
+    wire reset_n = clk_valid & BTN_RST;
     wire reset   = ~reset_n;
 
     ip_clk_gen_100M  clk_gen

@@ -97,7 +97,7 @@ module sdram_csr#(parameter AW = 16)
     always @(posedge clk or posedge reset) begin
         if (reset) begin 
             csr_ctrl      <= 32'h0;
-            csr_opmode    <= {19'h0, 3'b000, 1'b1, 2'b00, 3'b010, 1'b0, 3'b0};
+            csr_opmode    <= {19'h0, 3'b000, 1'b1, 2'b00, 3'b011, 1'b0, 3'b0};
             csr_config    <= 32'h0;
 
             csr_t_dly_rst <= T_DLY_RST;

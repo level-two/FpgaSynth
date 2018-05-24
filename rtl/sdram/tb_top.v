@@ -16,7 +16,7 @@ module tb_top;
     real CLK_PERIOD     = (1 / (TIMESTEP * CLK_FREQ));
 
     reg        CLK_50M;
-    reg  [0:0] PB;
+    reg        BTN_RST;
     wire [1:0] LED;
 
     // INTERFACE TO SDRAM
@@ -34,7 +34,7 @@ module tb_top;
 
     top_traffic_gen top_traffic_gen_inst (
         .CLK_50M          (CLK_50M               ),
-        .PB               (PB                    ),
+        .BTN_RST          (BTN_RST               ),
         .LED              (LED                   ),
         .SDRAM_CLK        (sdram_if_clk          ),
         .SDRAM_CKE        (sdram_if_cke          ),
@@ -66,7 +66,7 @@ module tb_top;
 
     initial begin
         CLK_50M = 0;
-        PB      = 1;
+        BTN_RST = 1;
     end
 
     always begin

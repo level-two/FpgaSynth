@@ -30,11 +30,11 @@ module sdram_ctrl (
     input             sdram_ctrl_access        ,
     input             sdram_ctrl_cmd_ready     ,
     output            sdram_ctrl_cmd_accepted  ,
-    output            sdram_ctrl_cmd_done      ,
+    output reg        sdram_ctrl_cmd_done      ,
     input  [31:0]     sdram_ctrl_addr          ,
     input             sdram_ctrl_wr_nrd        ,
     input  [15:0]     sdram_ctrl_wr_data       ,
-    output [15:0]     sdram_ctrl_rd_data       ,
+    output reg [15:0] sdram_ctrl_rd_data       ,
     //input           sdram_ctrl_op_err        , // TBI
 
     // INTERFACE TO SDRAM
@@ -117,6 +117,7 @@ module sdram_ctrl (
                 if (timer_done) next_state = ST_WAIT_INIT;
             end
             ST_WAIT_INIT: begin
+                // TODO: Check whether autorefresh is not counted before init
                 //if (csr_ctrl_start) next_state = ST_INIT_NOP;
                 next_state = ST_INIT_NOP;
             end
@@ -284,25 +285,29 @@ module sdram_ctrl (
         end
     end
 
-    reg [1:0] rd_data_valid;
+    reg [3:0] rd_data_valid;
     always @(posedge clk or posedge reset) begin
         if (reset) begin
-            rd_data_valid[1:0] <= 2'b0;
+            rd_data_valid[3:0] <= 4'b0;
         end
-        else if (csr_opmode_cas_latency == 3) begin
-            rd_data_valid[1]   <= (state == ST_CMD_READ);
+        else if (csr_opmode_cas_latency == 3'h3) begin
+            rd_data_valid[3]   <= (state == ST_CMD_READ);
+            rd_data_valid[2]   <= rd_data_valid[3];
+            rd_data_valid[1]   <= rd_data_valid[2];
             rd_data_valid[0]   <= rd_data_valid[1];
         end
-        else if (csr_opmode_cas_latency == 2) begin
-            rd_data_valid[1]   <= 1'b0;
-            rd_data_valid[0]   <= (state == ST_CMD_READ);
+        else if (csr_opmode_cas_latency == 3'h2) begin
+            rd_data_valid[3]   <= 1'b0;
+            rd_data_valid[2]   <= (state == ST_CMD_READ);
+            rd_data_valid[1]   <= rd_data_valid[2];
+            rd_data_valid[0]   <= rd_data_valid[1];
         end
     end
 
 
     reg [31:0] cur_sdram_addr;
     reg [15:0] cur_sdram_wr_data;
-    always @(posedge clk or posedge reset) begin
+    always @(posedge clk) begin
         if (reset) begin
             cur_sdram_addr    <= 32'h0;
             cur_sdram_wr_data <= 16'h0;
@@ -317,7 +322,8 @@ module sdram_ctrl (
 
 
     // SDRAM SIGNALS DRIVE
-    //assign sdram_if_clk            = clk;
+    wire sdram_clk_ddr;
+
     ODDR2 #(
         .DDR_ALIGNMENT("NONE"                ),
         .INIT         (0                     ),
@@ -330,56 +336,113 @@ module sdram_ctrl (
         .D1  (1'b0                           ),
         .C0  (clk                            ),
         .C1  (~clk                           ),
-        .Q   (sdram_if_clk                   )
+        .Q   (sdram_clk_ddr                  )
     );
+
+    IODELAY2 #(
+        .IDELAY_VALUE(0                ),
+        .IDELAY_MODE ("NORMAL"         ),
+        .ODELAY_VALUE(56               ),
+        //.ODELAY_VALUE(65               ), // value of 100 seems to work at 100MHz
+        .IDELAY_TYPE ("FIXED"          ),
+        .DELAY_SRC   ("ODATAIN"        ),
+        .DATA_RATE   ("SDR"            )
+    ) IODELAY_inst   (
+        .IDATAIN     (1'b0             ),
+        .T           (1'b0             ),
+        .ODATAIN     (sdram_clk_ddr    ),
+        .CAL         (1'b0             ),
+        .IOCLK0      (1'b0             ),
+        .IOCLK1      (1'b0             ),
+        .CLK         (1'b0             ),
+        .INC         (1'b0             ),
+        .CE          (1'b0             ),
+        .RST         (1'b0             ),
+        .BUSY        (                 ),
+        .DATAOUT     (                 ),
+        .DATAOUT2    (                 ),
+        .TOUT        (                 ),
+        .DOUT        (sdram_if_clk     )
+    );
+
     assign sdram_ctrl_cmd_accepted = (next_state == ST_CMD_READ ||
                                       next_state == ST_CMD_WRITE);
-    assign sdram_if_dq             = (state == ST_CMD_WRITE) ? cur_sdram_wr_data : 16'hzzzz;
-    assign sdram_ctrl_rd_data      = rd_data_valid[0] ? sdram_if_dq : 16'h0000;
-    assign sdram_ctrl_cmd_done     = rd_data_valid[0] || state == ST_CMD_WRITE;
 
+    always @(posedge clk) begin
+        if (reset) begin
+            sdram_ctrl_cmd_done <= 1'b0;
+        end
+        else if (rd_data_valid[0] == 1'b1 || state == ST_CMD_WRITE) begin
+            sdram_ctrl_cmd_done <= 1'b1;
+        end
+        else begin
+            sdram_ctrl_cmd_done <= 1'b0;
+        end
+    end
+
+    reg        sdram_if_cke_int;
+    reg        sdram_if_ncs_int;
+    reg        sdram_if_ncas_int;
+    reg        sdram_if_nras_int;
+    reg        sdram_if_nwe_int;
+    reg        sdram_if_dqml_int;
+    reg        sdram_if_dqmh_int;
+    reg [12:0] sdram_if_a_int;
+    reg [ 1:0] sdram_if_ba_int;
+
+    always @(posedge clk) begin
+        if (reset) begin
+            sdram_ctrl_rd_data <= 16'h0000;
+        end
+        else if (rd_data_valid[0] == 1'b1) begin
+            sdram_ctrl_rd_data <= sdram_if_dq;
+        end
+        else begin
+            sdram_ctrl_rd_data <= 16'h0000;
+        end
+    end
 
     always @(*) begin
         // INHIBIT
-        sdram_if_cke  = 1'b1;
-        sdram_if_ncs  = 1'b1;
-        sdram_if_nras = 1'b1;
-        sdram_if_ncas = 1'b1;
-        sdram_if_nwe  = 1'b1;
-        sdram_if_a    = 13'h0;
-        sdram_if_ba   = 2'h0;
+        sdram_if_cke_int  = 1'b1;
+        sdram_if_ncs_int  = 1'b1;
+        sdram_if_nras_int = 1'b1;
+        sdram_if_ncas_int = 1'b1;
+        sdram_if_nwe_int  = 1'b1;
+        sdram_if_a_int    = 13'h0;
+        sdram_if_ba_int   = 2'h0;
 
         if (timer_running && !timer_start) begin
             // NOP
-            sdram_if_ncs  = 1'b0;
+            sdram_if_ncs_int  = 1'b0;
         end
         else if (state == ST_IDLE || state == ST_WAIT_INIT) begin
             // INHIBIT
             // all signals are already set properly
         end
         else if (state == ST_INIT_PRECHG_ALL || state == ST_CMD_PRECHARGE_ALL) begin
-            sdram_if_ncs   = 1'b0;
-            sdram_if_nras  = 1'b0;
-            sdram_if_ncas  = 1'b1;
-            sdram_if_nwe   = 1'b0;
-            sdram_if_a[10] = 1'b1; // 0 - pchg bank selected by sdram_if_ba; 1 - all (Note 5, p.31)
+            sdram_if_ncs_int   = 1'b0;
+            sdram_if_nras_int  = 1'b0;
+            sdram_if_ncas_int  = 1'b1;
+            sdram_if_nwe_int   = 1'b0;
+            sdram_if_a_int[10] = 1'b1; // 0 - pchg bank selected by sdram_if_ba_int; 1 - all (Note 5, p.31)
         end
         else if (state == ST_INIT_AUTOREFR1 ||
                  state == ST_INIT_AUTOREFR2 ||
                  state == ST_CMD_AUTOREFRESH) begin
-            sdram_if_cke   = 1'b1;
-            sdram_if_ncs   = 1'b0;
-            sdram_if_nras  = 1'b0;
-            sdram_if_ncas  = 1'b0;
-            sdram_if_nwe   = 1'b1;
+            sdram_if_cke_int   = 1'b1;
+            sdram_if_ncs_int   = 1'b0;
+            sdram_if_nras_int  = 1'b0;
+            sdram_if_ncas_int  = 1'b0;
+            sdram_if_nwe_int   = 1'b1;
         end
         else if (state == ST_CMD_LMR) begin
-            sdram_if_ncs   = 1'b0;
-            sdram_if_nras  = 1'b0;
-            sdram_if_ncas  = 1'b0;
-            sdram_if_nwe   = 1'b0;
-            sdram_if_ba    = csr_opmode_ba_reserved[1:0];
-            sdram_if_a[12:0] = { 
+            sdram_if_ncs_int   = 1'b0;
+            sdram_if_nras_int  = 1'b0;
+            sdram_if_ncas_int  = 1'b0;
+            sdram_if_nwe_int   = 1'b0;
+            sdram_if_ba_int    = csr_opmode_ba_reserved[1:0];
+            sdram_if_a_int[12:0] = { 
                 csr_opmode_a_reserved[2:0],
                 csr_opmode_wr_burst_mode[0],
                 csr_opmode_operation_mode[1:0],
@@ -389,30 +452,30 @@ module sdram_ctrl (
             };
         end
         else if (state == ST_CMD_ACTIVE) begin
-            sdram_if_ncs     = 1'b0;
-            sdram_if_nras    = 1'b0;
-            sdram_if_ncas    = 1'b1;
-            sdram_if_nwe     = 1'b1;
-            sdram_if_a[12:0] = sdram_ctrl_addr[24:11];  // Row addr
-            sdram_if_ba      = sdram_ctrl_addr[10:9];   // Bank addr
+            sdram_if_ncs_int     = 1'b0;
+            sdram_if_nras_int    = 1'b0;
+            sdram_if_ncas_int    = 1'b1;
+            sdram_if_nwe_int     = 1'b1;
+            sdram_if_a_int[12:0] = sdram_ctrl_addr[24:11];  // Row addr
+            sdram_if_ba_int      = sdram_ctrl_addr[10:9];   // Bank addr
         end
         else if (state == ST_CMD_READ) begin
-            sdram_if_ncs    = 1'b0;
-            sdram_if_nras   = 1'b1;
-            sdram_if_ncas   = 1'b0;
-            sdram_if_nwe    = 1'b1;
-            sdram_if_ba     = cur_sdram_addr[10:9];   // Bank addr
-            sdram_if_a[8:0] = cur_sdram_addr[8:0];    // Col addr
-            sdram_if_a[10]  = csr_config_prechg_after_rd;
+            sdram_if_ncs_int    = 1'b0;
+            sdram_if_nras_int   = 1'b1;
+            sdram_if_ncas_int   = 1'b0;
+            sdram_if_nwe_int    = 1'b1;
+            sdram_if_ba_int     = cur_sdram_addr[10:9];   // Bank addr
+            sdram_if_a_int[8:0] = cur_sdram_addr[8:0];    // Col addr
+            sdram_if_a_int[10]  = csr_config_prechg_after_rd;
         end
         else if (state == ST_CMD_WRITE) begin
-            sdram_if_ncs    = 1'b0;
-            sdram_if_nras   = 1'b1;
-            sdram_if_ncas   = 1'b0;
-            sdram_if_nwe    = 1'b0;
-            sdram_if_ba     = cur_sdram_addr[10:9];   // Bank addr
-            sdram_if_a[8:0] = cur_sdram_addr[8:0];    // Col addr
-            sdram_if_a[10]  = csr_config_prechg_after_rd;
+            sdram_if_ncs_int    = 1'b0;
+            sdram_if_nras_int   = 1'b1;
+            sdram_if_ncas_int   = 1'b0;
+            sdram_if_nwe_int    = 1'b0;
+            sdram_if_ba_int     = cur_sdram_addr[10:9];   // Bank addr
+            sdram_if_a_int[8:0] = cur_sdram_addr[8:0];    // Col addr
+            sdram_if_a_int[10]  = csr_config_prechg_after_rd;
         end
         else if (state == ST_READ_TO_IDLE       ||
                  state == ST_WRITE_TO_IDLE      ||
@@ -421,29 +484,50 @@ module sdram_ctrl (
                  state == ST_WRITE_TO_PRECHARGE ||
                  state == ST_RW_IDLE             ) begin
             // NOP
-            sdram_if_ncs   = 1'b0;
-            sdram_if_nras  = 1'b1;
-            sdram_if_ncas  = 1'b1;
-            sdram_if_nwe   = 1'b1;
+            sdram_if_ncs_int   = 1'b0;
+            sdram_if_nras_int  = 1'b1;
+            sdram_if_ncas_int  = 1'b1;
+            sdram_if_nwe_int   = 1'b1;
         end
         else begin
             // NOP
-            sdram_if_ncs   = 1'b0;
-            sdram_if_nras  = 1'b1;
-            sdram_if_ncas  = 1'b1;
-            sdram_if_nwe   = 1'b1;
+            sdram_if_ncs_int   = 1'b0;
+            sdram_if_nras_int  = 1'b1;
+            sdram_if_ncas_int  = 1'b1;
+            sdram_if_nwe_int   = 1'b1;
         end
     end
-
 
     always @(*) begin
-        sdram_if_dqml = 1'b0;
-        sdram_if_dqmh = 1'b0;
+        sdram_if_dqml_int = 1'b0;
+        sdram_if_dqmh_int = 1'b0;
 
+        // TODO Check this!
         if (state == ST_READ_TO_WRITE) begin
             // DQM 2 cycles prior to WRITE
-            sdram_if_dqml = rd_data_valid[0] | rd_data_valid[1];
-            sdram_if_dqmh = rd_data_valid[0] | rd_data_valid[1];
+            sdram_if_dqml_int = rd_data_valid[0] | rd_data_valid[1];
+            sdram_if_dqmh_int = rd_data_valid[0] | rd_data_valid[1];
         end
     end
+
+    reg [15:0] sdram_if_dq_reg;
+    reg sdram_if_dq_en;
+
+    always @(posedge clk) begin
+        sdram_if_cke  <= sdram_if_cke_int;
+        sdram_if_ncs  <= sdram_if_ncs_int;
+        sdram_if_ncas <= sdram_if_ncas_int;
+        sdram_if_nras <= sdram_if_nras_int;
+        sdram_if_nwe  <= sdram_if_nwe_int;
+        sdram_if_dqml <= sdram_if_dqml_int;
+        sdram_if_dqmh <= sdram_if_dqmh_int;
+        sdram_if_a    <= sdram_if_a_int;
+        sdram_if_ba   <= sdram_if_ba_int;
+        sdram_if_dq_reg <= cur_sdram_wr_data;
+        sdram_if_dq_en  <= (state == ST_CMD_WRITE);
+    end
+
+    // To solve error "Non-net port sdram_if_dq cannot be of mode inout"
+    assign sdram_if_dq = sdram_if_dq_en ? sdram_if_dq_reg : 16'bz;
+
 endmodule

@@ -12,18 +12,17 @@
 # Timing Constraints #
 ##############################################################################
 
-##### Grouping Constraints #####
+# Grouping Constraints
 NET  CLK_50M     TNM_NET = clk50_grp;
 NET  SDRAM_CLK   TNM_NET = clk100_grp;
 NET  clk         TNM_NET = clk100_grp;
 #NET clk_6p140M  TNM_NET = clk6p140_grp;
 #NET SYS_SPI_SCK TNM_NET = clk32_grp;
 
-##### Clock Period Constraints #####
+# Clock Period Constraints
 TIMESPEC TS_PER_CLK50     = PERIOD "clk50_grp"    50.000 MHz;
 TIMESPEC TS_PER_CLK100    = PERIOD "clk100_grp"   100.000 MHz;
 #TIMESPEC TS_PER_CLK6p140 = PERIOD "clk6p140_grp" 6.140 MHz;
-
 
 #NET clk        TNM_NET = FFS GRP_100M;
 #NET clk_6p140M TNM_NET = FFS GRP_6p140M;
@@ -31,27 +30,31 @@ TIMESPEC TS_PER_CLK100    = PERIOD "clk100_grp"   100.000 MHz;
 #TIMESPEC TS_SLOW_TO_FAST = FROM "GRP_6p140M" TO "GRP_100M" 20 ns DATAPATHONLY;
 #TIMESPEC TS_FAST_TO_SLOW = FROM "GRP_100M" TO "GRP_6p140M" 350 ns DATAPATHONLY;
 
-
 #TIMESPEC TS_PER_CLK100 = PERIOD "clk100_grp" 10.0 ns;
 #TIMESPEC TS_PER_CLK32  = PERIOD "clk32_grp" 20.0 ns;
+
 #PIN "sys_clocks_gen/clkout2_buf.O" CLOCK_DEDICATED_ROUTE = FALSE;
 #PIN "clk_gen/clkout1_buf.O"        CLOCK_DEDICATED_ROUTE = FALSE;
 #NET "SYS_SPI_SCK"                  CLOCK_DEDICATED_ROUTE = FALSE;
 #PIN "clk_gen/clkout1_buf.O"        CLOCK_DEDICATED_ROUTE = FALSE;
 
+
 ##############################################################################
 # Pin LOC Constraints #
 ##############################################################################
 
+# SYSTEM CLOCK
 NET "CLK_50M"           LOC = A10   | IOSTANDARD = LVTTL;
 
+# LEDS
 NET "LED[0]"            LOC = T9    | IOSTANDARD = LVTTL;
 NET "LED[1]"            LOC = R9    | IOSTANDARD = LVTTL;
 
+# BUTTONS
 NET "BTN_RST"           LOC = T8    | IOSTANDARD = LVTTL;
-NET "BTN0"              LOC = R7    | IOSTANDARD = LVTTL;
+#NET "BTN"               LOC = R7    | IOSTANDARD = LVTTL;
 
-#SDRAM SIGNALS
+# SDRAM SIGNALS
 NET "SDRAM_CLK"         LOC = H1    | IOSTANDARD = LVTTL | SLEW = FAST;
 NET "SDRAM_CKE"         LOC = J1    | IOSTANDARD = LVTTL | SLEW = FAST;
 NET "SDRAM_NCAS"        LOC = H3    | IOSTANDARD = LVTTL | SLEW = FAST;
@@ -95,6 +98,8 @@ NET "SDRAM_A[10]"       LOC = L3    | IOSTANDARD = LVTTL | SLEW = FAST;
 NET "SDRAM_A[11]"       LOC = L1    | IOSTANDARD = LVTTL | SLEW = FAST;
 NET "SDRAM_A[12]"       LOC = K1    | IOSTANDARD = LVTTL | SLEW = FAST;
 
+/*
+# GPIO 0
 NET "GPIO_0[ 7]"        LOC = E12    | IOSTANDARD = LVTTL;
 NET "GPIO_0[ 8]"        LOC = E13    | IOSTANDARD = LVTTL;
 NET "GPIO_0[ 9]"        LOC = B15    | IOSTANDARD = LVTTL;
@@ -150,6 +155,7 @@ NET "GPIO_0[58]"        LOC = T14    | IOSTANDARD = LVTTL;
 NET "GPIO_0[59]"        LOC = T12    | IOSTANDARD = LVTTL;
 NET "GPIO_0[60]"        LOC = R12    | IOSTANDARD = LVTTL;
 
+# GPIO 1
 NET "GPIO_1[ 7]"        LOC = A14    | IOSTANDARD = LVTTL;
 NET "GPIO_1[ 8]"        LOC = B14    | IOSTANDARD = LVTTL;
 NET "GPIO_1[ 9]"        LOC = C13    | IOSTANDARD = LVTTL;
@@ -204,3 +210,4 @@ NET "GPIO_1[57]"        LOC = M10    | IOSTANDARD = LVTTL;
 NET "GPIO_1[58]"        LOC = P11    | IOSTANDARD = LVTTL;
 NET "GPIO_1[59]"        LOC = P12    | IOSTANDARD = LVTTL;
 NET "GPIO_1[60]"        LOC = M11    | IOSTANDARD = LVTTL;
+*/
