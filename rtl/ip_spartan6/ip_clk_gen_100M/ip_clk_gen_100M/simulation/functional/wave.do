@@ -47,6 +47,7 @@
 # PART OF THIS FILE AT ALL TIMES.
 # 
 
+add wave -noupdate -format Literal -radix ascii /ip_clk_gen_100M_tb/test_phase
 add wave -noupdate -divider {Input clocks}
 add wave -noupdate -format Logic /ip_clk_gen_100M_tb/CLK_IN1
 add wave -noupdate -divider {Output clocks}

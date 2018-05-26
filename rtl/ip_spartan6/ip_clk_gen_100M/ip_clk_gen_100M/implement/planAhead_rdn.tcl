@@ -47,7 +47,7 @@
 # PART OF THIS FILE AT ALL TIMES.
 # 
 
-set device xc6slx9tqg144-2
+set device xc6slx16ftg256-3
 set projName ip_clk_gen_100M
 set design ip_clk_gen_100M
 set projDir [file dirname [info script]]
@@ -55,15 +55,15 @@ create_project $projName $projDir/results/$projName -part $device -force
 set_property design_mode RTL [current_fileset -srcset]
 set top_module ip_clk_gen_100M_exdes
 set_property top ip_clk_gen_100M_exdes [get_property srcset [current_run]]
-add_files -norecurse {../../../ip_clk_gen_100M.vhd}
-add_files -norecurse {../../example_design/ip_clk_gen_100M_exdes.vhd}
+add_files -norecurse {../../../ip_clk_gen_100M.v}
+add_files -norecurse {../../example_design/ip_clk_gen_100M_exdes.v}
 import_files -fileset [get_filesets constrs_1 ] -force -norecurse {../../example_design/ip_clk_gen_100M_exdes.xdc}
 synth_design
 opt_design 
 place_design 
 route_design 
 write_sdf -rename_top_module ip_clk_gen_100M_exdes -file routed.sdf 
-write_vhdl -file routed.vhd
+write_verilog -nolib -mode timesim -sdf_anno false -rename_top_module ip_clk_gen_100M_exdes -file routed.v
 report_timing -nworst 30 -path_type full -file routed.twr
 report_drc -file report.drc
 write_bitstream -bitgen_options {-g UnconstrainedPins:Allow} -file routed.bit

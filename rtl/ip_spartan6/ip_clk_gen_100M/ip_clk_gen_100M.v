@@ -133,7 +133,9 @@ module ip_clk_gen_100M
 
   // Output buffering
   //-----------------------------------
-  assign clkfb = clk_out_100M;
+  BUFG clkf_buf
+   (.O (clkfb),
+    .I (clk2x));
 
   BUFG clkout1_buf
    (.O   (clk_out_100M),

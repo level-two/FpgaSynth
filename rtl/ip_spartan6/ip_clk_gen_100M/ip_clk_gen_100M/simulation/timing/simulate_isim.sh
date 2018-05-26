@@ -48,11 +48,12 @@
 # 
 
 # create the project
-vhpcomp -work work ../../implement/results/routed.vhd
-vhpcomp -work work ip_clk_gen_100M_tb.vhd
+vlogcomp -work work ${XILINX}/verilog/src/glbl.v
+vlogcomp -work work ../../implement/results/routed.v
+vlogcomp -work work ip_clk_gen_100M_tb.v
 
 # compile the project
-fuse work.ip_clk_gen_100M_tb  -L secureip -L simprim -o ip_clk_gen_100M_isim.exe
+fuse work.ip_clk_gen_100M_tb work.glbl -L secureip -L simprims_ver -o ip_clk_gen_100M_isim.exe
 
 # run the simulation script
 ./ip_clk_gen_100M_isim.exe -tclbatch simcmds.tcl -sdfmax /ip_clk_gen_100M_tb/dut=../../implement/results/routed.sdf

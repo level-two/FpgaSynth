@@ -49,12 +49,8 @@
 
 onerror {resume}
 quietly WaveActivateNextPane {} 0
-add wave -noupdate -divider {Input clocks}
-add wave -noupdate /ip_clk_gen_100M_tb/clk_in1
-add wave -noupdate -divider {Output clocks}
-add wave -noupdate /ip_clk_gen_100M_tb/clk_in1
-add wave -noupdate /ip_clk_gen_100M_tb/count
-add wave -noupdate /ip_clk_gen_100M_tb/counter_reset
+add wave -noupdate /ip_clk_gen_100M_tb/CLK_IN1
+add wave -noupdate /ip_clk_gen_100M_tb/COUNT
 TreeUpdate [SetDefaultTree]
 WaveRestoreCursors {{Cursor 1} {3223025 ps} 0}
 configure wave -namecolwidth 238
@@ -71,3 +67,4 @@ configure wave -griddelta 40
 configure wave -timeline 0
 configure wave -timelineunits ps
 update
+WaveRestoreZoom {0 ps} {74848022 ps}

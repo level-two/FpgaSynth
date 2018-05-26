@@ -4,8 +4,8 @@ ip_clk_gen_100M.asy
 ip_clk_gen_100M.gise
 ip_clk_gen_100M.sym
 ip_clk_gen_100M.ucf
-ip_clk_gen_100M.vhd
-ip_clk_gen_100M.vho
+ip_clk_gen_100M.v
+ip_clk_gen_100M.veo
 ip_clk_gen_100M.xco
 ip_clk_gen_100M.xdc
 ip_clk_gen_100M.xise
@@ -14,7 +14,7 @@ ip_clk_gen_100M\doc\clk_wiz_v3_6_readme.txt
 ip_clk_gen_100M\doc\clk_wiz_v3_6_vinfo.html
 ip_clk_gen_100M\doc\pg065_clk_wiz.pdf
 ip_clk_gen_100M\example_design\ip_clk_gen_100M_exdes.ucf
-ip_clk_gen_100M\example_design\ip_clk_gen_100M_exdes.vhd
+ip_clk_gen_100M\example_design\ip_clk_gen_100M_exdes.v
 ip_clk_gen_100M\example_design\ip_clk_gen_100M_exdes.xdc
 ip_clk_gen_100M\implement\implement.bat
 ip_clk_gen_100M\implement\implement.sh
@@ -34,10 +34,12 @@ ip_clk_gen_100M\simulation\functional\simulate_mti.do
 ip_clk_gen_100M\simulation\functional\simulate_mti.sh
 ip_clk_gen_100M\simulation\functional\simulate_ncsim.sh
 ip_clk_gen_100M\simulation\functional\simulate_vcs.sh
+ip_clk_gen_100M\simulation\functional\ucli_commands.key
+ip_clk_gen_100M\simulation\functional\vcs_session.tcl
 ip_clk_gen_100M\simulation\functional\wave.do
 ip_clk_gen_100M\simulation\functional\wave.sv
-ip_clk_gen_100M\simulation\ip_clk_gen_100M_tb.vhd
-ip_clk_gen_100M\simulation\timing\ip_clk_gen_100M_tb.vhd
+ip_clk_gen_100M\simulation\ip_clk_gen_100M_tb.v
+ip_clk_gen_100M\simulation\timing\ip_clk_gen_100M_tb.v
 ip_clk_gen_100M\simulation\timing\sdf_cmd_file
 ip_clk_gen_100M\simulation\timing\simcmds.tcl
 ip_clk_gen_100M\simulation\timing\simulate_isim.sh
