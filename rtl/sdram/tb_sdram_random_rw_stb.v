@@ -160,7 +160,7 @@ module tb_sdram_random_rw_stb();
         wbs_csr_write     <= 0;
     end
 
-    localparam NUM_OPS = 1000;
+    localparam NUM_OPS = 10;
 
     integer trans_len;
     integer addr;
@@ -198,7 +198,7 @@ module tb_sdram_random_rw_stb();
         wbs_sdram_write     <= 0;
 
         repeat (100) begin
-            trans_len = 32;
+            trans_len = NUM_OPS;
             send_trans();
             repeat (5) @(posedge clk);
         end
