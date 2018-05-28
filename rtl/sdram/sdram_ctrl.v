@@ -125,7 +125,7 @@ module sdram_ctrl (
                 next_state = ST_INIT_PRECHG_ALL;
             end
             ST_INIT_PRECHG_ALL: begin
-                if (timer_done) next_state = ST_CMD_LMR; // ST_INIT_AUTOREFR1;
+                if (timer_done) next_state = ST_INIT_AUTOREFR1; // ST_CMD_LMR;
             end
             ST_INIT_AUTOREFR1: begin
                 if (timer_done) next_state = ST_INIT_AUTOREFR2;
@@ -461,7 +461,7 @@ module sdram_ctrl (
             sdram_if_nras_int    = 1'b0;
             sdram_if_ncas_int    = 1'b1;
             sdram_if_nwe_int     = 1'b1;
-            sdram_if_a_int[12:0] = sdram_ctrl_addr[24:11];  // Row addr
+            sdram_if_a_int[12:0] = sdram_ctrl_addr[23:11];  // Row addr
             sdram_if_ba_int      = sdram_ctrl_addr[10:9];   // Bank addr
         end
         else if (state == ST_CMD_READ) begin
