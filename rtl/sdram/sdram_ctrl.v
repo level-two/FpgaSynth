@@ -125,7 +125,7 @@ module sdram_ctrl (
                 next_state = ST_INIT_PRECHG_ALL;
             end
             ST_INIT_PRECHG_ALL: begin
-                if (timer_done) next_state = ST_INIT_AUTOREFR1;
+                if (timer_done) next_state = ST_INIT_AUTOREFR1; // ST_CMD_LMR;
             end
             ST_INIT_AUTOREFR1: begin
                 if (timer_done) next_state = ST_INIT_AUTOREFR2;
@@ -222,7 +222,7 @@ module sdram_ctrl (
         (next_state == ST_CMD_PRECHARGE_ALL  ) ? csr_t_rp_val           :
         (next_state == ST_READ_TO_IDLE       ) ? csr_opmode_cas_latency :
         (next_state == ST_READ_TO_PRECHARGE  ) ? csr_opmode_cas_latency :
-        (next_state == ST_READ_TO_WRITE      ) ? csr_opmode_cas_latency :
+        (next_state == ST_READ_TO_WRITE      ) ? (csr_opmode_cas_latency == 3'h2 ? 4 : 5) :
         0;
 
     reg [31:0] timer_cnt;
@@ -332,6 +332,8 @@ module sdram_ctrl (
         .CE  (1'b1                           ),
         .R   (1'b0                           ),
         .S   (1'b0                           ),
+        //.D0  (1'b0                           ),
+        //.D1  (1'b1                           ),
         .D0  (1'b1                           ),
         .D1  (1'b0                           ),
         .C0  (clk                            ),
@@ -342,8 +344,8 @@ module sdram_ctrl (
     IODELAY2 #(
         .IDELAY_VALUE(0                ),
         .IDELAY_MODE ("NORMAL"         ),
-        .ODELAY_VALUE(56               ),
-        //.ODELAY_VALUE(65               ), // value of 100 seems to work at 100MHz
+        .ODELAY_VALUE(38               ),
+        //.ODELAY_VALUE(63               ), // value of 100 seems to work at 100MHz
         .IDELAY_TYPE ("FIXED"          ),
         .DELAY_SRC   ("ODATAIN"        ),
         .DATA_RATE   ("SDR"            )
@@ -368,27 +370,17 @@ module sdram_ctrl (
     assign sdram_ctrl_cmd_accepted = (next_state == ST_CMD_READ ||
                                       next_state == ST_CMD_WRITE);
 
-    always @(posedge clk) begin
-        if (reset) begin
-            sdram_ctrl_cmd_done <= 1'b0;
-        end
-        else if (rd_data_valid[0] == 1'b1 || state == ST_CMD_WRITE) begin
-            sdram_ctrl_cmd_done <= 1'b1;
-        end
-        else begin
-            sdram_ctrl_cmd_done <= 1'b0;
-        end
-    end
 
     reg        sdram_if_cke_int;
     reg        sdram_if_ncs_int;
     reg        sdram_if_ncas_int;
     reg        sdram_if_nras_int;
     reg        sdram_if_nwe_int;
-    reg        sdram_if_dqml_int;
-    reg        sdram_if_dqmh_int;
+    //reg        sdram_if_dqml_int;
+    //reg        sdram_if_dqmh_int;
     reg [12:0] sdram_if_a_int;
     reg [ 1:0] sdram_if_ba_int;
+
 
     always @(posedge clk) begin
         if (reset) begin
@@ -401,6 +393,19 @@ module sdram_ctrl (
             sdram_ctrl_rd_data <= 16'h0000;
         end
     end
+
+    always @(posedge clk) begin
+        if (reset) begin
+            sdram_ctrl_cmd_done <= 1'b0;
+        end
+        else if (rd_data_valid[0] == 1'b1 || next_state == ST_CMD_WRITE) begin
+            sdram_ctrl_cmd_done <= 1'b1;
+        end
+        else begin
+            sdram_ctrl_cmd_done <= 1'b0;
+        end
+    end
+
 
     always @(*) begin
         // INHIBIT
@@ -456,7 +461,7 @@ module sdram_ctrl (
             sdram_if_nras_int    = 1'b0;
             sdram_if_ncas_int    = 1'b1;
             sdram_if_nwe_int     = 1'b1;
-            sdram_if_a_int[12:0] = sdram_ctrl_addr[24:11];  // Row addr
+            sdram_if_a_int[12:0] = sdram_ctrl_addr[23:11];  // Row addr
             sdram_if_ba_int      = sdram_ctrl_addr[10:9];   // Bank addr
         end
         else if (state == ST_CMD_READ) begin
@@ -498,6 +503,7 @@ module sdram_ctrl (
         end
     end
 
+    /*
     always @(*) begin
         sdram_if_dqml_int = 1'b0;
         sdram_if_dqmh_int = 1'b0;
@@ -505,10 +511,11 @@ module sdram_ctrl (
         // TODO Check this!
         if (state == ST_READ_TO_WRITE) begin
             // DQM 2 cycles prior to WRITE
-            sdram_if_dqml_int = rd_data_valid[0] | rd_data_valid[1];
-            sdram_if_dqmh_int = rd_data_valid[0] | rd_data_valid[1];
+            sdram_if_dqml_int = ~rd_data_valid[3] & (rd_data_valid[2] | rd_data_valid[1]);
+            sdram_if_dqmh_int = ~rd_data_valid[3] & (rd_data_valid[2] | rd_data_valid[1]);
         end
     end
+    */
 
     reg [15:0] sdram_if_dq_reg;
     reg sdram_if_dq_en;
@@ -519,8 +526,10 @@ module sdram_ctrl (
         sdram_if_ncas <= sdram_if_ncas_int;
         sdram_if_nras <= sdram_if_nras_int;
         sdram_if_nwe  <= sdram_if_nwe_int;
-        sdram_if_dqml <= sdram_if_dqml_int;
-        sdram_if_dqmh <= sdram_if_dqmh_int;
+        //sdram_if_dqml <= sdram_if_dqml_int;
+        //sdram_if_dqmh <= sdram_if_dqmh_int;
+        sdram_if_dqml <= 1'b0;
+        sdram_if_dqmh <= 1'b0;
         sdram_if_a    <= sdram_if_a_int;
         sdram_if_ba   <= sdram_if_ba_int;
         sdram_if_dq_reg <= cur_sdram_wr_data;
