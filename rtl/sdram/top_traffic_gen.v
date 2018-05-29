@@ -42,8 +42,8 @@ module top_traffic_gen(
         .CLK_VALID    (clk_valid        )
     );
 
-    assign LED[0] = data_mismatch;
-    assign LED[1] = wbs_sdram_address[23];
+    assign LED[0] = ~data_mismatch;
+    assign LED[1] = ~wbs_sdram_address[23];
 
     // WISHBONE SLAVE INTERFACE FOR SDRAM ACCESS
     wire [AW_SDRAM-1:0]       wbs_sdram_address   ;

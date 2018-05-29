@@ -51,9 +51,6 @@
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="0"/>
       <association xil_pn:name="Implementation" xil_pn:seqID="8"/>
     </file>
-    <file xil_pn:name="../rtl/constrains.ucf" xil_pn:type="FILE_UCF">
-      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
-    </file>
     <file xil_pn:name="../rtl/sdram/tb_top.v" xil_pn:type="FILE_VERILOG">
       <association xil_pn:name="BehavioralSimulation" xil_pn:seqID="97"/>
       <association xil_pn:name="PostMapSimulation" xil_pn:seqID="97"/>
@@ -65,6 +62,9 @@
       <association xil_pn:name="PostMapSimulation" xil_pn:seqID="98"/>
       <association xil_pn:name="PostRouteSimulation" xil_pn:seqID="1"/>
       <association xil_pn:name="PostTranslateSimulation" xil_pn:seqID="98"/>
+    </file>
+    <file xil_pn:name="../rtl/constrains.ucf" xil_pn:type="FILE_UCF">
+      <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
     </file>
     <file xil_pn:name="../rtl/ip_spartan6/ip_clk_gen_100M/ip_clk_gen_100M.xise" xil_pn:type="FILE_COREGENISE">
       <association xil_pn:name="Implementation" xil_pn:seqID="0"/>
@@ -339,6 +339,7 @@
     <property xil_pn:name="Starting Placer Cost Table (1-100) Map spartan6" xil_pn:value="1" xil_pn:valueState="default"/>
     <property xil_pn:name="Synthesis Tool" xil_pn:value="XST (VHDL/Verilog)" xil_pn:valueState="default"/>
     <property xil_pn:name="Target Simulator" xil_pn:value="Please Specify" xil_pn:valueState="default"/>
+    <property xil_pn:name="Target UCF File Name" xil_pn:value="top_traffic_gen.ucf" xil_pn:valueState="non-default"/>
     <property xil_pn:name="Timing Mode Map" xil_pn:value="Performance Evaluation" xil_pn:valueState="default"/>
     <property xil_pn:name="Timing Mode Par" xil_pn:value="Performance Evaluation" xil_pn:valueState="default"/>
     <property xil_pn:name="Top-Level Module Name in Output Netlist" xil_pn:value="" xil_pn:valueState="default"/>
@@ -397,7 +398,7 @@
   </properties>
 
   <bindings>
-    <binding xil_pn:location="/tb_sdram_random_rw" xil_pn:name="../rtl/constrains.ucf"/>
+    <binding xil_pn:location="/top_traffic_gen" xil_pn:name="../rtl/constrains.ucf"/>
   </bindings>
 
   <libraries/>
