@@ -332,10 +332,10 @@ module sdram_ctrl (
         .CE  (1'b1                           ),
         .R   (1'b0                           ),
         .S   (1'b0                           ),
-        //.D0  (1'b0                           ),
-        //.D1  (1'b1                           ),
-        .D0  (1'b1                           ),
-        .D1  (1'b0                           ),
+        .D0  (1'b0                           ),
+        .D1  (1'b1                           ),
+        //.D0  (1'b1                           ),
+        //.D1  (1'b0                           ),
         .C0  (clk                            ),
         .C1  (~clk                           ),
         .Q   (sdram_clk_ddr                  )
@@ -344,8 +344,7 @@ module sdram_ctrl (
     IODELAY2 #(
         .IDELAY_VALUE(0                ),
         .IDELAY_MODE ("NORMAL"         ),
-        .ODELAY_VALUE(38               ),
-        //.ODELAY_VALUE(63               ), // value of 100 seems to work at 100MHz
+        .ODELAY_VALUE(48               ),
         .IDELAY_TYPE ("FIXED"          ),
         .DELAY_SRC   ("ODATAIN"        ),
         .DATA_RATE   ("SDR"            )
