@@ -15,10 +15,15 @@ module synth_top (
     input        reset,
     input        uart_rx,
 
+    // i2s interface
     input        i2s_lrclk_in,
     input        i2s_bclk_in,
     input        i2s_data_in,
-    output       i2s_data_out
+    output       i2s_data_out,
+    
+    // sigma-delta DAC out
+    output       sddac_out_l,
+    output       sddac_out_r
 );
 
     wire        uart_data_rdy;
@@ -84,6 +89,28 @@ module synth_top (
     );
 
     wire                lpf_smp_in_rdy;
+
+    // DSP signals interconnection
+    dsp_module #(
+        .CLIENTS_N(2                  ),
+        .DSPS_N   (1                  )
+    ) dsp_module_inst (
+        .clk    ( clk                 ),
+        .reset  ( reset               ),
+        .op     ( {lpf_op , pgen_op } ),
+        .al     ( {lpf_al , pgen_al } ),
+        .bl     ( {lpf_bl , pgen_bl } ),
+        .cl     ( {lpf_cl , pgen_cl } ),
+        .pl     ( {lpf_pl , pgen_pl } ),
+        .ar     ( {lpf_ar , pgen_ar } ),
+        .br     ( {lpf_br , pgen_br } ),
+        .cr     ( {lpf_cr , pgen_cr } ),
+        .pr     ( {lpf_pr , pgen_pr } ),
+        .req    ( {lpf_req, pgen_req} ),
+        .gnt    ( {lpf_gnt, pgen_gnt} )
+    );
+
+
     wire signed [17:0]  lpf_smp_l_in;
     wire signed [17:0]  lpf_smp_r_in;
     wire                lpf_smp_out_rdy;
@@ -169,4 +196,20 @@ module synth_top (
         .lrclk          (i2s_lrclk_in      ),
         .dacda          (i2s_data_out      )
     );
+
+
+    wire               sddac_sample_in_rdy = pgen_smp_out_rdy;
+    wire signed [17:0] sddac_sample_in_l   = pgen_smp_out_l;
+    wire signed [17:0] sddac_sample_in_r   = pgen_smp_out_r;
+
+    module_stereo_dac_output module_stereo_dac_output (
+        .clk              (clk                  ),
+        .reset            (reset                ),
+        .sample_in_rdy    (sddac_ample_in_rdy   ),
+        .sample_in_l      (sddac_ample_in_l     ),
+        .sample_in_r      (sddac_ample_in_r     ),
+        .dac_out_l        (sddac_out_l          ),
+        .dac_out_r        (sddac_out_r          )
+    );
+
 endmodule

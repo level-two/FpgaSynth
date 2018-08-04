@@ -21,8 +21,7 @@ module alu_top (
     output            alu_stall       ,
     //output          alu_err         , // TBI
 
-    input             alu_mode        ,
-    input  [ 7:0]     alu_op          ,
+    input  [ 8:0]     alu_op          ,
     input  [17:0]     alu_al          ,
     input  [17:0]     alu_bl          ,
     input  [47:0]     alu_cl          ,
@@ -38,7 +37,7 @@ module alu_top (
         if (reset) begin
             ack_q[2:0] <= 1'b0;
         end else begin
-            if (alu_cycle && alu_strobe && alu_mode == `ALU_MODE_DSP) begin
+            if (alu_cycle && alu_strobe && alu_op[8] == 1'b0) begin
                 ack_q[0] <= 1'b1;
             end else begin
                 ack_q[0] <= 1'b0;
@@ -66,7 +65,7 @@ module alu_top (
             // do nothing
         end
         else if (alu_mode == `ALU_MODE_DSP) begin
-            dsp_op         = alu_op;
+            dsp_op         = alu_op[7:0];
             dsp_al         = alu_al;
             dsp_bl         = alu_bl;
             dsp_cl         = alu_cl;

@@ -30,6 +30,65 @@ module tb_module_stereo_dac_output();
     real       SIN_FREQ      = 1e3;
 
 
+   // 18'h20000 = -2.0
+   // 18'h1FFFF <  2.0
+    function [17:0] real_to_sample;
+        input real real_val;
+        begin
+            if (real_val < -2.0 || real_val >= 2.0) begin
+                $display("real_to_sample: input is out of range %f", real_val);
+            end
+            else begin
+                real_to_sample = real_val * (1 << 16);
+            end
+        end
+    endfunction
+
+
+    function [17:0] sin_sample;
+        input real freq;
+        input real cur_time;
+        real       cur_sin_val;
+        begin
+            cur_sin_val = 0.5; //$sin(2*`M_PI*freq*cur_time);
+            sin_sample  = real_to_sample(cur_sin_val);
+        end
+    endfunction
+
+
+    wire               midi_rdy;
+    wire [`MIDI_CMD_SIZE-1:0] midi_cmd;
+    wire [3:0]         midi_ch_sysn;
+    wire [6:0]         midi_data0;
+    wire [6:0]         midi_data1;
+    wire               new_sample_trig;
+    wire               pgen_smp_out_rdy;
+    wire signed [17:0] pgen_smp_out_l;
+    wire signed [17:0] pgen_smp_out_r;
+
+    gen_sine gen_sine_inst (
+        .clk                  (clk                       ),
+        .reset                (reset                     ),
+        .midi_rdy             (midi_rdy                  ),
+        .midi_cmd             (midi_cmd                  ),
+        .midi_ch_sysn         (midi_ch_sysn              ),
+        .midi_data0           (midi_data0                ),
+        .midi_data1           (midi_data1                ),
+        .smp_rate_trig        (new_sample_trig           ),
+        .smp_out_rdy          (pgen_smp_out_rdy          ),
+        .smp_out_l            (pgen_smp_out_l            ),
+        .smp_out_r            (pgen_smp_out_r            ),
+        .dsp_outs_flat_l      (pgen_dsp_outs_flat_l      ),
+        .dsp_outs_flat_r      (pgen_dsp_outs_flat_r      ),
+        .dsp_ins_flat_l       (pgen_dsp_ins_flat_l       ),
+        .dsp_ins_flat_r       (pgen_dsp_ins_flat_r       )
+    );
+
+
+
+
+
+
     // dut
     module_stereo_dac_output dut (
         .clk              (clk             ),
@@ -57,11 +116,8 @@ module tb_module_stereo_dac_output();
 
     integer f;
     initial begin
-        f = $fopen("output.txt", "w");
-    end
+        f = $fopen("c:\output.txt", "w");
 
-
-    initial begin
         reset           <= 1;
 
         sample_in_rdy   <= 0;
@@ -71,31 +127,13 @@ module tb_module_stereo_dac_output();
         repeat (100) @(posedge clk);
             reset <= 0;
 
-        repeat (100) @(posedge clk);
-
-        sample_in_l     <= 18'h00000;
-        sample_in_r     <= 18'h01000;
-
         repeat (100) begin
+            sample_in_r     <= sin_sample(SIN_FREQ, $time());
+            sample_in_l     <= sin_sample(SIN_FREQ, $time());
             sample_in_rdy   <= 1;
             @(posedge clk);
             sample_in_rdy   <= 0;
             repeat (SAMPLE_CLKS) @(posedge clk);
-
-
-
-
-            begin : IN_CALC
-                real cur_sin_val;
-                cur_sin_val = $sin(2*PI*SAMPLE_FREQ*cur_time)
-           
-           
-            sample_in_l - 18'h0001;
-
-
-
-
-            sample_in_r     <= sample_in_r + 18'h0001;
         end
 
         #100;
@@ -105,7 +143,7 @@ module tb_module_stereo_dac_output();
     end
 
    
-    always begin
+    initial begin
         @(posedge reset);
         @(negedge reset);
         forever begin

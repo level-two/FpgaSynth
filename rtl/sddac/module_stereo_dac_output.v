@@ -10,7 +10,7 @@
 //              Output sample rate: 1536 kHz
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module module_stereo_dac_output (
     input               clk,

@@ -12,7 +12,7 @@
 //              k      =    8
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module fir_interp_20k_192k_8x (
     input                    clk,

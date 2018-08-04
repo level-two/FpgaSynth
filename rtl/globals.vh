@@ -18,6 +18,8 @@
 `define CLK_DIV_48K             (`CLK_DIV_1536K * `CLK_DIV_1536K_48K)
 `define CLK_DIV_96K             (`CLK_DIV_1536K * `CLK_DIV_1536K_96K)
 
+`define M_PI                    3.141592
+
 `define MIDI_CMD_NONE           'h00
 `define MIDI_CMD_NOTE_ON        'h01
 `define MIDI_CMD_NOTE_OFF       'h02
@@ -46,32 +48,32 @@
 `define ALU_MODE_DSP            1'b0
 `define ALU_MODE_FUNC           1'b1
                                 
-`define ALU_FUNC_SIN            8'h01
-`define ALU_FUNC_COS            8'h02
-`define ALU_FUNC_INV_1_PLUS_X   8'h03
+`define ALU_FUNC_SIN            9'h101
+`define ALU_FUNC_COS            9'h102
+`define ALU_FUNC_INV_1_PLUS_X   9'h103
 
 // DSP48A1 constants
-`define DSP_NOP                 8'h00
+`define ALU_DSP_NOP             9'h000
 
-`define DSP_XIN_ZERO            8'h00
-`define DSP_XIN_MULT            8'h01
-`define DSP_XIN_POUT            8'h02
-`define DSP_XIN_DAB             8'h03
+`define ALU_DSP_XIN_ZERO        9'h000
+`define ALU_DSP_XIN_MULT        9'h001
+`define ALU_DSP_XIN_POUT        9'h002
+`define ALU_DSP_XIN_DAB         9'h003
 
-`define DSP_ZIN_ZERO            8'h00
-`define DSP_ZIN_PCIN            8'h04
-`define DSP_ZIN_POUT            8'h08
-`define DSP_ZIN_CIN             8'h0c
+`define ALU_DSP_ZIN_ZERO        9'h000
+`define ALU_DSP_ZIN_PCIN        9'h004
+`define ALU_DSP_ZIN_POUT        9'h008
+`define ALU_DSP_ZIN_CIN         9'h00c
 
-`define DSP_USE_PREADD          8'h10
+`define ALU_DSP_USE_PREADD      9'h010
 
-`define DSP_CRYIN               8'h20
+`define ALU_DSP_CRYIN           9'h020
 
-`define DSP_PREADD_ADD          8'h00
-`define DSP_PREADD_SUB          8'h40
+`define ALU_DSP_PREADD_ADD      9'h000
+`define ALU_DSP_PREADD_SUB      9'h040
 
-`define DSP_POSTADD_ADD         8'h00
-`define DSP_POSTADD_SUB         8'h80
+`define ALU_DSP_POSTADD_ADD     9'h000
+`define ALU_DSP_POSTADD_SUB     9'h080
 
 
 ///// ????

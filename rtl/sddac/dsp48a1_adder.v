@@ -8,7 +8,7 @@
 // Description: Instance of the DSP48A1 in the 48-bit ADDER/SUBSTRACTER mode
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module dsp48a1_adder (
     input                clk,

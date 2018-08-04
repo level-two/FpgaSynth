@@ -8,7 +8,7 @@
 // Description: First order sigma-delta dac for audio output
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module sigma_delta_2order_dac
 (

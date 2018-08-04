@@ -8,7 +8,7 @@
 // Description: Halfband 2x-interpolating FIR implementation
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module fir_interp_halfband_2x (
     input                    clk,
