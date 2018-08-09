@@ -14,8 +14,8 @@ module alu_nic_mul (
     input                     clk           ,
     input                     reset         ,
 
-    input  [   CLIENTS_N-1:0] client_strobe ,
     input  [   CLIENTS_N-1:0] client_cycle  ,
+    input  [   CLIENTS_N-1:0] client_strobe ,
     output [   CLIENTS_N-1:0] client_ack    ,
     output [   CLIENTS_N-1:0] client_stall  ,
     //output[  CLIENTS_N-1:0] client_err    ,
@@ -29,8 +29,6 @@ module alu_nic_mul (
     input  [18*CLIENTS_N-1:0] client_br     ,
     input  [48*CLIENTS_N-1:0] client_cr     ,
     output [48*CLIENTS_N-1:0] client_pr     ,
-    input  [   CLIENTS_N-1:0] client_req    ,
-    output [   CLIENTS_N-1:0] client_gnt    ,
 
     output [      ALUS_N-1:0] alu_strobe    ,
     output [      ALUS_N-1:0] alu_cycle     ,
@@ -55,7 +53,6 @@ module alu_nic_mul (
 
     wire [CLIENTS_N-1:0]        gnt_val;
     wire [CLIENTS_N*ALUS_N-1:0] gnt_id;
-    assign client_gnt = gnt_val;
 
     arb_mul #(
         .PORTS_N    (CLIENTS_N       ),
@@ -64,7 +61,7 @@ module alu_nic_mul (
     ) arb_mul_inst (
         .clk        (clk             ),
         .reset      (reset           ),
-        .req        (client_req      ),
+        .req        (client_cycle    ),
         .gnt        (gnt_val         ),
         .gnt_id     (gnt_id          )
     );
@@ -74,8 +71,9 @@ module alu_nic_mul (
     always @(*) begin
         client_pl    = {CLEINTS_N{47'h0}};
         client_pr    = {CLEINTS_N{47'h0}};
-        client_ack   = {CLIENTS_N{ 1'b0}};
+
         client_stall = {CLIENTS_N{ 1'b0}};
+        client_ack   = {CLIENTS_N{ 1'b0}};
         //client_err = {CLIENTS_N{ 1'b0}};
 
         alu_strobe   = {   ALUS_N{ 1'b0}};
@@ -90,26 +88,27 @@ module alu_nic_mul (
         alu_cr       = {   ALUS_N{47'h0}};
 
         generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
+            client_stall[j] = client_cycle[j] & ~gnt_val[j];
+
             if (gnt_val[j]) begin : on_gnt
-                integer alu_id;
-                alu_id                = gnt_id[ALUS_W*j +: ALUS_W];
+                integer alu_id           = gnt_id       [ALUS_W*j +: ALUS_W];
 
-                client_ack  [j]       = alu_ack  [alu_id];
-                client_stall[j]       = alu_stall[alu_id];
-                //client_err[j]       = alu_err  [alu_id];
-                client_pl[48*j +: 48] = alu_pl   [alu_id];
-                client_pr[48*j +: 48] = alu_pr   [alu_id];
+                client_ack  [         j] = alu_ack      [    alu_id];
+                client_stall[         j] = alu_stall    [    alu_id];
+                //client_err[         j] = alu_err      [    alu_id];
+                client_pl   [48*j +: 48] = alu_pl       [    alu_id];
+                client_pr   [48*j +: 48] = alu_pr       [    alu_id];
 
-                alu_strobe[alu_id]    = client_strobe[j];
-                alu_cycle [alu_id]    = client_cycle [j];
-                alu_mode  [alu_id]    = client_mode  [j];
-                alu_op    [alu_id]    = client_op[ 8*j +:  8];
-                alu_al    [alu_id]    = client_al[18*j +: 18];
-                alu_bl    [alu_id]    = client_bl[18*j +: 18];
-                alu_cl    [alu_id]    = client_cl[48*j +: 48];
-                alu_ar    [alu_id]    = client_ar[18*j +: 18];
-                alu_br    [alu_id]    = client_br[18*j +: 18];
-                alu_cr    [alu_id]    = client_cr[48*j +: 48];
+                alu_strobe  [    alu_id] = client_strobe[         j];
+                alu_cycle   [    alu_id] = client_cycle [         j];
+                alu_mode    [    alu_id] = client_mode  [         j];
+                alu_op      [    alu_id] = client_op    [ 8*j +:  8];
+                alu_al      [    alu_id] = client_al    [18*j +: 18];
+                alu_bl      [    alu_id] = client_bl    [18*j +: 18];
+                alu_cl      [    alu_id] = client_cl    [48*j +: 48];
+                alu_ar      [    alu_id] = client_ar    [18*j +: 18];
+                alu_br      [    alu_id] = client_br    [18*j +: 18];
+                alu_cr      [    alu_id] = client_cr    [48*j +: 48];
             end
         end endgenerate
     end

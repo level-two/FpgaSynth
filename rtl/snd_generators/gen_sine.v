@@ -40,7 +40,7 @@ module gen_sine (
     output reg signed [17:0]    alu_ar        ,
     output reg signed [17:0]    alu_br        ,
     output reg signed [47:0]    alu_cr        ,
-    input      signed [47:0]    alu_pr        ,
+    input      signed [47:0]    alu_pr        
 );
 
     // TASKS
