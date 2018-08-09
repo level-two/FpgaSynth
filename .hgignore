@@ -16,3 +16,4 @@ docs/
 *\_xmsgs\*.xmsgs
 prj_sdram/
 rtl/ip_spartan6/tmp/
+prj_sddac/

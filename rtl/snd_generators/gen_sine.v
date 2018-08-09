@@ -11,41 +11,44 @@
 `include "globals.vh"
 
 module gen_sine (
-    input                       clk,
-    input                       reset,
+    input                       clk           ,
+    input                       reset         ,
 
-    input                       midi_rdy,
-    input  [`MIDI_CMD_SIZE-1:0] midi_cmd,
-    input  [3:0]                midi_ch_sysn,
-    input  [6:0]                midi_data0,
-    input  [6:0]                midi_data1,
+    input                       midi_rdy      ,
+    input  [`MIDI_CMD_SIZE-1:0] midi_cmd      ,
+    input  [3:0]                midi_ch_sysn  ,
+    input  [6:0]                midi_data0    ,
+    input  [6:0]                midi_data1    ,
 
-    input                       smp_trig,
-    output reg                  smp_out_rdy,
-    output reg signed [17:0]    smp_out_l,
-    output reg signed [17:0]    smp_out_r,
+    input                       smp_trig      ,
+    output reg                  smp_out_rdy   ,
+    output reg signed [17:0]    smp_out_l     ,
+    output reg signed [17:0]    smp_out_r     ,
 
     // ALU
-    output reg        [ 8:0]     alu_op     ,
-    output reg signed [17:0]     alu_al     ,
-    output reg signed [17:0]     alu_bl     ,
-    output reg signed [47:0]     alu_cl     ,
-    input      signed [47:0]     alu_pl     ,
-    output reg signed [17:0]     alu_ar     ,
-    output reg signed [17:0]     alu_br     ,
-    output reg signed [47:0]     alu_cr     ,
-    input      signed [47:0]     alu_pr     ,
-    output reg                   alu_req    ,
-    input                        alu_gnt    ,
-    input                        alu_op_done
+    output                      alu_cycle     ,
+    output                      alu_strobe    ,
+    input                       alu_ack       ,
+    input                       alu_stall     ,
+    //input                     alu_err       , // TBI
+
+    output reg        [ 8:0]    alu_op        ,
+    output reg signed [17:0]    alu_al        ,
+    output reg signed [17:0]    alu_bl        ,
+    output reg signed [47:0]    alu_cl        ,
+    input      signed [47:0]    alu_pl        ,
+    output reg signed [17:0]    alu_ar        ,
+    output reg signed [17:0]    alu_br        ,
+    output reg signed [47:0]    alu_cr        ,
+    input      signed [47:0]    alu_pr        ,
 );
 
     // TASKS
     localparam [15:0] NOP                      = 16'h0001;
     localparam [15:0] JP_0                     = 16'h0002;
     localparam [15:0] SEND_SMP                 = 16'h0004;
-    localparam [15:0] SET_ALU_REQ              = 16'h0008;
-    localparam [15:0] CLR_ALU_REQ              = 16'h0010;
+    localparam [15:0] SET_ALU_CYCLE            = 16'h0008;
+    localparam [15:0] CLR_ALU_CYCLE            = 16'h0010;
     localparam [15:0] CALC_SIN_VAL             = 16'h0020;
     localparam [15:0] MUL_AC_AMPL              = 16'h0040;
     localparam [15:0] ADD_PHASE_STEP           = 16'h0080;
@@ -97,21 +100,20 @@ module gen_sine (
     always @(pc) begin
         case (pc)
             4'h0   : tasks = (note_on     == 1'b0) ? WAIT ; NOP                ;
-            4'h1   : tasks = (smp_trig    == 1'b0) ? WAIT ; SEND_SMP | SET_ALU_REQ;
-            4'h2   : tasks = (alu_gnt     == 1'b0) ? WAIT : CALC_SIN_VAL       ;
-            4'h3   : tasks = (alu_op_done == 1'b0) ? WAIT : MUL_AC_AMPL        ;
+            4'h1   : tasks = (smp_trig    == 1'b0) ? WAIT ; SEND_SMP | SET_ALU_CYCLE;
+            4'h2   : tasks = CALC_SIN_VAL                                      ;
+            4'h3   : tasks = (alu_ack == 1'b0) ? WAIT : MUL_AC_AMPL            ;
             4'h4   : tasks = ADD_PHASE_STEP                                    ;
-            4'h5   : tasks = NOP                                               ;
-            4'h6   : tasks = MOV_SIN_VAL_AC                                    ;
-            4'h7   : tasks = MOV_PHASE_AC                                      |
-                            (dir == DIR_NEG && alu_pl[47] == 1'b1) ?
-                                REACHED_MIN_BOUND | CLR_ALU_REQ | JP_0 :
-                                PI2_MINUS_AC                                   ;
-            4'h8   : tasks = NOP                                               ;
-            4'h9   : tasks = NOP                                               ;
-            4'ha   : tasks = (alu_pl[47] == 1'b1 ? REACHED_MAX_BOUND : NOP)    |
-                             CLR_ALU_REQ                                       |
-                             JP_0                                              ;
+            4'h5   : tasks = (alu_ack == 1'b0) ? WAIT : MOV_SIN_VAL_AC         ;
+            4'h5   : tasks = (alu_ack == 1'b0) ? WAIT                          :
+                                 MOV_PHASE_AC                                  |
+                                 (dir == DIR_NEG && alu_pl[47] == 1'b1)        ?
+                                     REACHED_MIN_BOUND | CLR_ALU_CYCLE | JP_0  :
+                                     PI2_MINUS_AC                              ;
+            4'h5   : tasks = (alu_ack == 1'b0) ? WAIT                          :
+                                 (alu_pl[47] == 1'b1 ? REACHED_MAX_BOUND : NOP)|
+                                 CLR_ALU_CYCLE                                 |
+                                 JP_0                                          ;
             default: tasks = JP_0                                              ;
         endcase
     end
@@ -132,14 +134,14 @@ module gen_sine (
     end
 
 
-    // REQ
+    // CYCLE
     always @(posedge reset or posedge clk) begin
         if (reset) begin
-            alu_req <= 1'b0;
-        end else if (tasks & SET_ALU_REQ) begin
-            alu_req <= 1'b1;
-        end else if (tasks & CLR_ALU_REQ) begin
-            alu_req <= 1'b0;
+            alu_cycle <= 1'b0;
+        end else if (tasks & SET_ALU_CYCLE) begin
+            alu_cycle <= 1'b1;
+        end else if (tasks & CLR_ALU_CYCLE) begin
+            alu_cycle <= 1'b0;
         end
     end
 
@@ -201,6 +203,7 @@ module gen_sine (
 
     always @(posedge reset or posedge clk) begin
         if (reset) begin
+            alu_strobe <= 1'b0;
             alu_op <= `ALU_NOP;
             alu_al <= 18'h00000;
             alu_bl <= 18'h00000;
@@ -210,11 +213,13 @@ module gen_sine (
             alu_cr <= 48'h00000;
         end
         else if (tasks & CALC_SIN_VAL) begin
+            alu_strobe <= 1'b1;
             alu_op <= `ALU_FUNC_SIN;
             alu_al <= phase;
             alu_ar <= phase;
         end
         else if (tasks & MUL_AC_AMPL) begin
+            alu_strobe <= 1'b1;
             alu_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
             alu_al <= alu_pl[33:16];
             alu_bl <= {2'b0, ampl[6:0], 9'h0};
@@ -223,6 +228,7 @@ module gen_sine (
         end
         else if (tasks & ADD_PHASE_STEP) begin
             // phase+-step*sign
+            alu_strobe <= 1'b1;
             alu_op <= `ALU_DSP_XIN_MULT |
                       `ALU_DSP_ZIN_CIN  |
                       (dir == DIR_POS ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
@@ -234,6 +240,7 @@ module gen_sine (
             alu_cr <= phase;
         end
         else if (tasks & PI2_MINUS_AC) begin
+            alu_strobe <= 1'b1;
             alu_op <= `ALU_DSP_XIN_MULT   |
                       `ALU_DSP_ZIN_CIN    |
                       `ALU_DSP_POSTADD_SUB;
@@ -245,6 +252,7 @@ module gen_sine (
             alu_cr <= PI2;
         end
         else begin
+            alu_strobe <= 1'b0;
             alu_op <= `ALU_NOP;
             alu_al <= 18'h00000;
             alu_bl <= 18'h00000;
@@ -295,7 +303,7 @@ module gen_sine (
             7'h1e:   begin step <= 18'h00000; end
             7'h1f:   begin step <= 18'h00000; end
 
-            7'h20:   begin step <= 18'h00000; end
+            7'h20:   begin step <= 18'h01111; end
             7'h21:   begin step <= 18'h00000; end
             7'h22:   begin step <= 18'h00000; end
             7'h23:   begin step <= 18'h00000; end

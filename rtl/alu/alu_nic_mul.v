@@ -92,7 +92,7 @@ module alu_nic_mul (
         generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
             if (gnt_val[j]) begin : on_gnt
                 integer alu_id;
-                alu_id = gnt_id[ALUS_W*j +: ALUS_W];
+                alu_id                = gnt_id[ALUS_W*j +: ALUS_W];
 
                 client_ack  [j]       = alu_ack  [alu_id];
                 client_stall[j]       = alu_stall[alu_id];
@@ -100,16 +100,16 @@ module alu_nic_mul (
                 client_pl[48*j +: 48] = alu_pl   [alu_id];
                 client_pr[48*j +: 48] = alu_pr   [alu_id];
 
-                alu_strobe[alu_id] = client_strobe[j];
-                alu_cycle [alu_id] = client_cycle [j];
-                alu_mode  [alu_id] = client_mode  [j];
-                alu_op    [alu_id] = client_op[ 8*j +:  8];
-                alu_al    [alu_id] = client_al[18*j +: 18];
-                alu_bl    [alu_id] = client_bl[18*j +: 18];
-                alu_cl    [alu_id] = client_cl[48*j +: 48];
-                alu_ar    [alu_id] = client_ar[18*j +: 18];
-                alu_br    [alu_id] = client_br[18*j +: 18];
-                alu_cr    [alu_id] = client_cr[48*j +: 48];
+                alu_strobe[alu_id]    = client_strobe[j];
+                alu_cycle [alu_id]    = client_cycle [j];
+                alu_mode  [alu_id]    = client_mode  [j];
+                alu_op    [alu_id]    = client_op[ 8*j +:  8];
+                alu_al    [alu_id]    = client_al[18*j +: 18];
+                alu_bl    [alu_id]    = client_bl[18*j +: 18];
+                alu_cl    [alu_id]    = client_cl[48*j +: 48];
+                alu_ar    [alu_id]    = client_ar[18*j +: 18];
+                alu_br    [alu_id]    = client_br[18*j +: 18];
+                alu_cr    [alu_id]    = client_cr[48*j +: 48];
             end
         end endgenerate
     end
