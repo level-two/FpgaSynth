@@ -180,59 +180,59 @@ module alu_taylor_calc_1 (
     wire signed [17:0] sil = sl_reg[i_reg];
     wire signed [17:0] sir = sr_reg[i_reg];
     always @(*) begin
-        dsp_op     <= `ALU_DSP_NOP;
-        dsp_al     <= 18'h00000;
-        dsp_ar     <= 18'h00000;
-        dsp_bl     <= 18'h00000;
-        dsp_br     <= 18'h00000;
-        dsp_cl     <= 48'h00000;
-        dsp_cr     <= 48'h00000;
+        dsp_op     = `ALU_DSP_NOP;
+        dsp_al     = 18'h00000;
+        dsp_ar     = 18'h00000;
+        dsp_bl     = 18'h00000;
+        dsp_br     = 18'h00000;
+        dsp_cl     = 48'h00000;
+        dsp_cr     = 48'h00000;
 
         if (tasks & MUL_1_CI_SI) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= ci;
-            dsp_ar <= ci;
-            dsp_bl <= 18'h10000;
-            dsp_br <= 18'h10000;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = ci;
+            dsp_ar = ci;
+            dsp_bl = 18'h10000;
+            dsp_br = 18'h10000;
         end
         else if (tasks & MUL_XA_CI_SI) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= ci;
-            dsp_ar <= ci;
-            dsp_bl <= xal;
-            dsp_br <= xar;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = ci;
+            dsp_ar = ci;
+            dsp_bl = xal;
+            dsp_br = xar;
         end
         else if (tasks & MUL_SI_1) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= sil;
-            dsp_ar <= sir;
-            dsp_bl <= 18'h10000;
-            dsp_br <= 18'h10000;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = sil;
+            dsp_ar = sir;
+            dsp_bl = 18'h10000;
+            dsp_br = 18'h10000;
         end
         else if (tasks & MUL_SI_AC) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= sil;
-            dsp_ar <= sir;
-            dsp_bl <= dsp_pl[33:16];
-            dsp_br <= dsp_pr[33:16];
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = sil;
+            dsp_ar = sir;
+            dsp_bl = dsp_pl[33:16];
+            dsp_br = dsp_pr[33:16];
         end
         else if (tasks & MADD_SI_MR_AC) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN;
-            dsp_al <= sil;
-            dsp_ar <= sir;
-            dsp_bl <= mrl_reg;
-            dsp_br <= mrr_reg;
-            dsp_cl <= dsp_pl;
-            dsp_cr <= dsp_pr;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN;
+            dsp_al = sil;
+            dsp_ar = sir;
+            dsp_bl = mrl_reg;
+            dsp_br = mrr_reg;
+            dsp_cl = dsp_pl;
+            dsp_cr = dsp_pr;
         end
         else if (tasks & SUB_X_A0_XA) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN | `ALU_DSP_POSTADD_SUB;
-            dsp_al <= a0;
-            dsp_ar <= a0;
-            dsp_bl <= 18'h10000;
-            dsp_br <= 18'h10000;
-            dsp_cl <= { {15{xl_reg[17]}}, xl_reg[16:0], 16'h0000};
-            dsp_cr <= { {15{xr_reg[17]}}, xr_reg[16:0], 16'h0000};
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN | `ALU_DSP_POSTADD_SUB;
+            dsp_al = a0;
+            dsp_ar = a0;
+            dsp_bl = 18'h10000;
+            dsp_br = 18'h10000;
+            dsp_cl = { {15{xl_reg[17]}}, xl_reg[16:0], 16'h0000};
+            dsp_cr = { {15{xr_reg[17]}}, xr_reg[16:0], 16'h0000};
         end
     end
         

@@ -204,43 +204,43 @@ module alu_taylor_calc (
     wire signed [17:0] vjr  = valr[j_reg];
 
     always @(*) begin
-        dsp_op     <= `ALU_DSP_NOP;
-        dsp_al     <= 18'h00000;
-        dsp_ar     <= 18'h00000;
-        dsp_bl     <= 18'h00000;
-        dsp_br     <= 18'h00000;
-        dsp_cl     <= 48'h00000;
-        dsp_cr     <= 48'h00000;
+        dsp_op     = `ALU_DSP_NOP;
+        dsp_al     = 18'h00000;
+        dsp_ar     = 18'h00000;
+        dsp_bl     = 18'h00000;
+        dsp_br     = 18'h00000;
+        dsp_cl     = 48'h00000;
+        dsp_cr     = 48'h00000;
 
         if (tasks & MUL_X_FJ_VJ) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= xl_reg;
-            dsp_ar <= xr_reg;
-            dsp_bl <= fj;
-            dsp_br <= fj;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = xl_reg;
+            dsp_ar = xr_reg;
+            dsp_bl = fj;
+            dsp_br = fj;
         end
         else if (tasks & MUL_VI_VJ_VJ) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= vil;
-            dsp_ar <= vir;
-            dsp_bl <= vjl;
-            dsp_br <= vjr;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = vil;
+            dsp_ar = vir;
+            dsp_bl = vjl;
+            dsp_br = vjr;
         end
         else if (tasks & MUL_AC_VJ_VJ) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            dsp_al <= dsp_pl[33:16];
-            dsp_ar <= dsp_pr[33:16];
-            dsp_bl <= vjl;
-            dsp_br <= vjr;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al = dsp_pl[33:16];
+            dsp_ar = dsp_pr[33:16];
+            dsp_bl = vjl;
+            dsp_br = vjr;
         end
         else if (tasks & MADD_VI_CI_AC) begin
-            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN;
-            dsp_al <= vil;
-            dsp_ar <= vir;
-            dsp_bl <= ci;
-            dsp_br <= ci;
-            dsp_cl <= dsp_pl;
-            dsp_cr <= dsp_pr;
+            dsp_op = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN;
+            dsp_al = vil;
+            dsp_ar = vir;
+            dsp_bl = ci;
+            dsp_br = ci;
+            dsp_cl = dsp_pl;
+            dsp_cr = dsp_pr;
         end
     end
         

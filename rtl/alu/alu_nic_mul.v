@@ -50,7 +50,7 @@ module alu_nic_mul (
     parameter ALUS_W    = 1;
 
     wire [CLIENTS_N-1:0]        gnt_val;
-    wire [CLIENTS_N*ALUS_N-1:0] gnt_id;
+    wire [CLIENTS_N*ALUS_W-1:0] gnt_id;
 
     arb_mul #(
         .PORTS_N    (CLIENTS_N       ),
@@ -67,24 +67,24 @@ module alu_nic_mul (
     genvar j;
     generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
         always @(*) begin
-            client_pl    <= {CLIENTS_N{47'h0}};
-            client_pr    <= {CLIENTS_N{47'h0}};
+            client_pl[48*j +: 48] = 48'h0;
+            client_pr[48*j +: 48] = 48'h0;
 
-            client_stall <= {CLIENTS_N{ 1'b0}};
-            client_ack   <= {CLIENTS_N{ 1'b0}};
-            //client_err <= {CLIENTS_N{ 1'b0}};
+            client_stall[j] = 1'b0;
+            client_ack[j]   = 1'b0;
+            //client_err[j] = 1'b0;
 
-            alu_strobe   <= {   ALUS_N{ 1'b0}};
-            alu_cycle    <= {   ALUS_N{ 1'b0}};
-            alu_op       <= {   ALUS_N{ 8'h0}};
-            alu_al       <= {   ALUS_N{17'h0}};
-            alu_bl       <= {   ALUS_N{17'h0}};
-            alu_cl       <= {   ALUS_N{47'h0}};
-            alu_ar       <= {   ALUS_N{17'h0}};
-            alu_br       <= {   ALUS_N{17'h0}};
-            alu_cr       <= {   ALUS_N{47'h0}};
+            alu_strobe   = {   ALUS_N{ 1'b0}};
+            alu_cycle    = {   ALUS_N{ 1'b0}};
+            alu_op       = {   ALUS_N{ 8'h0}};
+            alu_al       = {   ALUS_N{17'h0}};
+            alu_bl       = {   ALUS_N{17'h0}};
+            alu_cl       = {   ALUS_N{47'h0}};
+            alu_ar       = {   ALUS_N{17'h0}};
+            alu_br       = {   ALUS_N{17'h0}};
+            alu_cr       = {   ALUS_N{47'h0}};
 
-            client_stall[j] <= client_cycle[j] & ~gnt_val[j];
+            client_stall[j] = client_cycle[j] & ~gnt_val[j];
 
             if (gnt_val[j])
             begin : on_gnt
@@ -92,21 +92,21 @@ module alu_nic_mul (
 
                 alu_id = gnt_id[ALUS_W*j +: ALUS_W];
 
-                client_ack  [         j] <= alu_ack      [    alu_id];
-                client_stall[         j] <= alu_stall    [    alu_id];
-                //client_err[         j] <= alu_err      [    alu_id];
-                client_pl   [48*j +: 48] <= alu_pl       [    alu_id];
-                client_pr   [48*j +: 48] <= alu_pr       [    alu_id];
+                client_ack  [         j] = alu_ack      [    alu_id];
+                client_stall[         j] = alu_stall    [    alu_id];
+                //client_err[         j] = alu_err      [    alu_id];
+                client_pl   [48*j +: 48] = alu_pl       [    alu_id];
+                client_pr   [48*j +: 48] = alu_pr       [    alu_id];
 
-                alu_strobe  [    alu_id] <= client_strobe[         j];
-                alu_cycle   [    alu_id] <= client_cycle [         j];
-                alu_op      [    alu_id] <= client_op    [ 9*j +:  9];
-                alu_al      [    alu_id] <= client_al    [18*j +: 18];
-                alu_bl      [    alu_id] <= client_bl    [18*j +: 18];
-                alu_cl      [    alu_id] <= client_cl    [48*j +: 48];
-                alu_ar      [    alu_id] <= client_ar    [18*j +: 18];
-                alu_br      [    alu_id] <= client_br    [18*j +: 18];
-                alu_cr      [    alu_id] <= client_cr    [48*j +: 48];
+                alu_strobe  [    alu_id] = client_strobe[         j];
+                alu_cycle   [    alu_id] = client_cycle [         j];
+                alu_op      [    alu_id] = client_op    [ 9*j +:  9];
+                alu_al      [    alu_id] = client_al    [18*j +: 18];
+                alu_bl      [    alu_id] = client_bl    [18*j +: 18];
+                alu_cl      [    alu_id] = client_cl    [48*j +: 48];
+                alu_ar      [    alu_id] = client_ar    [18*j +: 18];
+                alu_br      [    alu_id] = client_br    [18*j +: 18];
+                alu_cr      [    alu_id] = client_cr    [48*j +: 48];
             end
         end
     end endgenerate

@@ -201,65 +201,64 @@ module gen_sine (
     end
 
 
-    always @(posedge reset or posedge clk) begin
-        if (reset) begin
-            alu_strobe <= 1'b0;
-            alu_op <= `ALU_DSP_NOP;
-            alu_al <= 18'h00000;
-            alu_bl <= 18'h00000;
-            alu_cl <= 48'h00000;
-            alu_ar <= 18'h00000;
-            alu_br <= 18'h00000;
-            alu_cr <= 48'h00000;
-        end
-        else if (tasks & CALC_SIN_VAL) begin
-            alu_strobe <= 1'b1;
-            alu_op <= `ALU_FUNC_SIN;
-            alu_al <= phase;
-            alu_ar <= phase;
+    always @(*) begin
+        alu_strobe = 1'b0;
+        alu_op     = `ALU_DSP_NOP;
+        alu_al     = 18'h00000;
+        alu_bl     = 18'h00000;
+        alu_cl     = 48'h00000;
+        alu_ar     = 18'h00000;
+        alu_br     = 18'h00000;
+        alu_cr     = 48'h00000;
+
+        if (tasks & CALC_SIN_VAL) begin
+            alu_strobe = 1'b1;
+            alu_op     = `ALU_FUNC_SIN;
+            alu_al     = phase;
+            alu_ar     = phase;
         end
         else if (tasks & MUL_AC_AMPL) begin
-            alu_strobe <= 1'b1;
-            alu_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
-            alu_al <= alu_pl[33:16];
-            alu_bl <= {2'b0, ampl[6:0], 9'h0};
-            alu_ar <= alu_pr[33:16];
-            alu_br <= {2'b0, ampl[6:0], 9'h0};
+            alu_strobe = 1'b1;
+            alu_op     = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            alu_al     = alu_pl[33:16];
+            alu_bl     = {2'b0, ampl[6:0], 9'h0};
+            alu_ar     = alu_pr[33:16];
+            alu_br     = {2'b0, ampl[6:0], 9'h0};
         end
         else if (tasks & ADD_PHASE_STEP) begin
             // phase+-step*sign
-            alu_strobe <= 1'b1;
-            alu_op <= `ALU_DSP_XIN_MULT |
-                      `ALU_DSP_ZIN_CIN  |
-                      (dir == DIR_POS ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
-            alu_al <= step;
-            alu_bl <= (sign == SGN_POS ? PLUS1 : MINUS1);
-            alu_cl <= phase;
-            alu_ar <= step;
-            alu_br <= (sign == SGN_POS ? PLUS1 : MINUS1);
-            alu_cr <= phase;
+            alu_strobe = 1'b1;
+            alu_op     = `ALU_DSP_XIN_MULT |
+                         `ALU_DSP_ZIN_CIN  |
+                         (dir == DIR_POS ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
+            alu_al     = step;
+            alu_bl     = (sign == SGN_POS ? PLUS1 : MINUS1);
+            alu_cl     = phase;
+            alu_ar     = step;
+            alu_br     = (sign == SGN_POS ? PLUS1 : MINUS1);
+            alu_cr     = phase;
         end
         else if (tasks & PI2_MINUS_AC) begin
-            alu_strobe <= 1'b1;
-            alu_op <= `ALU_DSP_XIN_MULT   |
-                      `ALU_DSP_ZIN_CIN    |
-                      `ALU_DSP_POSTADD_SUB;
-            alu_al <= alu_pl[33:16];
-            alu_bl <= PLUS1;
-            alu_cl <= PI2;
-            alu_ar <= alu_pr[33:16];
-            alu_br <= PLUS1;
-            alu_cr <= PI2;
+            alu_strobe = 1'b1;
+            alu_op     = `ALU_DSP_XIN_MULT   |
+                         `ALU_DSP_ZIN_CIN    |
+                         `ALU_DSP_POSTADD_SUB;
+            alu_al     = alu_pl[33:16];
+            alu_bl     = PLUS1;
+            alu_cl     = PI2;
+            alu_ar     = alu_pr[33:16];
+            alu_br     = PLUS1;
+            alu_cr     = PI2;
         end
         else begin
-            alu_strobe <= 1'b0;
-            alu_op <= `ALU_DSP_NOP;
-            alu_al <= 18'h00000;
-            alu_bl <= 18'h00000;
-            alu_cl <= 48'h00000;
-            alu_ar <= 18'h00000;
-            alu_br <= 18'h00000;
-            alu_cr <= 48'h00000;
+            alu_strobe = 1'b0;
+            alu_op     = `ALU_DSP_NOP;
+            alu_al     = 18'h00000;
+            alu_bl     = 18'h00000;
+            alu_cl     = 48'h00000;
+            alu_ar     = 18'h00000;
+            alu_br     = 18'h00000;
+            alu_cr     = 48'h00000;
         end
     end
 
