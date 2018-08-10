@@ -34,7 +34,7 @@ module alu_nic_mul (
     input      [      ALUS_N-1:0] alu_ack       ,
     input      [      ALUS_N-1:0] alu_stall     ,
   //input      [      ALUS_N-1:0] alu_err       ,
-    output reg [    8*ALUS_N-1:0] alu_op        ,
+    output reg [    9*ALUS_N-1:0] alu_op        ,
     output reg [   18*ALUS_N-1:0] alu_al        ,
     output reg [   18*ALUS_N-1:0] alu_bl        ,
     output reg [   48*ALUS_N-1:0] alu_cl        ,
@@ -64,6 +64,7 @@ module alu_nic_mul (
         .gnt_id     (gnt_id          )
     );
 
+    // TODO implement with the single always block
     genvar j;
     generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
         always @(*) begin
@@ -76,7 +77,7 @@ module alu_nic_mul (
 
             alu_strobe   = {   ALUS_N{ 1'b0}};
             alu_cycle    = {   ALUS_N{ 1'b0}};
-            alu_op       = {   ALUS_N{ 8'h0}};
+            alu_op       = {   ALUS_N{ 9'h0}};
             alu_al       = {   ALUS_N{17'h0}};
             alu_bl       = {   ALUS_N{17'h0}};
             alu_cl       = {   ALUS_N{47'h0}};

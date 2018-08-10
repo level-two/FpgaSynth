@@ -38,7 +38,7 @@ module alu(
     wire [   ALUS_N-1:0] alu_ack;
     wire [   ALUS_N-1:0] alu_stall;
     wire [   ALUS_N-1:0] alu_err;
-    wire [ 8*ALUS_N-1:0] alu_op;
+    wire [ 9*ALUS_N-1:0] alu_op;
     wire [18*ALUS_N-1:0] alu_al;
     wire [18*ALUS_N-1:0] alu_bl;
     wire [48*ALUS_N-1:0] alu_cl;
@@ -88,24 +88,25 @@ module alu(
     );
 
     genvar i;
-    generate for (i = 0; i < ALUS_N; i=i+1) begin : int_alu_inst
+    generate for (i = 0; i < ALUS_N; i=i+1) begin : alu_core_block
         alu_core alu_core(
-            .clk        (clk                    ),
-            .reset      (reset                  ),
-            .alu_strobe (alu_strobe[i]          ),
-            .alu_cycle  (alu_cycle [i]          ),
-            .alu_ack    (alu_ack   [i]          ),
-            .alu_stall  (alu_stall [i]          ),
-            //.alu_err  (alu_err   [i]          ), // TBI
-            .alu_op     (alu_op    [ 9*i+: 9]   ),
-            .alu_al     (alu_al    [18*i+:18]   ),
-            .alu_bl     (alu_bl    [18*i+:18]   ),
-            .alu_cl     (alu_cl    [48*i+:48]   ),
-            .alu_pl     (alu_pl    [48*i+:48]   ),
-            .alu_ar     (alu_ar    [18*i+:18]   ),
-            .alu_br     (alu_br    [18*i+:18]   ),
-            .alu_cr     (alu_cr    [48*i+:48]   ),
-            .alu_pr     (alu_pr    [48*i+:48]   )
+            .clk        (clk                     ),
+            .reset      (reset                   ),
+            .alu_strobe (alu_strobe[i]           ),
+            .alu_cycle  (alu_cycle [i]           ),
+            .alu_ack    (alu_ack   [i]           ),
+            .alu_stall  (alu_stall [i]           ),
+            //.alu_err  (alu_err   [i]           ), // TBI
+            .alu_op     (alu_op    [ 9*i +:  9]  ),
+            .alu_al     (alu_al    [18*i +: 18]  ),
+            .alu_bl     (alu_bl    [18*i +: 18]  ),
+            .alu_cl     (alu_cl    [48*i +: 48]  ),
+            .alu_pl     (alu_pl    [48*i +: 48]  ),
+            .alu_ar     (alu_ar    [18*i +: 18]  ),
+            .alu_br     (alu_br    [18*i +: 18]  ),
+            .alu_cr     (alu_cr    [48*i +: 48]  ),
+            .alu_pr     (alu_pr    [48*i +: 48]  )
         );
     end endgenerate
+
 endmodule

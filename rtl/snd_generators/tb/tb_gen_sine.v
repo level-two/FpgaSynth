@@ -87,7 +87,7 @@ module tb_gen_sine;
     alu#(
         .CLIENTS_N(1),
         .ALUS_N   (1),
-        .ALUS_W   (2)
+        .ALUS_W   (1)
     ) alu (
         .clk           (clk                     ),
         .reset         (reset                   ),
