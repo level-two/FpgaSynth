@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: alu_top.v
-// Description: Top of the ALU module
+// File: alu_core.v
+// Description: Core of the ALU module
 // -----------------------------------------------------------------------------
 
 `include "../globals.vh"
 
-module alu_top (
+module alu_core (
     input             clk             ,
     input             reset           ,
 
@@ -252,7 +252,7 @@ module alu_top (
     wire [47:0] dsp_pr;
 
     // DSP
-    dsp48a1_inst dsp48a1_l_inst (
+    alu_dsp48a1 alu_dsp48a1_l (
         .clk    (clk             ),
         .reset  (reset           ),
         .op     (dsp_op          ),
@@ -262,7 +262,7 @@ module alu_top (
         .p      (dsp_pl          )
     );
 
-    dsp48a1_inst dsp48a1_r_inst (
+    alu_dsp48a1 alu_dsp48a1_r (
         .clk    (clk            ),
         .reset  (reset          ),
         .op     (dsp_op         ),

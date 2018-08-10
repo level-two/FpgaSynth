@@ -4,14 +4,14 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: dsp48a1_inst.v
+// File: alu_dsp48a1.v
 // Description: Instance of the DSP48A1 in the pipelined multiplier-postadder
 //              mode
 // -----------------------------------------------------------------------------
 
 `include "../globals.vh"
 
-module dsp48a1_inst (
+module alu_dsp48a1 (
     input                clk  ,
     input                reset,
     input         [ 7:0] op   ,

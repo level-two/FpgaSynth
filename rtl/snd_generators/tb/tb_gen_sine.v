@@ -82,11 +82,11 @@ module tb_gen_sine;
     );
 
     
-    dsp_module #(
+    alu#(
         .CLIENTS_N(1),
         .ALUS_N   (1),
-        .ALUS_W   (1)
-    ) dsp_module (
+        .ALUS_W   (2)
+    ) alu (
         .clk           (clk                     ),
         .reset         (reset                   ),
 

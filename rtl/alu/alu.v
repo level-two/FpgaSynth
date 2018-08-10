@@ -4,14 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: int_alu_module.v
-// Description: Instance of the DSP48A1 in the pipelined multiplier-postadder
-//              mode
+// File: alu.v
+// Description: ALU
 // -----------------------------------------------------------------------------
 
 `include "../globals.vh"
 
-module dsp_module (
+module alu(
     input                          clk              ,
     input                          reset            ,
     output      [   CLIENTS_N-1:0] client_cycle     ,
@@ -90,7 +89,7 @@ module dsp_module (
 
     genvar i;
     generate for (i = 0; i < ALUS_N; i=i+1) begin : int_alu_inst
-        alu_top alu_inst (
+        alu_core alu_core(
             .clk        (clk                    ),
             .reset      (reset                  ),
             .alu_strobe (alu_strobe[i]          ),
