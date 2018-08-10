@@ -48,21 +48,6 @@ module tb_gen_sine;
     wire signed [47:0]       sine_alu_cr;
     wire signed [47:0]       sine_alu_pr;
 
-    wire                     alu_cycle;
-    wire                     alu_strobe;
-    wire                     alu_ack;
-    wire                     alu_stall;
-
-    wire        [ 8:0]       alu_op;
-    wire signed [17:0]       alu_al;
-    wire signed [17:0]       alu_bl;
-    wire signed [47:0]       alu_cl;
-    wire signed [47:0]       alu_pl;
-    wire signed [17:0]       alu_ar;
-    wire signed [17:0]       alu_br;
-    wire signed [47:0]       alu_cr;
-    wire signed [47:0]       alu_pr;
-
     gen_sine gen_sine
     (
         .clk           (clk                     ),
@@ -97,11 +82,11 @@ module tb_gen_sine;
     );
 
     
-    alu_nic_mul #(
+    dsp_module #(
         .CLIENTS_N(1),
         .ALUS_N   (1),
         .ALUS_W   (1)
-    ) alu_nic_mul (
+    ) dsp_module (
         .clk           (clk                     ),
         .reset         (reset                   ),
 
@@ -109,8 +94,7 @@ module tb_gen_sine;
         .client_strobe (sine_alu_strobe         ),
         .client_ack    (sine_alu_ack            ),
         .client_stall  (sine_alu_stall          ),
-        .client_err    (sine_alu_err            ),
-        .client_mode   (sine_alu_mode           ),
+      //.client_err    (sine_alu_err            ),
         .client_op     (sine_alu_op             ),
         .client_al     (sine_alu_al             ),
         .client_bl     (sine_alu_bl             ),
@@ -119,44 +103,7 @@ module tb_gen_sine;
         .client_ar     (sine_alu_ar             ),
         .client_br     (sine_alu_br             ),
         .client_cr     (sine_alu_cr             ),
-        .client_pr     (sine_alu_pr             ),
-
-        .alu_strobe    (alu_strobe              ),
-        .alu_cycle     (alu_cycle               ),
-        .alu_ack       (alu_ack                 ),
-        .alu_stall     (alu_stall               ),
-        //.alu_err     (alu_err                 ),
-        .alu_mode      (alu_mode                ),
-        .alu_op        (alu_op                  ),
-        .alu_al        (alu_al                  ),
-        .alu_bl        (alu_bl                  ),
-        .alu_cl        (alu_cl                  ),
-        .alu_pl        (alu_pl                  ),
-        .alu_ar        (alu_ar                  ),
-        .alu_br        (alu_br                  ),
-        .alu_cr        (alu_cr                  ),
-        .alu_pr        (alu_pr                  )
-    );
-
-
-    alu_top alu_top (
-        .clk           (clk                     ),
-        .reset         (reset                   ),
-
-        .alu_strobe    (alu_strobe              ),
-        .alu_cycle     (alu_cycle               ),
-        .alu_ack       (alu_ack                 ),
-        .alu_stall     (alu_stall               ),
-        .alu_err       (alu_err                 ),
-        .alu_op        (alu_op                  ),
-        .alu_al        (alu_al                  ),
-        .alu_bl        (alu_bl                  ),
-        .alu_cl        (alu_cl                  ),
-        .alu_pl        (alu_pl                  ),
-        .alu_ar        (alu_ar                  ),
-        .alu_br        (alu_br                  ),
-        .alu_cr        (alu_cr                  ),
-        .alu_pr        (alu_pr                  )
+        .client_pr     (sine_alu_pr             )
     );
 
     

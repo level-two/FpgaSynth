@@ -8,7 +8,7 @@
 // Description: Interconnection with arbitration for DSP clients
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module dsp_nic (
     input                          clk,

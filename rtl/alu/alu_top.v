@@ -8,7 +8,7 @@
 // Description: Top of the ALU module
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module alu_top (
     input             clk             ,
@@ -17,19 +17,19 @@ module alu_top (
     // WISHBONE SLAVE INTERFACE
     input             alu_strobe      ,
     input             alu_cycle       ,
-    output            alu_ack         ,
-    output            alu_stall       ,
+    output reg        alu_ack         ,
+    output reg        alu_stall       ,
     //output          alu_err         , // TBI
 
-    input  [ 8:0]     alu_op          ,
-    input  [17:0]     alu_al          ,
-    input  [17:0]     alu_bl          ,
-    input  [47:0]     alu_cl          ,
-    output [47:0]     alu_pl          ,
-    input  [17:0]     alu_ar          ,
-    input  [17:0]     alu_br          ,
-    input  [47:0]     alu_cr          ,
-    output [47:0]     alu_pr
+    input      [ 8:0] alu_op          ,
+    input      [17:0] alu_al          ,
+    input      [17:0] alu_bl          ,
+    input      [47:0] alu_cl          ,
+    output reg [47:0] alu_pl          ,
+    input      [17:0] alu_ar          ,
+    input      [17:0] alu_br          ,
+    input      [47:0] alu_cr          ,
+    output reg [47:0] alu_pr
 );
 
     reg [2:0] ack_q;
@@ -46,127 +46,120 @@ module alu_top (
         end
     end
 
+    wire alu_mode = alu_op[8];
+
     always @(*) begin
-        dsp_op         =  8'h0;
-        dsp_al         = 18'h0;
-        dsp_bl         = 18'h0;
-        dsp_cl         = 48'h0;
-        dsp_ar         = 18'h0;
-        dsp_br         = 18'h0;
-        dsp_cr         = 48'h0;
-        alu_pl         = 48'h0;
-        alu_pr         = 48'h0;
-        taylor_dsp_pl  = 48'h0;
-        taylor_dsp_pr  = 48'h0;
-        taylor1_dsp_pl = 48'h0;
-        taylor1_dsp_pr = 48'h0;
+        dsp_op         <=  8'h0;
+        dsp_al         <= 18'h0;
+        dsp_bl         <= 18'h0;
+        dsp_cl         <= 48'h0;
+        dsp_ar         <= 18'h0;
+        dsp_br         <= 18'h0;
+        dsp_cr         <= 48'h0;
+        alu_pl         <= 48'h0;
+        alu_pr         <= 48'h0;
+        taylor_dsp_pl  <= 48'h0;
+        taylor_dsp_pr  <= 48'h0;
+        taylor1_dsp_pl <= 48'h0;
+        taylor1_dsp_pr <= 48'h0;
 
         if (!alu_cycle) begin
             // do nothing
         end
         else if (alu_mode == `ALU_MODE_DSP) begin
-            dsp_op         = alu_op[7:0];
-            dsp_al         = alu_al;
-            dsp_bl         = alu_bl;
-            dsp_cl         = alu_cl;
-            dsp_ar         = alu_ar;
-            dsp_br         = alu_br;
-            dsp_cr         = alu_cr;
-            alu_pl         = dsp_pl;
-            alu_pr         = dsp_pr;
-        end
-        else if (alu_op == `ALU_FUNC_SIN || alu_op == `ALU_FUNC_COS) begin
-            dsp_op         = taylor_dsp_op;
-            dsp_al         = taylor_dsp_al;
-            dsp_bl         = taylor_dsp_bl;
-            dsp_cl         = taylor_dsp_cl;
-            dsp_ar         = taylor_dsp_ar;
-            dsp_br         = taylor_dsp_br;
-            dsp_cr         = taylor_dsp_cr;
-            taylor_dsp_pl  = dsp_pl;
-            taylor_dsp_pr  = dsp_pr;
-        end
-        else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
-            dsp_op         = taylor1_dsp_op;
-            dsp_al         = taylor1_dsp_al;
-            dsp_bl         = taylor1_dsp_bl;
-            dsp_cl         = taylor1_dsp_cl;
-            dsp_ar         = taylor1_dsp_ar;
-            dsp_br         = taylor1_dsp_br;
-            dsp_cr         = taylor1_dsp_cr;
-            taylor1_dsp_pl = dsp_pl;
-            taylor1_dsp_pr = dsp_pr;
+            dsp_op         <= alu_op[7:0];
+            dsp_al         <= alu_al;
+            dsp_bl         <= alu_bl;
+            dsp_cl         <= alu_cl;
+            dsp_ar         <= alu_ar;
+            dsp_br         <= alu_br;
+            dsp_cr         <= alu_cr;
+            alu_pl         <= dsp_pl;
+            alu_pr         <= dsp_pr;
+        end else if (alu_op == `ALU_FUNC_SIN || alu_op == `ALU_FUNC_COS) begin
+            dsp_op         <= taylor_dsp_op;
+            dsp_al         <= taylor_dsp_al;
+            dsp_bl         <= taylor_dsp_bl;
+            dsp_cl         <= taylor_dsp_cl;
+            dsp_ar         <= taylor_dsp_ar;
+            dsp_br         <= taylor_dsp_br;
+            dsp_cr         <= taylor_dsp_cr;
+            taylor_dsp_pl  <= dsp_pl;
+            taylor_dsp_pr  <= dsp_pr;
+        end else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
+            dsp_op         <= taylor1_dsp_op;
+            dsp_al         <= taylor1_dsp_al;
+            dsp_bl         <= taylor1_dsp_bl;
+            dsp_cl         <= taylor1_dsp_cl;
+            dsp_ar         <= taylor1_dsp_ar;
+            dsp_br         <= taylor1_dsp_br;
+            dsp_cr         <= taylor1_dsp_cr;
+            taylor1_dsp_pl <= dsp_pl;
+            taylor1_dsp_pr <= dsp_pr;
         end
     end
 
     always @(*) begin
-        alu_ack   = 1'b0;
-        alu_stall = 1'b0;
-        alu_pl    = 48'h0;
-        alu_pr    = 48'h0;
+        alu_ack   <= 1'b0;
+        alu_stall <= 1'b0;
+        alu_pl    <= 48'h0;
+        alu_pr    <= 48'h0;
 
         if (!alu_cycle) begin
             // do nothing
-        end
-        else if (alu_mode == `ALU_MODE_DSP) begin
-            alu_ack   = ack_q[2];
-            alu_stall = 1'b0;
-            alu_pl    = dsp_pl;
-            alu_pr    = dsp_pr;
-        end
-        else if (alu_op == `ALU_FUNC_SIN || alu_op == `ALU_FUNC_COS) begin
-            alu_ack   = taylor_calc_done;
-            alu_stall = !taylor_calc_done;
-            alu_pl    = taylor_resl;
-            alu_pr    = taylor_resr;
-        end
-        else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
-            alu_ack   = taylor1_calc_done;
-            alu_stall = !taylor1_calc_done;
-            alu_pl    = taylor1_resl;
-            alu_pr    = taylor1_resl;
+        end else if (alu_mode == `ALU_MODE_DSP) begin
+            alu_ack   <= ack_q[2];
+            alu_stall <= 1'b0;
+            alu_pl    <= dsp_pl;
+            alu_pr    <= dsp_pr;
+        end else if (alu_op == `ALU_FUNC_SIN || alu_op == `ALU_FUNC_COS) begin
+            alu_ack   <= taylor_calc_done;
+            alu_stall <= !taylor_calc_done;
+            alu_pl    <= taylor_resl;
+            alu_pr    <= taylor_resr;
+        end else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
+            alu_ack   <= taylor1_calc_done;
+            alu_stall <= !taylor1_calc_done;
+            alu_pl    <= taylor1_resl;
+            alu_pr    <= taylor1_resl;
         end
     end
 
     always @(*) begin
-        taylor_function_sel  = 'h0;
-        taylor_do_calc       = 1'b0;
-        taylor_xl            = 18'h0;
-        taylor_xr            = 18'h0;
-        taylor1_function_sel = 'h0;
-        taylor1_do_calc      = 1'b0;
-        taylor1_xl           = 18'h0;
-        taylor1_xr           = 18'h0;
+        taylor_function_sel  <= 'h0;
+        taylor_do_calc       <= 1'b0;
+        taylor_xl            <= 18'h0;
+        taylor_xr            <= 18'h0;
+        taylor1_function_sel <= 'h0;
+        taylor1_do_calc      <= 1'b0;
+        taylor1_xl           <= 18'h0;
+        taylor1_xr           <= 18'h0;
 
         if (!alu_cycle) begin
             // do nothing
-        end
-        else if (alu_mode == `ALU_MODE_DSP) begin
+        end else if (alu_mode == `ALU_MODE_DSP) begin
             // do nothing
-        end
-        else if (alu_op == `ALU_FUNC_SIN) begin
-            taylor_function_sel  = `ALU_FUNC_SIN;
-            taylor_do_calc       = alu_strobe;
-            taylor_xl            = alu_al;
-            taylor_xr            = alu_ar;
-        end
-        else if (alu_op == `ALU_FUNC_COS) begin
-            taylor_function_sel  = `ALU_FUNC_COS;
-            taylor_do_calc       = alu_strobe;
-            taylor_xl            = alu_al;
-            taylor_xr            = alu_ar;
-        end
-        else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
-            taylor1_function_sel = `ALU_FUNC_INV_1_PLUS_X;
-            taylor1_do_calc      = alu_strobe;
-            taylor1_xl           = alu_al;
-            taylor1_xr           = alu_ar;
+        end else if (alu_op == `ALU_FUNC_SIN) begin
+            taylor_function_sel  <= `ALU_FUNC_SIN;
+            taylor_do_calc       <= alu_strobe;
+            taylor_xl            <= alu_al;
+            taylor_xr            <= alu_ar;
+        end else if (alu_op == `ALU_FUNC_COS) begin
+            taylor_function_sel  <= `ALU_FUNC_COS;
+            taylor_do_calc       <= alu_strobe;
+            taylor_xl            <= alu_al;
+            taylor_xr            <= alu_ar;
+        end else if (alu_op == `ALU_FUNC_INV_1_PLUS_X) begin
+            taylor1_function_sel <= `ALU_FUNC_INV_1_PLUS_X;
+            taylor1_do_calc      <= alu_strobe;
+            taylor1_xl           <= alu_al;
+            taylor1_xr           <= alu_ar;
         end
     end
 
 
     // SIN and COS calc
-    reg [2:0]          taylor_function_sel;
+    reg [8:0]          taylor_function_sel;
     reg                taylor_do_calc;
     reg  signed [17:0] taylor_xl;
     reg  signed [17:0] taylor_xr;
@@ -178,16 +171,16 @@ module alu_top (
     wire signed [17:0] taylor_dsp_al;
     wire signed [17:0] taylor_dsp_bl;
     wire signed [47:0] taylor_dsp_cl;
-    wire signed [47:0] taylor_dsp_pl;
+    reg  signed [47:0] taylor_dsp_pl;
     wire signed [17:0] taylor_dsp_ar;
     wire signed [17:0] taylor_dsp_br;
     wire signed [47:0] taylor_dsp_cr;
-    wire signed [47:0] taylor_dsp_pr;
+    reg  signed [47:0] taylor_dsp_pr;
 
     alu_taylor_calc alu_taylor_calc (
         .clk            (clk                 ),
         .reset          (reset               ),
-        .func_sel       (taylor_func_sel     ),
+        .func_sel       (taylor_function_sel ),
         .do_calc        (taylor_do_calc      ),
         .xl             (taylor_xl           ),
         .xr             (taylor_xr           ),
@@ -207,7 +200,7 @@ module alu_top (
 
 
     // 1/(1+x) calc
-    reg [2:0]          taylor1_function_sel;
+    reg [8:0]          taylor1_function_sel;
     reg                taylor1_do_calc;
     reg  signed [17:0] taylor1_xl;
     reg  signed [17:0] taylor1_xr;
@@ -219,17 +212,17 @@ module alu_top (
     wire signed [17:0] taylor1_dsp_al;
     wire signed [17:0] taylor1_dsp_bl;
     wire signed [47:0] taylor1_dsp_cl;
-    wire signed [47:0] taylor1_dsp_pl;
+    reg  signed [47:0] taylor1_dsp_pl;
     wire signed [17:0] taylor1_dsp_ar;
     wire signed [17:0] taylor1_dsp_br;
     wire signed [47:0] taylor1_dsp_cr;
-    wire signed [47:0] taylor1_dsp_pr;
+    reg  signed [47:0] taylor1_dsp_pr;
 
 
     alu_taylor_calc_1 alu_taylor1_calc (
         .clk            (clk                 ),
         .reset          (reset               ),
-        .func_sel       (taylor1_func_sel    ),
+        .func_sel       (taylor1_function_sel),
         .do_calc        (taylor1_do_calc     ),
         .xl             (taylor1_xl          ),
         .xr             (taylor1_xr          ),
@@ -248,14 +241,14 @@ module alu_top (
     );
 
     // DSP signals
-    wire [ 7:0] dsp_op;
-    wire [17:0] dsp_al;
-    wire [17:0] dsp_bl;
-    wire [47:0] dsp_cl;
+    reg  [ 7:0] dsp_op;
+    reg  [17:0] dsp_al;
+    reg  [17:0] dsp_bl;
+    reg  [47:0] dsp_cl;
     wire [47:0] dsp_pl;
-    wire [17:0] dsp_ar;
-    wire [17:0] dsp_br;
-    wire [47:0] dsp_cr;
+    reg  [17:0] dsp_ar;
+    reg  [17:0] dsp_br;
+    reg  [47:0] dsp_cr;
     wire [47:0] dsp_pr;
 
     // DSP

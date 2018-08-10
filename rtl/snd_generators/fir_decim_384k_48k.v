@@ -62,7 +62,7 @@ module fir_decim_384k_48k (
     localparam [15:0] JP_1             = 16'h0200;
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             5'h0   : tasks = REPEAT_COEFS_NUM       | // init stack
                              PUSH_X                 ;

@@ -67,7 +67,7 @@ module alu_filter_iir (
     localparam [15:0] WAIT_IN        = 16'h0800;
               
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = WAIT_IN       ;
             4'h1   : tasks = PUSH_X_IN     |

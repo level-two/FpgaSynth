@@ -62,7 +62,7 @@ module sigma_delta_2order_dac
     localparam [23:0] INC_DELTA_CNT     = 24'h10000;
               
     reg [23:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = WAIT_IN            ;
             // Left sample calc

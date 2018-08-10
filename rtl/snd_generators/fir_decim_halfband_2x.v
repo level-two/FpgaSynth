@@ -8,7 +8,7 @@
 // Description: Halfband 2x-decimating FIR implementation
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module fir_decim_halfband_2x (
     input                    clk,
@@ -65,7 +65,7 @@ module fir_decim_halfband_2x (
     localparam [15:0] JP_1             = 16'h0800;
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = REPEAT_COEFS_NUM       | // init stacks
                              PUSH_X                 |

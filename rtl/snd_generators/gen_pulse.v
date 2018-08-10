@@ -8,7 +8,7 @@
 // Description: Simple pulse generator
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module gen_pulse (
     input                       clk,

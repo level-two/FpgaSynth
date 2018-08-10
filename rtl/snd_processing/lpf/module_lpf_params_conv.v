@@ -57,7 +57,7 @@ module module_lpf_params_conv (
     localparam [15:0] MOV_RES_C         = 15'h0000;
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             5'h0   : tasks = WAIT_IN           ;
             5'h1   : tasks = CAL_SIN_W0        ;

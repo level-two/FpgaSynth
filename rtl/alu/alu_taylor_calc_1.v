@@ -24,39 +24,39 @@
 //   end
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module alu_taylor_calc_1 (
     input                    clk        ,
     input                    reset      ,
     input                    do_calc    ,
-    input             [ 2:0] func_sel   ,
+    input             [ 8:0] func_sel   ,
     input      signed [17:0] xl         ,
     input      signed [17:0] xr         ,
     output reg               calc_done  ,
     output reg signed [17:0] resl       ,
     output reg signed [17:0] resr       ,
 
-    output            [ 7:0] dsp_op     ,
-    output     signed [17:0] dsp_al     ,
-    output     signed [17:0] dsp_bl     ,
-    output     signed [47:0] dsp_cl     ,
+    output reg        [ 7:0] dsp_op     ,
+    output reg signed [17:0] dsp_al     ,
+    output reg signed [17:0] dsp_bl     ,
+    output reg signed [47:0] dsp_cl     ,
     input      signed [47:0] dsp_pl     ,
-    output     signed [17:0] dsp_ar     ,
-    output     signed [17:0] dsp_br     ,
-    output     signed [47:0] dsp_cr     ,
+    output reg signed [17:0] dsp_ar     ,
+    output reg signed [17:0] dsp_br     ,
+    output reg signed [47:0] dsp_cr     ,
     input      signed [47:0] dsp_pr
 );
 
     // STORE SAMPLE_IN
     reg signed [17:0] xl_reg;
     reg signed [17:0] xr_reg;
-    reg        [ 2:0] func_sel_reg;
+    reg        [ 8:0] func_sel_reg;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             xl_reg       <= 18'h00000;
             xr_reg       <= 18'h00000;
-            func_sel_reg <= 3'h0;
+            func_sel_reg <= 9'h0;
         end
         else if (do_calc) begin
             xl_reg       <= xl;
@@ -155,12 +155,13 @@ module alu_taylor_calc_1 (
     reg signed [17:0] mrl_reg;
     reg signed [17:0] mrr_reg;
     always @(posedge reset or posedge clk) begin
-        if (reset)
+        if (reset) begin
             mrl_reg <= 18'h00000;
             mrr_reg <= 18'h00000;
-        else if (tasks & MOV_MR_AC)
+        end else if (tasks & MOV_MR_AC) begin
             mrl_reg <= dsp_pl[33:16];
             mrr_reg <= dsp_pr[33:16];
+        end
     end
 
 
@@ -179,59 +180,59 @@ module alu_taylor_calc_1 (
     wire signed [17:0] sil = sl_reg[i_reg];
     wire signed [17:0] sir = sr_reg[i_reg];
     always @(*) begin
-        dsp_op = `DSP_NOP;
-        dsp_al     = 18'h00000;
-        dsp_ar     = 18'h00000;
-        dsp_bl     = 18'h00000;
-        dsp_br     = 18'h00000;
-        dsp_cl     = 48'h00000;
-        dsp_cr     = 48'h00000;
+        dsp_op     <= `ALU_DSP_NOP;
+        dsp_al     <= 18'h00000;
+        dsp_ar     <= 18'h00000;
+        dsp_bl     <= 18'h00000;
+        dsp_br     <= 18'h00000;
+        dsp_cl     <= 48'h00000;
+        dsp_cr     <= 48'h00000;
 
         if (tasks & MUL_1_CI_SI) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            dsp_al = ci;
-            dsp_ar = ci;
-            dsp_bl = 18'h10000;
-            dsp_br = 18'h10000;
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al <= ci;
+            dsp_ar <= ci;
+            dsp_bl <= 18'h10000;
+            dsp_br <= 18'h10000;
         end
         else if (tasks & MUL_XA_CI_SI) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            dsp_al = ci;
-            dsp_ar = ci;
-            dsp_bl = xal;
-            dsp_br = xar;
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al <= ci;
+            dsp_ar <= ci;
+            dsp_bl <= xal;
+            dsp_br <= xar;
         end
         else if (tasks & MUL_SI_1) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            dsp_al = sil;
-            dsp_ar = sir;
-            dsp_bl = 18'h10000;
-            dsp_br = 18'h10000;
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al <= sil;
+            dsp_ar <= sir;
+            dsp_bl <= 18'h10000;
+            dsp_br <= 18'h10000;
         end
         else if (tasks & MUL_SI_AC) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_ZERO;
-            dsp_al = sil;
-            dsp_ar = sir;
-            dsp_bl = dsp_pl[33:16];
-            dsp_br = dsp_pr[33:16];
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_ZERO;
+            dsp_al <= sil;
+            dsp_ar <= sir;
+            dsp_bl <= dsp_pl[33:16];
+            dsp_br <= dsp_pr[33:16];
         end
         else if (tasks & MADD_SI_MR_AC) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_CIN;
-            dsp_al = sil;
-            dsp_ar = sir;
-            dsp_bl = mrl_reg;
-            dsp_br = mrr_reg;
-            dsp_cl = dsp_pl;
-            dsp_cr = dsp_pr;
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN;
+            dsp_al <= sil;
+            dsp_ar <= sir;
+            dsp_bl <= mrl_reg;
+            dsp_br <= mrr_reg;
+            dsp_cl <= dsp_pl;
+            dsp_cr <= dsp_pr;
         end
         else if (tasks & SUB_X_A0_XA) begin
-            dsp_op = `DSP_XIN_MULT | `DSP_ZIN_CIN | `DSP_POSTADD_SUB;
-            dsl_al = a0;
-            dsl_ar = a0;
-            dsl_bl = 18'h10000;
-            dsl_br = 18'h10000;
-            dsl_cl = { {15{xl_reg[17]}}, xl_reg[16:0], 16'h0000};
-            dsl_cr = { {15{xr_reg[17]}}, xr_reg[16:0], 16'h0000};
+            dsp_op <= `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_CIN | `ALU_DSP_POSTADD_SUB;
+            dsp_al <= a0;
+            dsp_ar <= a0;
+            dsp_bl <= 18'h10000;
+            dsp_br <= 18'h10000;
+            dsp_cl <= { {15{xl_reg[17]}}, xl_reg[16:0], 16'h0000};
+            dsp_cr <= { {15{xr_reg[17]}}, xr_reg[16:0], 16'h0000};
         end
     end
         
@@ -275,16 +276,17 @@ module alu_taylor_calc_1 (
     reg signed [17:0] xal;
     reg signed [17:0] xar;
     reg signed [17:0] sl_reg[0:9];
+    reg signed [17:0] sr_reg[0:9];
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             // do nothing
-        end 
-        else if (mov_trig[2] == 2'b01)
+        end else if (mov_trig[2] == 2'b01) begin
             sl_reg[mov_idx[2]] <= dsp_pl[33:16];
             sr_reg[mov_idx[2]] <= dsp_pr[33:16];
-        else if (mov_trig[2] == 2'b10)
+        end else if (mov_trig[2] == 2'b10) begin
             xal                <= dsp_pl[33:16];
             xar                <= dsp_pr[33:16];
+        end
     end
 
 

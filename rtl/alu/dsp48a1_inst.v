@@ -18,8 +18,7 @@ module dsp48a1_inst (
     input  signed [17:0] a    ,
     input  signed [17:0] b    ,
     input  signed [47:0] c    ,
-    output signed [47:0] p    ,
-    output reg           done
+    output signed [47:0] p
 );
 
     reg signed [47:0] c_dly;

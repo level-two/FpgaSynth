@@ -72,7 +72,7 @@ module fir_interp_halfband_2x (
     localparam [15:0] DONE             = 16'h0800;
 
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = REPEAT_COEFS_NUM       | // init stack
                              PUSH_X                 ;

@@ -8,7 +8,7 @@
 // Description: Simple triangle generator
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module gen_triangle (
     input                       clk,
@@ -68,7 +68,7 @@ module gen_triangle (
     localparam [15:0] MOV_OUTR_ACCSGN   = 16'h8000;
               
     reg [15:0] tasks;
-    always @(pc) begin
+    always @(*) begin
         case (pc)
             4'h0   : tasks = WAIT_IN            ;
             // Left sample calc

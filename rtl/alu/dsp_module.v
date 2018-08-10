@@ -9,18 +9,17 @@
 //              mode
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module dsp_module (
     input                          clk              ,
     input                          reset            ,
-    output      [   CLIENTS_N-1:0] client_strobe    ,
     output      [   CLIENTS_N-1:0] client_cycle     ,
+    output      [   CLIENTS_N-1:0] client_strobe    ,
     input       [   CLIENTS_N-1:0] client_ack       ,
     input       [   CLIENTS_N-1:0] client_stall     ,
     //input     [   CLIENTS_N-1:0] client_err       ,
-    output      [   CLIENTS_N-1:0] client_mode      ,
-    input       [ 8*CLIENTS_N-1:0] client_op        ,
+    input       [ 9*CLIENTS_N-1:0] client_op        ,
     input       [18*CLIENTS_N-1:0] client_al        ,
     input       [18*CLIENTS_N-1:0] client_bl        ,
     input       [48*CLIENTS_N-1:0] client_cl        ,
@@ -28,9 +27,7 @@ module dsp_module (
     input       [18*CLIENTS_N-1:0] client_ar        ,
     input       [18*CLIENTS_N-1:0] client_br        ,
     input       [48*CLIENTS_N-1:0] client_cr        ,
-    output      [48*CLIENTS_N-1:0] client_pr        ,
-    input       [   CLIENTS_N-1:0] client_req       ,
-    output      [   CLIENTS_N-1:0] client_gnt
+    output      [48*CLIENTS_N-1:0] client_pr        
 );
 
     parameter CLIENTS_N = 2;
@@ -42,7 +39,6 @@ module dsp_module (
     wire [   ALUS_N-1:0] alu_ack;
     wire [   ALUS_N-1:0] alu_stall;
     wire [   ALUS_N-1:0] alu_err;
-    wire [   ALUS_N-1:0] alu_mode;
     wire [ 8*ALUS_N-1:0] alu_op;
     wire [18*ALUS_N-1:0] alu_al;
     wire [18*ALUS_N-1:0] alu_bl;
@@ -60,12 +56,12 @@ module dsp_module (
     ) alu_nic_mul_inst (
         .clk           (clk                ),
         .reset         (reset              ),
+
         .client_strobe (client_strobe      ),
         .client_cycle  (client_cycle       ),
         .client_ack    (client_ack         ),
         .client_stall  (client_stall       ),
         //.client_err  (client_err         ), // TBI
-        .client_mode   (client_mode        ),
         .client_op     (client_op          ),
         .client_al     (client_al          ),
         .client_bl     (client_bl          ),
@@ -75,14 +71,12 @@ module dsp_module (
         .client_br     (client_br          ),
         .client_cr     (client_cr          ),
         .client_pr     (client_pr          ),
-        .client_req    (client_req         ),
-        .client_gnt    (client_gnt         ),
+
         .alu_strobe    (alu_strobe         ),
         .alu_cycle     (alu_cycle          ),
         .alu_ack       (alu_ack            ),
         .alu_stall     (alu_stall          ),
         //.alu_err     (alu_err            ), // TBI
-        .alu_mode      (alu_mode           ),
         .alu_op        (alu_op             ),
         .alu_al        (alu_al             ),
         .alu_bl        (alu_bl             ),
@@ -95,7 +89,7 @@ module dsp_module (
     );
 
     genvar i;
-    generate for (i = 0; i < DSPS_N; i=i+1) begin : int_alu_inst
+    generate for (i = 0; i < ALUS_N; i=i+1) begin : int_alu_inst
         alu_top alu_inst (
             .clk        (clk                    ),
             .reset      (reset                  ),
@@ -104,8 +98,7 @@ module dsp_module (
             .alu_ack    (alu_ack   [i]          ),
             .alu_stall  (alu_stall [i]          ),
             //.alu_err  (alu_err   [i]          ), // TBI
-            .alu_mode   (alu_mode  [i]          ),
-            .alu_op     (alu_op    [ 8*i+: 8]   ),
+            .alu_op     (alu_op    [ 9*i+: 9]   ),
             .alu_al     (alu_al    [18*i+:18]   ),
             .alu_bl     (alu_bl    [18*i+:18]   ),
             .alu_cl     (alu_cl    [48*i+:48]   ),

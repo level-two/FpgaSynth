@@ -9,25 +9,25 @@
 //              functions
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../globals.vh"
 
 module alu_taylor_coefs (
-    input [2:0]          function_sel,
+    input [8:0]          function_sel,
     input [3:0]          idx,
 //    output               last_idx,
     output signed [17:0] deriv_coef
 );
 
     assign deriv_coef = 
-        (function_sel == `ALU_TAYLOR_SIN) ? deriv_coef_sin :
-        (function_sel == `ALU_TAYLOR_COS) ? deriv_coef_cos :
-        (function_sel == `ALU_TAYLOR_INV_1_PLUS_X) ? deriv_coef_inv_1_plus_x :
+        (function_sel == `ALU_FUNC_SIN) ? deriv_coef_sin :
+        (function_sel == `ALU_FUNC_COS) ? deriv_coef_cos :
+        (function_sel == `ALU_FUNC_INV_1_PLUS_X) ? deriv_coef_inv_1_plus_x :
         18'h00000;
 
     /*
     assign last_idx =
-        (function_sel == `ALU_TAYLOR_SIN) ? last_idx_sin :
-        (function_sel == `ALU_TAYLOR_COS) ? last_idx_cos :
+        (function_sel == `ALU_FUNC_SIN) ? last_idx_sin :
+        (function_sel == `ALU_FUNC_COS) ? last_idx_cos :
         18'h00000;
     */
 
