@@ -48,7 +48,6 @@ module tb_gen_sine;
     wire signed [47:0]       sine_alu_cr;
     wire signed [47:0]       sine_alu_pr;
 
-    /*
     gen_sine gen_sine
     (
         .clk           (clk                     ),
@@ -81,8 +80,7 @@ module tb_gen_sine;
         .alu_cr        (sine_alu_cr             ),
         .alu_pr        (sine_alu_pr             ) 
     );
-    
-    */
+
 
     alu#(
         .CLIENTS_N(1),
