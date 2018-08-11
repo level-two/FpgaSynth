@@ -103,16 +103,20 @@ module alu_core (
     assign dsp_al         = alu_al | taylor_dsp_al | taylor1_dsp_al;
     assign dsp_bl         = alu_bl | taylor_dsp_bl | taylor1_dsp_bl;
     assign dsp_cl         = alu_cl | taylor_dsp_cl | taylor1_dsp_cl;
-    assign alu_pl         = dsp_pl | taylor_dsp_pl | taylor1_dsp_pl;
     assign taylor_dsp_pl  = dsp_pl;
     assign taylor1_dsp_pl = dsp_pl;
     assign dsp_ar         = alu_ar | taylor_dsp_ar | taylor1_dsp_ar;
     assign dsp_br         = alu_br | taylor_dsp_br | taylor1_dsp_br;
     assign dsp_cr         = alu_cr | taylor_dsp_cr | taylor1_dsp_cr;
-    assign alu_pr         = dsp_pr | taylor_dsp_pr | taylor1_dsp_pr;
     assign taylor_dsp_pr  = dsp_pr;
     assign taylor1_dsp_pr = dsp_pr;
 
+    assign alu_pl         = dsp_pl |
+                            { {14{taylor_resl [17]}}, taylor_resl [17:0], 16'h0} |
+                            { {14{taylor1_resl[17]}}, taylor1_resl[17:0], 16'h0};
+    assign alu_pr         = dsp_pr |
+                            { {14{taylor_resr [17]}}, taylor_resr [17:0], 16'h0} |
+                            { {14{taylor1_resr[17]}}, taylor1_resr[17:0], 16'h0};
 
     reg busy;
     always @(posedge reset or posedge clk) begin

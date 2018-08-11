@@ -107,9 +107,7 @@ module gen_sine (
             4'h5   : tasks = (alu_ack   == 1'b0) ? WAIT : MOV_SIN_VAL_AC       ;
             4'h6   : tasks = (alu_ack   == 1'b0) ? WAIT                        :
                                  MOV_PHASE_AC                                  |
-                                 (dir == DIR_NEG && alu_pl[47] == 1'b1)        ?
-                                     REACHED_MIN_BOUND | CLR_ALU_CYCLE | JP_0  :
-                                     PI2_MINUS_AC                              ;
+                                 (dir == DIR_NEG && alu_pl[47] == 1'b1 ? REACHED_MIN_BOUND | CLR_ALU_CYCLE | JP_0 : PI2_MINUS_AC);
             4'h7   : tasks = (alu_ack == 1'b0) ? WAIT                          :
                                  (alu_pl[47] == 1'b1 ? REACHED_MAX_BOUND : NOP)|
                                  CLR_ALU_CYCLE                                 |
@@ -233,10 +231,10 @@ module gen_sine (
                          (dir == DIR_POS ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
             alu_al     = step;
             alu_bl     = (sign == SGN_POS ? PLUS1 : MINUS1);
-            alu_cl     = phase;
+            alu_cl     = {14'h0, phase[17:0], 16'h0};
             alu_ar     = step;
             alu_br     = (sign == SGN_POS ? PLUS1 : MINUS1);
-            alu_cr     = phase;
+            alu_cr     = {14'h0, phase[17:0], 16'h0};
         end
         else if (tasks & PI2_MINUS_AC) begin
             alu_strobe = 1'b1;

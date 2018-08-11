@@ -145,17 +145,24 @@ module tb_gen_sine;
         sine_smp_trig   <= 1'b0;
         @(posedge clk);
 
-//        repeat (10) begin
+        repeat (10) begin
             sine_smp_trig <= 1'b1;
             @(posedge clk);
 
             sine_smp_trig <= 1'b0;
             repeat (100) @(posedge clk);
-//        end
+        end
 
 //        repeat (100) @(posedge clk);
 
         $finish;
+    end
+
+
+    always @(posedge clk) begin
+        if (sine_smp_out_rdy) begin
+            $display("%d", sine_smp_out_l);
+        end
     end
 endmodule
 
