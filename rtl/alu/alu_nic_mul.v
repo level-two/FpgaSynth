@@ -64,51 +64,48 @@ module alu_nic_mul (
         .gnt_id     (gnt_id          )
     );
 
-    // TODO implement with the single always block
-    genvar j;
-    generate for (j = 0; j < CLIENTS_N; j=j+1) begin : conn_cl_to_dsp
-        always @(*) begin
-            client_pl[48*j +: 48] = 48'h0;
-            client_pr[48*j +: 48] = 48'h0;
+    always @(*) begin : nic_alw
+        integer j;
 
-            client_stall[j] = 1'b0;
-            client_ack[j]   = 1'b0;
-            //client_err[j] = 1'b0;
+        alu_strobe   = {   ALUS_N{ 1'b0}};
+        alu_cycle    = {   ALUS_N{ 1'b0}};
+        alu_op       = {   ALUS_N{ 9'h0}};
+        alu_al       = {   ALUS_N{17'h0}};
+        alu_bl       = {   ALUS_N{17'h0}};
+        alu_cl       = {   ALUS_N{47'h0}};
+        alu_ar       = {   ALUS_N{17'h0}};
+        alu_br       = {   ALUS_N{17'h0}};
+        alu_cr       = {   ALUS_N{47'h0}};
 
-            alu_strobe   = {   ALUS_N{ 1'b0}};
-            alu_cycle    = {   ALUS_N{ 1'b0}};
-            alu_op       = {   ALUS_N{ 9'h0}};
-            alu_al       = {   ALUS_N{17'h0}};
-            alu_bl       = {   ALUS_N{17'h0}};
-            alu_cl       = {   ALUS_N{47'h0}};
-            alu_ar       = {   ALUS_N{17'h0}};
-            alu_br       = {   ALUS_N{17'h0}};
-            alu_cr       = {   ALUS_N{47'h0}};
+        for (j = 0; j < CLIENTS_N; j=j+1) begin : nic_for
+            client_pl   [48*j +: 48] = 48'h0;
+            client_pr   [48*j +: 48] = 48'h0;
 
-            client_stall[j] = client_cycle[j] & ~gnt_val[j];
+            client_ack  [j         ] = 1'b0;
+            //client_err[j         ] = 1'b0;
+            client_stall[j         ] = client_cycle[j] & ~gnt_val[j];
 
-            if (gnt_val[j])
-            begin : on_gnt
-                reg [ALUS_W-1:0] alu_id;
+            if (gnt_val[j]) begin : on_gnt
+                reg [ALUS_W-1:0] id;
 
-                alu_id = gnt_id[ALUS_W*j +: ALUS_W];
+                id = gnt_id[ALUS_W*j +: ALUS_W];
 
-                client_ack  [         j] = alu_ack      [    alu_id];
-                client_stall[         j] = alu_stall    [    alu_id];
-                //client_err[         j] = alu_err      [    alu_id];
-                client_pl   [48*j +: 48] = alu_pl       [    alu_id];
-                client_pr   [48*j +: 48] = alu_pr       [    alu_id];
+                client_ack  [          j] = alu_ack      [         id];
+                client_stall[          j] = alu_stall    [         id];
+                //client_err[          j] = alu_err      [         id];
+                client_pl   [ 48*j +: 48] = alu_pl       [48*id +: 48];
+                client_pr   [ 48*j +: 48] = alu_pr       [48*id +: 48];
 
-                alu_strobe  [    alu_id] = client_strobe[         j];
-                alu_cycle   [    alu_id] = client_cycle [         j];
-                alu_op      [    alu_id] = client_op    [ 9*j +:  9];
-                alu_al      [    alu_id] = client_al    [18*j +: 18];
-                alu_bl      [    alu_id] = client_bl    [18*j +: 18];
-                alu_cl      [    alu_id] = client_cl    [48*j +: 48];
-                alu_ar      [    alu_id] = client_ar    [18*j +: 18];
-                alu_br      [    alu_id] = client_br    [18*j +: 18];
-                alu_cr      [    alu_id] = client_cr    [48*j +: 48];
+                alu_strobe  [         id] = client_strobe[          j];
+                alu_cycle   [         id] = client_cycle [          j];
+                alu_op      [ 9*id +:  9] = client_op    [  9*j +:  9];
+                alu_al      [18*id +: 18] = client_al    [ 18*j +: 18];
+                alu_bl      [18*id +: 18] = client_bl    [ 18*j +: 18];
+                alu_cl      [48*id +: 48] = client_cl    [ 48*j +: 48];
+                alu_ar      [18*id +: 18] = client_ar    [ 18*j +: 18];
+                alu_br      [18*id +: 18] = client_br    [ 18*j +: 18];
+                alu_cr      [48*id +: 48] = client_cr    [ 48*j +: 48];
             end
-        end
-    end endgenerate
+        end // for
+    end // always
 endmodule

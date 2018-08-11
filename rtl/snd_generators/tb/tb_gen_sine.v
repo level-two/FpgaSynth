@@ -119,17 +119,41 @@ module tb_gen_sine;
 
     initial begin
         reset           <= 1'b1;
-        midi_rdy        <= 1'b1;
-        midi_cmd        <= {`MIDI_CMD_SIZE{1'b1}};
-        midi_ch_sysn    <= 4'b1;
-        midi_data0      <= 7'b1;
-        midi_data1      <= 7'b1;
-        sine_smp_trig   <= 1'b1;
+        midi_rdy        <= 1'b0;
+        midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
+        midi_ch_sysn    <= 4'b0;
+        midi_data0      <= 7'b0;
+        midi_data1      <= 7'b0;
+        sine_smp_trig   <= 1'b0;
 
         #100;
         reset           <= 1'b0;
+        repeat (10) @(posedge clk);
+
+        midi_rdy        <= 1'b1;
+        midi_cmd        <= `MIDI_CMD_NOTE_ON;
+        midi_ch_sysn    <= 4'h0;
+        midi_data0      <= 7'h20;
+        midi_data1      <= 7'h3f;
+        @(posedge clk);
         
-        repeat (10000) @(posedge clk);
+        midi_rdy        <= 1'b0;
+        midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
+        midi_ch_sysn    <= 4'b0;
+        midi_data0      <= 7'b0;
+        midi_data1      <= 7'b0;
+        sine_smp_trig   <= 1'b0;
+        @(posedge clk);
+
+//        repeat (10) begin
+            sine_smp_trig <= 1'b1;
+            @(posedge clk);
+
+            sine_smp_trig <= 1'b0;
+            repeat (100) @(posedge clk);
+//        end
+
+//        repeat (100) @(posedge clk);
 
         $finish;
     end

@@ -99,13 +99,13 @@ module gen_sine (
     reg [15:0] tasks;
     always @(*) begin
         case (pc)
-            4'h0   : tasks = (note_on     == 1'b0) ? WAIT : NOP                ;
-            4'h1   : tasks = (smp_trig    == 1'b0) ? WAIT : SEND_SMP | SET_ALU_CYCLE;
-            4'h2   : tasks = CALC_SIN_VAL                                      ;
-            4'h3   : tasks = (alu_ack == 1'b0) ? WAIT : MUL_AC_AMPL            ;
+            4'h0   : tasks = (note_on   == 1'b0) ? WAIT : NOP                  ;
+            4'h1   : tasks = (smp_trig  == 1'b0) ? WAIT : SEND_SMP | SET_ALU_CYCLE;
+            4'h2   : tasks = (alu_stall == 1'b1) ? WAIT : CALC_SIN_VAL         ;
+            4'h3   : tasks = (alu_ack   == 1'b0) ? WAIT : MUL_AC_AMPL          ;
             4'h4   : tasks = ADD_PHASE_STEP                                    ;
-            4'h5   : tasks = (alu_ack == 1'b0) ? WAIT : MOV_SIN_VAL_AC         ;
-            4'h6   : tasks = (alu_ack == 1'b0) ? WAIT                          :
+            4'h5   : tasks = (alu_ack   == 1'b0) ? WAIT : MOV_SIN_VAL_AC       ;
+            4'h6   : tasks = (alu_ack   == 1'b0) ? WAIT                        :
                                  MOV_PHASE_AC                                  |
                                  (dir == DIR_NEG && alu_pl[47] == 1'b1)        ?
                                      REACHED_MIN_BOUND | CLR_ALU_CYCLE | JP_0  :
