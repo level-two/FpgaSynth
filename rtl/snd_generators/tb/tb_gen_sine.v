@@ -153,7 +153,7 @@ module tb_gen_sine;
         end
 
         midi_rdy        <= 1'b1;
-        midi_cmd        <= `MIDI_CMD_NOTE_OFF;
+        midi_cmd        <= `MIDI_CMD_NOTE_ON;
         midi_ch_sysn    <= 4'h0;
         midi_data0      <= 7'h50;
         midi_data1      <= 7'h01;

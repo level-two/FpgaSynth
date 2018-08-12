@@ -43,6 +43,8 @@ module gen_sine (
     input      signed [47:0]    alu_pr        
 );
 
+    parameter MIDI_CH = 0;
+
     // TASKS
     localparam [15:0] NOP                      = 16'h0000;
     localparam [15:0] JP_0                     = 16'h0001;
@@ -70,8 +72,8 @@ module gen_sine (
     localparam SGN_NEG = 1'b0;
 
 
-    wire note_on_event  = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_ON);
-    wire note_off_event = (midi_rdy && midi_cmd == `MIDI_CMD_NOTE_OFF);
+    wire note_on_event  = (midi_rdy && midi_ch_sysn == MIDI_CH && midi_cmd == `MIDI_CMD_NOTE_ON);
+    wire note_off_event = (midi_rdy && midi_ch_sysn == MIDI_CH && midi_cmd == `MIDI_CMD_NOTE_OFF);
 
     reg [6:0] note;
     reg [6:0] ampl;
