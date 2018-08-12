@@ -133,10 +133,9 @@ module tb_gen_sine;
         midi_rdy        <= 1'b1;
         midi_cmd        <= `MIDI_CMD_NOTE_ON;
         midi_ch_sysn    <= 4'h0;
-        midi_data0      <= 7'h20;
-        midi_data1      <= 7'h7f;
+        midi_data0      <= 7'h50;
+        midi_data1      <= 7'h11;
         @(posedge clk);
-        
         midi_rdy        <= 1'b0;
         midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
         midi_ch_sysn    <= 4'b0;
@@ -145,13 +144,61 @@ module tb_gen_sine;
         sine_smp_trig   <= 1'b0;
         @(posedge clk);
 
-        repeat (1000) begin
+        repeat (100) begin
             sine_smp_trig <= 1'b1;
             @(posedge clk);
 
             sine_smp_trig <= 1'b0;
             repeat (100) @(posedge clk);
         end
+
+        midi_rdy        <= 1'b1;
+        midi_cmd        <= `MIDI_CMD_NOTE_OFF;
+        midi_ch_sysn    <= 4'h0;
+        midi_data0      <= 7'h50;
+        midi_data1      <= 7'h01;
+        @(posedge clk);
+        midi_rdy        <= 1'b0;
+        midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
+        midi_ch_sysn    <= 4'b0;
+        midi_data0      <= 7'b0;
+        midi_data1      <= 7'b0;
+        sine_smp_trig   <= 1'b0;
+        @(posedge clk);
+
+
+        repeat (100) begin
+            sine_smp_trig <= 1'b1;
+            @(posedge clk);
+
+            sine_smp_trig <= 1'b0;
+            repeat (100) @(posedge clk);
+        end
+
+
+        midi_rdy        <= 1'b1;
+        midi_cmd        <= `MIDI_CMD_NOTE_ON;
+        midi_ch_sysn    <= 4'h0;
+        midi_data0      <= 7'h40;
+        midi_data1      <= 7'h21;
+        @(posedge clk);
+        midi_rdy        <= 1'b0;
+        midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
+        midi_ch_sysn    <= 4'b0;
+        midi_data0      <= 7'b0;
+        midi_data1      <= 7'b0;
+        sine_smp_trig   <= 1'b0;
+        @(posedge clk);
+
+
+        repeat (100) begin
+            sine_smp_trig <= 1'b1;
+            @(posedge clk);
+
+            sine_smp_trig <= 1'b0;
+            repeat (100) @(posedge clk);
+        end
+
 
 //        repeat (100) @(posedge clk);
 
