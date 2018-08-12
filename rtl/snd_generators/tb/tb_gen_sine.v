@@ -134,7 +134,7 @@ module tb_gen_sine;
         midi_cmd        <= `MIDI_CMD_NOTE_ON;
         midi_ch_sysn    <= 4'h0;
         midi_data0      <= 7'h20;
-        midi_data1      <= 7'h3f;
+        midi_data1      <= 7'h7f;
         @(posedge clk);
         
         midi_rdy        <= 1'b0;
@@ -145,7 +145,7 @@ module tb_gen_sine;
         sine_smp_trig   <= 1'b0;
         @(posedge clk);
 
-        repeat (10) begin
+        repeat (1000) begin
             sine_smp_trig <= 1'b1;
             @(posedge clk);
 
