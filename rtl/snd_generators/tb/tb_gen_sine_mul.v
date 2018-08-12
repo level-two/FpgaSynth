@@ -136,11 +136,9 @@ module tb_gen_sine_mul;
     );
 
 
-
-
     alu#(
         .CLIENTS_N(2),
-        .ALUS_N   (1),
+        .ALUS_N   (2),
         .ALUS_W   (1)
     ) alu (
         .clk           (clk                           ),
@@ -162,7 +160,7 @@ module tb_gen_sine_mul;
         .client_pr     ({s1_alu_pr    , s2_alu_pr    })
     );
 
-    
+
     initial $timeformat(-9, 0, " ns", 0);
 
     initial begin
@@ -228,8 +226,8 @@ module tb_gen_sine_mul;
 
 
     always @(posedge clk) begin
-        if (s1_smp_out_rdy) begin
-            $display("%d", s1_smp_out_l);
+        if (s2_smp_out_rdy) begin
+            $display("%d", s2_smp_out_l);
         end
     end
 endmodule
