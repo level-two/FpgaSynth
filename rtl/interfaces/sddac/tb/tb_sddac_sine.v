@@ -18,7 +18,7 @@ module tb_gen_sine_mul;
     localparam CLK_FREQ = 100_000_000;
     real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
     localparam SAMPLE_CLKS   = 2083;
-    localparam DAC_OUT_CLKS  = 8;
+    localparam DAC_OUT_CLKS  = `CLK_DIV_1536K;
 
     reg                      clk;
     reg                      reset;
@@ -136,7 +136,7 @@ module tb_gen_sine_mul;
 
     integer f;
     initial begin
-        f = $fopen("c:/output.txt", "w");
+        f = $fopen("output.txt", "w");
 
         reset           <= 1'b1;
         midi_rdy        <= 1'b0;
@@ -154,8 +154,8 @@ module tb_gen_sine_mul;
         midi_rdy        <= 1'b1;
         midi_cmd        <= `MIDI_CMD_NOTE_ON;
         midi_ch_sysn    <= 4'h0;
-        midi_data0      <= 7'h50;
-        midi_data1      <= 7'h11;
+        midi_data0      <= 7'h30;
+        midi_data1      <= 7'h7f;
         @(posedge clk);
         midi_rdy        <= 1'b0;
         midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
@@ -165,7 +165,7 @@ module tb_gen_sine_mul;
         @(posedge clk);
 
 
-        repeat (100) begin
+        repeat (2000) begin
             s_smp_trig  <= 1'b1;
             @(posedge clk);
 
@@ -174,11 +174,35 @@ module tb_gen_sine_mul;
         end
 
 
+        midi_rdy        <= 1'b1;
+        midi_cmd        <= `MIDI_CMD_NOTE_OFF;
+        midi_ch_sysn    <= 4'h0;
+        midi_data0      <= 7'h50;
+        midi_data1      <= 7'h7f;
+        @(posedge clk);
+        midi_rdy        <= 1'b0;
+        midi_cmd        <= {`MIDI_CMD_SIZE{1'b0}};
+        midi_ch_sysn    <= 4'b0;
+        midi_data0      <= 7'b0;
+        midi_data1      <= 7'b0;
+        @(posedge clk);
+
+        repeat (2000) begin
+            s_smp_trig  <= 1'b1;
+            @(posedge clk);
+
+            s_smp_trig  <= 1'b0;
+            repeat (SAMPLE_CLKS-1) @(posedge clk);
+        end
+
+
+
         repeat (100) @(posedge clk);
 
         $fclose(f);
         $finish;
     end
+
 
 
     always @(posedge clk) begin
@@ -194,6 +218,7 @@ module tb_gen_sine_mul;
         forever begin
             repeat (DAC_OUT_CLKS) @(posedge clk);
             $fwrite(f, "%b\n",  dac_out_l); 
+//            $display("%d", dac_out_l);
         end
     end
 
