@@ -4,16 +4,16 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: dsp48a1_adder.v
+// File: sddac_dsp48a1_adder.v
 // Description: Instance of the DSP48A1 in the 48-bit ADDER/SUBSTRACTER mode
 // -----------------------------------------------------------------------------
 
 `include "../../globals.vh"
 
-module dsp48a1_adder (
+module sddac_dsp48a1_adder (
     input                clk,
     input                reset,
-    input         [7:0]  opmode,
+    input         [8:0]  opmode,
     input  signed [47:0] dabin,
     input  signed [47:0] cin,
     output signed [47:0] pout
@@ -58,7 +58,7 @@ module dsp48a1_adder (
         .P         (pout        ), // Data output
         .PCIN      (pcin_nc     ), // P cascade (if used, connect to PCOUT of another DSP48A1)
         .CLK       (clk         ), // Clock 
-        .OPMODE    (opmode      ), // Operation mode 
+        .OPMODE    (opmode[7:0] ), // Operation mode 
         .A         (ain         ), // A data 
         .B         (bin         ), // B data (connected to fabric or BCOUT of adjacent DSP48A1)
         .C         (cin         ), // C data 

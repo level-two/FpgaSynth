@@ -27,12 +27,12 @@ module sddac_fir_interp_20k_192k_8x (
     output reg signed [17:0] sample_out_r,
     output reg               done,
 
-    output reg        [ 7:0] opl   ,
+    output reg        [ 8:0] opl   ,
     output reg signed [17:0] al    ,
     output reg signed [17:0] bl    ,
     output     signed [47:0] cl    ,
     input      signed [47:0] pl    ,
-    output reg        [ 7:0] opr   ,
+    output reg        [ 8:0] opr   ,
     output reg signed [17:0] ar    ,
     output reg signed [17:0] br    ,
     output     signed [47:0] cr    ,
@@ -286,16 +286,16 @@ module sddac_fir_interp_20k_192k_8x (
 
     // MUL TASKS
     always @(*) begin
-        opl = `DSP_NOP;
-        opr = `DSP_NOP;
+        opl = `ALU_DSP_NOP;
+        opr = `ALU_DSP_NOP;
         al  = 18'h00000;
         ar  = 18'h00000;
         bl  = 18'h00000;
         br  = 18'h00000;
 
         if (tasks & MAC_CIJ_X) begin
-            opl = `DSP_XIN_MULT | `DSP_ZIN_POUT;
-            opr = `DSP_XIN_MULT | `DSP_ZIN_POUT;
+            opl = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_POUT;
+            opr = `ALU_DSP_XIN_MULT | `ALU_DSP_ZIN_POUT;
             al  = cij;
             ar  = cij;
             bl  = xjl;

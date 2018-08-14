@@ -18,6 +18,7 @@ module tb_gen_sine_mul;
     localparam CLK_FREQ = 100_000_000;
     real CLK_PERIOD = (1 / (TIMESTEP * CLK_FREQ));
     localparam SAMPLE_CLKS   = 2083;
+    localparam DAC_OUT_CLKS  = 8;
 
     reg                      clk;
     reg                      reset;
@@ -135,7 +136,7 @@ module tb_gen_sine_mul;
 
     integer f;
     initial begin
-        f = $fopen("c:\output.txt", "w");
+        f = $fopen("c:/output.txt", "w");
 
         reset           <= 1'b1;
         midi_rdy        <= 1'b0;
@@ -188,8 +189,8 @@ module tb_gen_sine_mul;
 
 
     initial begin
-        @(posedge reset);
-        @(negedge reset);
+        wait (reset === 1'b0);
+
         forever begin
             repeat (DAC_OUT_CLKS) @(posedge clk);
             $fwrite(f, "%b\n",  dac_out_l); 

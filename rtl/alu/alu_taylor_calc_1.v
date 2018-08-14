@@ -37,7 +37,7 @@ module alu_taylor_calc_1 (
     output reg signed [17:0] resl       ,
     output reg signed [17:0] resr       ,
 
-    output reg        [ 7:0] dsp_op     ,
+    output reg        [ 8:0] dsp_op     ,
     output reg signed [17:0] dsp_al     ,
     output reg signed [17:0] dsp_bl     ,
     output reg signed [47:0] dsp_cl     ,

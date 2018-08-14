@@ -8,7 +8,7 @@
 // Description: First order sigma-delta dac for audio output
 // -----------------------------------------------------------------------------
 
-`include "../globals.vh"
+`include "../../globals.vh"
 
 module sddac_dac_2ord
 (
@@ -140,48 +140,48 @@ module sddac_dac_2ord
 
     // ADDER TASKS
     always @(*) begin
-        opmode = `DSP_NOP;
+        opmode = `ALU_DSP_NOP;
         dab    = 48'h00000;
         c      = 48'h00000;
         if (tasks & ADD_SL_I1L) begin
-            opmode = `DSP_XIN_DAB  | 
-                     `DSP_ZIN_CIN  |
-                     `DSP_POSTADD_ADD;
+            opmode = `ALU_DSP_XIN_DAB  | 
+                     `ALU_DSP_ZIN_CIN  |
+                     `ALU_DSP_POSTADD_ADD;
             dab    = integ1_l;
             c      = { {30{sample_in_l_reg[17]}}, sample_in_l_reg[17:0] };
         end
         else if (tasks & ADD_SR_I1R) begin
-            opmode = `DSP_XIN_DAB  | 
-                     `DSP_ZIN_CIN  |
-                     `DSP_POSTADD_ADD;
+            opmode = `ALU_DSP_XIN_DAB  | 
+                     `ALU_DSP_ZIN_CIN  |
+                     `ALU_DSP_POSTADD_ADD;
             dab    = integ1_r;
             c      = { {30{sample_in_r_reg[17]}}, sample_in_r_reg[17:0] };
         end
         else if (tasks & ADD_DL) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     (delta_add_l ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
+            opmode = `ALU_DSP_XIN_DAB  |
+                     `ALU_DSP_ZIN_POUT |
+                     (delta_add_l ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
             dab    = {30'h0, delta};
             c      = 48'h00000;
         end
         else if (tasks & ADD_DR) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     (delta_add_r ? `DSP_POSTADD_ADD : `DSP_POSTADD_SUB);
+            opmode = `ALU_DSP_XIN_DAB  |
+                     `ALU_DSP_ZIN_POUT |
+                     (delta_add_r ? `ALU_DSP_POSTADD_ADD : `ALU_DSP_POSTADD_SUB);
             dab    = {30'h0, delta};
             c      = 48'h00000;
         end
         else if (tasks & ADD_I2L) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     `DSP_POSTADD_ADD;
+            opmode = `ALU_DSP_XIN_DAB  |
+                     `ALU_DSP_ZIN_POUT |
+                     `ALU_DSP_POSTADD_ADD;
             dab    = integ2_l;
             c      = 48'h00000;
         end
         else if (tasks & ADD_I2R) begin
-            opmode = `DSP_XIN_DAB  |
-                     `DSP_ZIN_POUT |
-                     `DSP_POSTADD_ADD;
+            opmode = `ALU_DSP_XIN_DAB  |
+                     `ALU_DSP_ZIN_POUT |
+                     `ALU_DSP_POSTADD_ADD;
             dab    = integ2_r;
             c      = 48'h00000;
         end
@@ -250,7 +250,7 @@ module sddac_dac_2ord
     end
 
 
-    reg         [7:0]  opmode;
+    reg         [8:0]  opmode;
     reg  signed [47:0] dab;
     reg  signed [47:0] c;
     wire signed [47:0] p;

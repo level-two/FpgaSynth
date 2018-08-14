@@ -14,7 +14,7 @@
 module alu_dsp48a1 (
     input                clk  ,
     input                reset,
-    input         [ 7:0] op   ,
+    input         [ 8:0] op   ,
     input  signed [17:0] a    ,
     input  signed [17:0] b    ,
     input  signed [47:0] c    ,
@@ -22,11 +22,11 @@ module alu_dsp48a1 (
 );
 
     reg signed [47:0] c_dly;
-    reg        [ 7:0] op_dly;
+    reg        [ 8:0] op_dly;
     always @(posedge reset or posedge clk) begin
         if (reset) begin
             c_dly  <= 48'h0;
-            op_dly <= 8'h00;
+            op_dly <= 9'h00;
         end 
         else begin
             c_dly  <= c;

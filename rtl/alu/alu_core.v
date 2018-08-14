@@ -58,7 +58,7 @@ module alu_core (
     wire signed [17:0] taylor_resl;
     wire signed [17:0] taylor_resr;
 
-    wire        [ 7:0] taylor_dsp_op;
+    wire        [ 8:0] taylor_dsp_op;
     wire signed [17:0] taylor_dsp_al;
     wire signed [17:0] taylor_dsp_bl;
     wire signed [47:0] taylor_dsp_cl;
@@ -77,7 +77,7 @@ module alu_core (
     wire signed [17:0] taylor1_resl;
     wire signed [17:0] taylor1_resr;
 
-    wire        [ 7:0] taylor1_dsp_op;
+    wire        [ 8:0] taylor1_dsp_op;
     wire signed [17:0] taylor1_dsp_al;
     wire signed [17:0] taylor1_dsp_bl;
     wire signed [47:0] taylor1_dsp_cl;
@@ -88,7 +88,7 @@ module alu_core (
     wire signed [47:0] taylor1_dsp_pr;
 
     // DSP signals
-    wire [ 7:0] dsp_op;
+    wire [ 8:0] dsp_op;
     wire [17:0] dsp_al;
     wire [17:0] dsp_bl;
     wire [47:0] dsp_cl;
@@ -99,7 +99,7 @@ module alu_core (
     wire [47:0] dsp_pr;
 
 
-    assign dsp_op         = alu_op[7:0] | taylor_dsp_op | taylor1_dsp_op;
+    assign dsp_op         = alu_op | taylor_dsp_op | taylor1_dsp_op;
     assign dsp_al         = alu_al | taylor_dsp_al | taylor1_dsp_al;
     assign dsp_bl         = alu_bl | taylor_dsp_bl | taylor1_dsp_bl;
     assign dsp_cl         = alu_cl | taylor_dsp_cl | taylor1_dsp_cl;

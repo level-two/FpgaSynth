@@ -142,12 +142,12 @@ module sddac (
     wire signed [17:0] i1_sample_out_l;
     wire signed [17:0] i1_sample_out_r;
     wire               i1_done;
-    wire        [ 7:0] i1_opl;
+    wire        [ 8:0] i1_opl;
     wire        [17:0] i1_al;
     wire        [17:0] i1_bl;
     wire        [47:0] i1_cl;
     wire        [47:0] i1_pl;
-    wire        [ 7:0] i1_opr;
+    wire        [ 8:0] i1_opr;
     wire        [17:0] i1_ar;
     wire        [17:0] i1_br;
     wire        [47:0] i1_cr;
@@ -182,12 +182,12 @@ module sddac (
     wire signed [17:0] i2_sample_out_l;
     wire signed [17:0] i2_sample_out_r;
     wire               i2_done;
-    wire        [ 7:0] i2_opl;
+    wire        [ 8:0] i2_opl;
     wire        [17:0] i2_al;
     wire        [17:0] i2_bl;
     wire        [47:0] i2_cl;
     wire        [47:0] i2_pl;
-    wire        [ 7:0] i2_opr;
+    wire        [ 8:0] i2_opr;
     wire        [17:0] i2_ar;
     wire        [17:0] i2_br;
     wire        [47:0] i2_cr;
@@ -222,12 +222,12 @@ module sddac (
     wire signed [17:0] i3_sample_out_l;
     wire signed [17:0] i3_sample_out_r;
     wire               i3_done;
-    wire        [ 7:0] i3_opl;
+    wire        [ 8:0] i3_opl;
     wire        [17:0] i3_al;
     wire        [17:0] i3_bl;
     wire        [47:0] i3_cl;
     wire        [47:0] i3_pl;
-    wire        [ 7:0] i3_opr;
+    wire        [ 8:0] i3_opr;
     wire        [17:0] i3_ar;
     wire        [17:0] i3_br;
     wire        [47:0] i3_cr;
@@ -257,11 +257,11 @@ module sddac (
 
 
     // DSP signals interconnection
-    wire [ 7:0] opl = i1_opl | i2_opl | i3_opl;
+    wire [ 8:0] opl = i1_opl | i2_opl | i3_opl;
     wire [17:0] al  = i1_al  | i2_al  | i3_al;
     wire [17:0] bl  = i1_bl  | i2_bl  | i3_bl;
     wire [47:0] cl  = i1_cl  | i2_cl  | i3_cl;
-    wire [ 7:0] opr = i1_opr | i2_opr | i3_opr;
+    wire [ 8:0] opr = i1_opr | i2_opr | i3_opr;
     wire [17:0] ar  = i1_ar  | i2_ar  | i3_ar;
     wire [17:0] br  = i1_br  | i2_br  | i3_br;
     wire [47:0] cr  = i1_cr  | i2_cr  | i3_cr;
