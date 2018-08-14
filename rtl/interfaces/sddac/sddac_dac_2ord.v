@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: sigma_delta_2order_dac.v
+// File: sddac_dac_2ord.v
 // Description: First order sigma-delta dac for audio output
 // -----------------------------------------------------------------------------
 
 `include "../globals.vh"
 
-module sigma_delta_2order_dac
+module sddac_dac_2ord
 (
     input               clk,
     input               reset,
@@ -255,7 +255,7 @@ module sigma_delta_2order_dac
     reg  signed [47:0] c;
     wire signed [47:0] p;
 
-    dsp48a1_adder dsp48a1_adder
+    sddac_dsp48a1_adder  sddac_dsp48a1_adder
     (
         .clk        (clk        ),
         .reset      (reset      ),

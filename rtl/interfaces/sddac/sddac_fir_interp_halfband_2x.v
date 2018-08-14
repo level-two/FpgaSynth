@@ -4,13 +4,13 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: fir_interp_halfband_2x.v
+// File: sddac_fir_interp_halfband_2x.v
 // Description: Halfband 2x-interpolating FIR implementation
 // -----------------------------------------------------------------------------
 
-`include "../globals.vh"
+`include "../../globals.vh"
 
-module fir_interp_halfband_2x (
+module sddac_fir_interp_halfband_2x (
     input                    clk,
     input                    reset,
 

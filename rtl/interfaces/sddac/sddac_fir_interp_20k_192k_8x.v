@@ -4,7 +4,7 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: fir_interp_20k_192k_8x.v
+// File: sddac_fir_interp_20k_192k_8x.v
 // Description: Interpolating FIR
 //              Fs_in  =  192 kHz
 //              Fs_out = 1536 kHz
@@ -12,9 +12,9 @@
 //              k      =    8
 // -----------------------------------------------------------------------------
 
-`include "../globals.vh"
+`include "../../globals.vh"
 
-module fir_interp_20k_192k_8x (
+module sddac_fir_interp_20k_192k_8x (
     input                    clk,
     input                    reset,
 

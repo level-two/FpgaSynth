@@ -230,6 +230,5 @@ module tb_gen_sine_mul;
             $display("%d", s2_smp_out_l);
         end
     end
+
 endmodule
-
-

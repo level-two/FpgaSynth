@@ -4,15 +4,15 @@
 // Unauthorized copying of this file, via any medium is strictly prohibited
 // Proprietary and confidential
 // -----------------------------------------------------------------------------
-// File: module_stereo_dac_output.v
+// File: sddac.v
 // Description: Stereo sigma-delta dac with interpolation
 //              Input  sample rate:   48 kHz
 //              Output sample rate: 1536 kHz
 // -----------------------------------------------------------------------------
 
-`include "../globals.vh"
+`include "../../globals.vh"
 
-module module_stereo_dac_output (
+module sddac (
     input               clk,
     input               reset,
     input               sample_in_rdy,
@@ -153,7 +153,7 @@ module module_stereo_dac_output (
     wire        [47:0] i1_cr;
     wire        [47:0] i1_pr;
 
-    fir_interp_halfband_2x  i1_48k_96k (
+    sddac_fir_interp_halfband_2x  i1_48k_96k (
         .clk             (clk                   ),
         .reset           (reset                 ),
         .sample_in_rdy   (i1_sample_in_rdy      ),
@@ -193,7 +193,7 @@ module module_stereo_dac_output (
     wire        [47:0] i2_cr;
     wire        [47:0] i2_pr;
 
-    fir_interp_halfband_2x  i2_96k_192k (
+    sddac_fir_interp_halfband_2x  i2_96k_192k (
         .clk             (clk                   ),
         .reset           (reset                 ),
         .sample_in_rdy   (i2_sample_in_rdy      ),
@@ -233,7 +233,7 @@ module module_stereo_dac_output (
     wire        [47:0] i3_cr;
     wire        [47:0] i3_pr;
 
-    fir_interp_20k_192k_8x  i3_192k_1536k (
+    sddac_fir_interp_20k_192k_8x  i3_192k_1536k (
         .clk             (clk                   ),
         .reset           (reset                 ),
         .sample_in_rdy   (i3_sample_in_rdy      ),
@@ -277,7 +277,7 @@ module module_stereo_dac_output (
     assign i3_pr = pr;
 
 
-    dsp48a1_inst dsp48a1_l (
+    sddac_dsp48a1  sddac_dsp48a1_l (
         .clk            (clk             ),
         .reset          (reset           ),
         .op             (opl             ),
@@ -287,7 +287,7 @@ module module_stereo_dac_output (
         .p              (pl              )
     );
 
-    dsp48a1_inst dsp48a1_r (
+    sddac_dsp48a1  sddac_dsp48a1_r (
         .clk            (clk             ),
         .reset          (reset           ),
         .op             (opr             ),
@@ -333,7 +333,7 @@ module module_stereo_dac_output (
     end
     */
 
-    sigma_delta_2order_dac  sigma_delta_2order_dac_inst
+    sddac_dac_2ord  sddac_dac_2ord
     (
         .clk            (clk                ),
         .reset          (reset              ),
