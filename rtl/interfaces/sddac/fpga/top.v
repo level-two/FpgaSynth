@@ -8,13 +8,13 @@
 // Description: Top level module with external Logi-Pi board interface
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../../../globals.vh"
 
 module top (
     input            CLK_50M,
     input  [1:0]     BTN    ,
     input  [7:7]     GPIO_0 , // uart rx input
-    input  [7:7]     GPIO_1 , // sddac output
+    output [7:7]     GPIO_1 , // sddac output
     output [1:0]     LED
 );
 
@@ -27,7 +27,7 @@ module top (
     wire reset   = ~reset_n;
 
     wire   uart_rx = GPIO_0[7];
-    assign GPIO_0[7]    = dac_out;
+    assign GPIO_1[7]    = dac_out;
     assign LED[0]       = 0;
     assign LED[1]       = 0;
 

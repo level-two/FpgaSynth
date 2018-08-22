@@ -8,15 +8,15 @@
 // Description: Top level module with external FPGA interface
 // -----------------------------------------------------------------------------
 
-`include "globals.vh"
+`include "../../../globals.vh"
 
 module synth_top (
-    input        clk,
-    input        reset,
+    input        clk    ,
+    input        reset  ,
     input        uart_rx,
 
     // sigma-delta DAC out
-    output       dac_out,
+    output       dac_out
 );
 
     wire        uart_data_rdy;

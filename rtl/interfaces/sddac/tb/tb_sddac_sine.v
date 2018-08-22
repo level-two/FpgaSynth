@@ -50,7 +50,7 @@ module tb_gen_sine_mul;
     wire signed [47:0]       s_alu_pr;
 
 
-    gen_sine #(.MIDI_CH(0)) gen_sine_1
+    gen_sine #(.MIDI_CH(0)) gen_sine
     (
         .clk           (clk                     ),
         .reset         (reset                   ),
@@ -165,7 +165,7 @@ module tb_gen_sine_mul;
         @(posedge clk);
 
 
-        repeat (2000) begin
+        repeat (1000) begin
             s_smp_trig  <= 1'b1;
             @(posedge clk);
 
@@ -187,7 +187,7 @@ module tb_gen_sine_mul;
         midi_data1      <= 7'b0;
         @(posedge clk);
 
-        repeat (2000) begin
+        repeat (1000) begin
             s_smp_trig  <= 1'b1;
             @(posedge clk);
 
