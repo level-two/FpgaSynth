@@ -1,0 +1,212 @@
+# -----------------------------------------------------------------------------
+# Copyright © 2017 Yauheni Lychkouski. All Rights Reserved
+#
+# Unauthorized copying of this file, via any medium is strictly prohibited
+# Proprietary and confidential
+# -----------------------------------------------------------------------------
+# File: constrains.ucf
+# Description: Constrains
+# -----------------------------------------------------------------------------
+
+##############################################################################
+# Timing Constraints #
+##############################################################################
+
+# Grouping Constraints
+NET  CLK_50M     TNM_NET = clk50_grp;
+#NET  SDRAM_CLK   TNM_NET = clk100_grp;
+NET  clk         TNM_NET = clk100_grp;
+#NET clk_6p140M  TNM_NET = clk6p140_grp;
+#NET SYS_SPI_SCK TNM_NET = clk32_grp;
+
+# Clock Period Constraints
+TIMESPEC TS_PER_CLK50     = PERIOD "clk50_grp"    50.000 MHz;
+TIMESPEC TS_PER_CLK100    = PERIOD "clk100_grp"   100.000 MHz;
+#TIMESPEC TS_PER_CLK6p140 = PERIOD "clk6p140_grp" 6.140 MHz;
+
+#NET clk        TNM_NET = FFS GRP_100M;
+#NET clk_6p140M TNM_NET = FFS GRP_6p140M;
+
+#TIMESPEC TS_SLOW_TO_FAST = FROM "GRP_6p140M" TO "GRP_100M" 20 ns DATAPATHONLY;
+#TIMESPEC TS_FAST_TO_SLOW = FROM "GRP_100M" TO "GRP_6p140M" 350 ns DATAPATHONLY;
+
+#TIMESPEC TS_PER_CLK100 = PERIOD "clk100_grp" 10.0 ns;
+#TIMESPEC TS_PER_CLK32  = PERIOD "clk32_grp" 20.0 ns;
+
+#PIN "sys_clocks_gen/clkout2_buf.O" CLOCK_DEDICATED_ROUTE = FALSE;
+#PIN "clk_gen/clkout1_buf.O"        CLOCK_DEDICATED_ROUTE = FALSE;
+#NET "SYS_SPI_SCK"                  CLOCK_DEDICATED_ROUTE = FALSE;
+#PIN "clk_gen/clkout1_buf.O"        CLOCK_DEDICATED_ROUTE = FALSE;
+
+
+##############################################################################
+# Pin LOC Constraints #
+##############################################################################
+
+# SYSTEM CLOCK
+NET "CLK_50M"           LOC = A10   | IOSTANDARD = LVTTL;
+
+# LEDS
+NET "LED[0]"            LOC = T9    | IOSTANDARD = LVTTL;
+NET "LED[1]"            LOC = R9    | IOSTANDARD = LVTTL;
+
+# BUTTONS
+NET "BTN[0]"            LOC = T8    | IOSTANDARD = LVTTL;
+NET "BTN[1]"            LOC = R7    | IOSTANDARD = LVTTL;
+
+# SDRAM SIGNALS
+#NET "SDRAM_CLK"         LOC = H1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_CKE"         LOC = J1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_NCAS"        LOC = H3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_NRAS"        LOC = J4    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_NWE"         LOC = G3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_NCS"         LOC = J3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_DQML"        LOC = F3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_DQMH"        LOC = H2    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+
+#NET "SDRAM_DQ[0]"       LOC = A3    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[1]"       LOC = A2    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[2]"       LOC = B3    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[3]"       LOC = B2    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[4]"       LOC = C3    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[5]"       LOC = C2    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[6]"       LOC = D3    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[7]"       LOC = E3    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[8]"       LOC = G1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[9]"       LOC = F1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[10]"      LOC = F2    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[11]"      LOC = E1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[12]"      LOC = E2    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[13]"      LOC = D1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[14]"      LOC = C1    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "SDRAM_DQ[15]"      LOC = B1    | IOSTANDARD = LVTTL | SLEW = FAST;
+
+#NET "SDRAM_BA[0]"       LOC = K3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_BA[1]"       LOC = K2    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+
+#NET "SDRAM_A[0]"        LOC = L4    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[1]"        LOC = M3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[2]"        LOC = M4    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[3]"        LOC = N3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[4]"        LOC = R2    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[5]"        LOC = R1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[6]"        LOC = P2    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[7]"        LOC = P1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[8]"        LOC = N1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[9]"        LOC = M1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[10]"       LOC = L3    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[11]"       LOC = L1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+#NET "SDRAM_A[12]"       LOC = K1    | IOSTANDARD = LVTTL | SLEW = FAST | IOB = TRUE;
+
+# GPIO 0
+NET "GPIO_0[ 7]"        LOC = E12    | IOSTANDARD = LVTTL | SLEW = FAST;
+#NET "GPIO_0[ 8]"        LOC = E13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[ 9]"        LOC = B15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[10]"        LOC = B16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[11]"        LOC = C15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[12]"        LOC = C16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[13]"        LOC = D14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[14]"        LOC = D16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[15]"        LOC = E15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[16]"        LOC = E16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[17]"        LOC = F15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[18]"        LOC = F16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[19]"        LOC = G11    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[20]"        LOC = F12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[21]"        LOC = F14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[22]"        LOC = F13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[23]"        LOC = G16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[24]"        LOC = G14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[25]"        LOC = H15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[26]"        LOC = H16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[27]"        LOC = G12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[28]"        LOC = H11    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[29]"        LOC = H13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[30]"        LOC = H14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[31]"        LOC = J14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[32]"        LOC = J16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[33]"        LOC = J11    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[34]"        LOC = J12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[35]"        LOC = K14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[36]"        LOC = J13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[37]"        LOC = K15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[38]"        LOC = K16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[39]"        LOC = L16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[40]"        LOC = L14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[41]"        LOC = K11    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[42]"        LOC = K12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[43]"        LOC = M15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[44]"        LOC = M16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[45]"        LOC = N14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[46]"        LOC = N16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[47]"        LOC = M13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[48]"        LOC = M14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[49]"        LOC = L12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[50]"        LOC = L13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[51]"        LOC = P15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[52]"        LOC = P16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[53]"        LOC = R15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[54]"        LOC = R16    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[55]"        LOC = R14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[56]"        LOC = T15    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[57]"        LOC = T13    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[58]"        LOC = T14    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[59]"        LOC = T12    | IOSTANDARD = LVTTL;
+#NET "GPIO_0[60]"        LOC = R12    | IOSTANDARD = LVTTL;
+
+# GPIO 1
+NET "GPIO_1[ 7]"        LOC = A14    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[ 8]"        LOC = B14    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[ 9]"        LOC = C13    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[10]"        LOC = A13    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[11]"        LOC = B12    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[12]"        LOC = A12    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[13]"        LOC = C11    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[14]"        LOC = A11    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[15]"        LOC = B10    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[16]"        LOC = A9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[17]"        LOC = C9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[18]"        LOC = A8     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[19]"        LOC = B8     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[20]"        LOC = A7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[21]"        LOC = C7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[22]"        LOC = A6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[23]"        LOC = B6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[24]"        LOC = A5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[25]"        LOC = B5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[26]"        LOC = A4     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[27]"        LOC = E10    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[28]"        LOC = C10    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[29]"        LOC = E11    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[30]"        LOC = F10    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[31]"        LOC = F9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[32]"        LOC = D9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[33]"        LOC = C8     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[34]"        LOC = D8     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[35]"        LOC = E7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[36]"        LOC = E6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[37]"        LOC = F7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[38]"        LOC = C6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[39]"        LOC = D6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[40]"        LOC = M6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[41]"        LOC = P4     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[42]"        LOC = N5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[43]"        LOC = P5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[44]"        LOC = N6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[45]"        LOC = M7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[46]"        LOC = P6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[47]"        LOC = N8     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[48]"        LOC = L7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[49]"        LOC = P9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[50]"        LOC = T4     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[51]"        LOC = T5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[52]"        LOC = R5     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[53]"        LOC = T6     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[54]"        LOC = T7     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[55]"        LOC = N9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[56]"        LOC = M9     | IOSTANDARD = LVTTL;
+#NET "GPIO_1[57]"        LOC = M10    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[58]"        LOC = P11    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[59]"        LOC = P12    | IOSTANDARD = LVTTL;
+#NET "GPIO_1[60]"        LOC = M11    | IOSTANDARD = LVTTL;
+
